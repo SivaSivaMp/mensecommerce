@@ -11,6 +11,7 @@ import connectB from './config/db.js';
 import AppError from './utils/appError.js';
 import globalErrorHandler from './controllers/user/errorController.js';
 import userRouter from './routes/user/userRoutes.js';
+import passport from './config/passport.js'
 
 const app = express();
 dotenv.config();
@@ -33,7 +34,8 @@ app.use(
         },
     })
 );
-
+app.use(passport.initialize());
+app.use(passport.session());
 app.use((req, res, next) => {
     res.locals.user = req.session.user || req.user || null;
     next();

@@ -1,0 +1,180 @@
+<%-include("../../views/partials/user/header")%>
+<style>
+    #otpTimer {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+    }
+</style>
+<section class="">
+    <div
+        class="col-lg-12 d-flex justify-content-center align-items-center border-0 rounded-lg auth-h100"
+    >
+        <div
+            class="w-100 p-3 p-md-4 card border-0 shadow-lg mb-2"
+            style="max-width: 28rem"
+        >
+            <!-- Form -->
+            <form id="verifyotp-form" class="row g-1 p-3 p-md-4">
+                <div class="col-12 text-center mb-5">
+                    <img
+                        src="../assets/images/verify.svg"
+                        class="w240"
+                        alt=""
+                    />
+                    <h5>Verification</h5>
+                </div>
+                <div class="col-12 text-center mb-3">
+                    <div id="otpTimer">
+                        Time remaining: <span id="timerValue">60</span>s
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="mb-2">
+                        <input
+                            type="text"
+                            name="otp"
+                            id="otp"
+                            class="form-control form-control-lg text-center"
+                            placeholder="_______________"
+                            required
+                            maxlength="5"
+                            pattern="\d*"
+                        />
+                    </div>
+                </div>
+
+                <div class="col-12 text-center mt-4">
+                    <button
+                        type="submit"
+                        class="btn btn-lg btn-block btn-light lift text-uppercase"
+                    >
+                        Verify my account
+                    </button>
+                </div>
+                <div
+                    id="error-message"
+                    class="alert alert-danger d-none"
+                    role="alert"
+                ></div>
+                <div
+                    id="success-message"
+                    class="alert alert-success d-none"
+                    role="alert"
+                ></div>
+                <div class="col-12 text-center mt-4">
+                    <span
+                        >Haven't received it?
+                        <a
+                            href="#"
+                            id="resendBtn"
+                            onclick="return resendOTP()"
+                            class="text-secondary"
+                            >Resend a new code.</a
+                        >
+                    </span>
+                </div>
+            </form>
+            <!-- End Form -->
+        </div>
+    </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    let timer = 60;
+    let timerInterval;
+
+    function startTimer() {
+        const timerValue = document.getElementById('timerValue');
+        const resendBtn = document.getElementById('resendBtn');
+
+        resendBtn.style.pointerEvents = 'none';
+        resendBtn.style.opacity = '0.5';
+
+        timer = 60;
+        timerValue.textContent = timer;
+
+        timerInterval = setInterval(() => {
+            timer--;
+            timerValue.textContent = timer;
+
+            if (timer <= 0) {
+                clearInterval(timerInterval);
+                resendBtn.style.pointerEvents = 'auto';
+                resendBtn.style.opacity = '1';
+            }
+        }, 1000);
+    }
+
+    function resendOTP() {
+        clearInterval(timerInterval);
+        startTimer();
+
+        console.log('OTP Resent!');
+        return false;
+    }
+
+    window.onload = startTimer;
+</script>
+<script>
+    const form = document.getElementById('verifyotp-form');
+    const errorBox = document.getElementById('error-message');
+    const successBox = document.getElementById('success-message');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        errorBox.classList.add('d-none');
+        successBox.classList.add('d-none');
+
+        const formData = {
+            otp: document.getElementById('otp').value,
+        };
+        try {
+            const res = await axios.post('/verify-otp', formData);
+            if (res.data.status === 'success') {
+                successBox.textContent = res.data.message;
+                successBox.classList.remove('d-none');
+
+                setTimeout(() => {
+                    window.location.href = res.data.redirectUrl;
+                }, 1000);
+            }
+        } catch (err) {
+            const msg = err.response?.data?.message || 'Something went wrong';
+            errorBox.textContent = msg;
+            errorBox.classList.remove('d-none');
+        }
+    });
+    async function resendOTP() {
+        clearInterval(timerInterval);
+        startTimer();
+
+        errorBox.classList.add('d-none');
+        successBox.classList.add('d-none');
+
+        try {
+            const res = await axios.post('/resend-otp');
+
+            if (res.data.success) {
+                successBox.textContent = 'OTP Resent Successfully';
+                successBox.classList.remove('d-none');
+                startTimer();
+            } else {
+                errorBox.textContent =
+                    res.data.message ||
+                    'An error occurred while resending OTP. Please try again.';
+                errorBox.classList.remove('d-none');
+            }
+        } catch (err) {
+            const msg =
+                err.response?.data?.message ||
+                'Failed to connect to the server. Please try again.';
+            errorBox.textContent = msg;
+            errorBox.classList.remove('d-none');
+        }
+
+        return false;
+    }
+</script>
+<%-include("../../views/partials/user/footer")%>

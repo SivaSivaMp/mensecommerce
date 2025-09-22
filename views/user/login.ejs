@@ -1,0 +1,187 @@
+<%-include("../../views/partials/user/header")%>
+ <style>
+     .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+            display: none;
+        }
+
+ </style>
+ 
+ <!-- page-title -->
+        <div class="tf-page-title style-2">
+            <div class="container-full">
+                <div class="heading text-center"><%=title%></div>
+            </div>
+        </div>
+        <!-- /page-title -->
+    
+        <section class="flat-spacing-10">
+            <div class="container">
+                <div class="tf-grid-layout  tf-login-wrap">
+                    <div class="tf-login-form">
+                        <div id="recover">
+                            <h5 class="mb_24">Reset your password</h5>
+                            <p class="mb_30">We will send you an email to reset your password</p>
+                            <div>
+                                <form class="" id="forgetpassword-form" action="#" method="post" accept-charset="utf-8" data-mailchimp="true" >
+                                    <div class="tf-field style-1 mb_15">
+                                        <input class="tf-field-input tf-input" placeholder="" type="email" id="property1" name="email">
+                                        <label class="tf-field-label fw-4 text_black-2" for="property1">Email *</label>
+                                    </div>
+                                    <div id="error-1" class="error-message"></div>
+                                    <div class="mb_20">
+                                        <a href="#login" class="tf-btn btn-line">Cancel</a>
+                                    </div>
+                                    <div id="error-message1" class="alert alert-danger d-none" role="alert"></div>
+                                    <div class="">
+                                        <button type="submit" class="tf-btn w-100 radius-3 btn-fill animate-hover-btn justify-content-center">Reset password</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <div id="login">
+                            <h5 class="mb_36 ">Log in</h5>
+                            <div>
+                                <form class="" id="login-form" accept-charset="utf-8" >
+                                    <div class="tf-field style-1 mb_15">
+                                        <input class="tf-field-input tf-input" placeholder="" type="email" id="property3" name="email">
+                                        <label class="tf-field-label fw-4 text_black-2" for="property3">Email *</label>
+                                    </div>
+                                    <div id="error-2" class="error-message"></div>
+                                    <div class="tf-field style-1 mb_30">
+                                        <input class="tf-field-input tf-input" placeholder="" type="password" id="property4" name="password">
+                                        <label class="tf-field-label fw-4 text_black-2" for="property4">Password *</label>
+                                    </div>
+                                    <div id="error-3" class="error-message"></div>
+                                    <div class=" d-flex justify-content-between">
+                                        <a href="#recover" class="tf-btn btn-line ">Forgot your password? </a>                                        
+                                        <a href="/signup" class="tf-btn btn-line ">Register<i class="icon icon-arrow1-top-left"></i></a>
+                                    </div>                                    
+                                    <div class="mt_20">
+                                        <button type="submit" class="tf-btn w-100 radius-3 btn-fill animate-hover-btn justify-content-center mb_24 ">Log in</button>
+                                    </div>
+                                    <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+                                    <div id="success-message" class="alert alert-success d-none" role="alert"></div>                                    
+                                    <div class="">
+                                        <!-- <button type="submit" class="tf-btn w-100 radius-3 btn-fill-google animate-hover-btn justify-content-center "><img src="https://img.icons8.com/color/16/000000/google-logo.png" class="me-2"/>Log in with Google</i></button> -->
+                                        <a href="/auth/google" class=" w-100 radius-3 btn-fill-google animate-hover-btn justify-content-center p-2 text-center"><img src="https://img.icons8.com/color/16/000000/google-logo.png" class="me-2"/>Log in with Google</i></a>
+                                    </div>                                    
+                                </form>
+                            </div>
+                        </div>
+                    </div>                    
+                </div>
+            </div>
+        </section>
+        
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>           
+         <!-- axios subbimission -->
+            <script>
+            const form = document.getElementById("login-form");
+            const errorBox = document.getElementById("error-message");
+            const successBox = document.getElementById("success-message");           
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                errorBox.classList.add("d-none");
+                successBox.classList.add("d-none");
+                const formData = {
+                email: document.getElementById("property3").value,
+                password: document.getElementById("property4").value
+                };
+                try {
+                const res = await axios.post("/login", formData);
+                if (res.data.status === "success") { 
+                    successBox.textContent=res.data.message||'login successful'                   
+                    successBox.classList.remove('d-none')
+                    setTimeout(() => {
+                    window.location.href = res.data.redirectUrl||'/';
+                    }, 1200);
+                }
+                } catch (err) {
+                const msg = err.response?.data?.message || "Something went wrong";
+                errorBox.textContent = msg;
+                errorBox.classList.remove("d-none");
+                }
+            });
+
+            // forget password post 
+            const forgetform=document.getElementById('forgetpassword-form')
+            const errorBox1 = document.getElementById("error-message1");
+            forgetform.addEventListener('submit',async(e)=>{
+                e.preventDefault()
+                errorBox.classList.add('d-none')
+                const formData={
+                    email:document.getElementById('property1').value
+                }
+                try {
+                const res = await axios.post("/emailverification", formData);
+
+                if (res.data.status === "success") {
+                    
+                    setTimeout(() => {
+                    window.location.href = res.data.redirectUrl;
+                    }, 1200);
+                }
+                } catch (err) {
+                const msg = err.response?.data?.message || "Something went wrong";
+                errorBox1.textContent = msg;
+                errorBox1.classList.remove("d-none");
+                }
+            })
+            </script>
+            <!-- frontend validation -->
+            <script>
+                const emailforgetid=document.getElementById('property1')
+                const emailid = document.getElementById('property3');
+                const passid = document.getElementById('property4');
+                const error1=document.getElementById('error-1')
+                const error2 = document.getElementById('error-2'); 
+                const error3 = document.getElementById('error-3');
+                const forgetForm=document.getElementById('forgetpassword-form')
+                const loginform = document.getElementById('login-form');
+                function emailValidateChecking() {
+                    const emailval = emailid.value.trim();
+                    const emailpattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+                    if (!emailpattern.test(emailval)) {
+                        error2.style.display = 'block';
+                        error2.innerHTML = 'Please enter a valid email address';
+                    } else {
+                        error2.style.display = 'none';
+                        error2.innerHTML = '';
+                    }
+                }
+                function passValidateChecking(isLogin = false) {
+                    const passval = passid.value;    
+                    const alpha = /[a-zA-Z]/;
+                    const digit = /\d/;
+
+                    if (passval.length < 8) {
+                        error3.style.display = 'block';
+                        error3.innerHTML = 'Password must be at least 8 characters';
+                    } else if (!alpha.test(passval) || !digit.test(passval)) {
+                        error3.style.display = 'block';
+                        error3.innerHTML = 'Password must contain both letters and numbers';
+                    } else {
+                        error3.style.display = 'none';
+                        error3.innerHTML = '';
+                    }
+                }
+
+                if (loginform) {
+                    loginform.addEventListener('submit', (e) => {
+                        emailValidateChecking();
+                        passValidateChecking(true);
+
+                        if ((error2 && error2.innerHTML) || (error3 && error3.innerHTML)) {
+                            e.preventDefault();
+                        }
+                    });
+                }
+            </script>
+
+
+<%-include("../../views/partials/user/footer")%>
