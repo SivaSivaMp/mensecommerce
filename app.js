@@ -11,6 +11,7 @@ import connectB from './config/db.js';
 import AppError from './utils/appError.js';
 import globalErrorHandler from './controllers/user/errorController.js';
 import userRouter from './routes/user/userRoutes.js';
+import adminRouter from './routes/admin/adminRoutes.js';
 import passport from './config/passport.js'
 
 const app = express();
@@ -38,6 +39,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use((req, res, next) => {
     res.locals.user = req.session.user || req.user || null;
+    res.locals.admin=req.session.admin||null
     next();
 });
 app.use(nocache());
@@ -65,6 +67,7 @@ app.set('views', [
 ]);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', userRouter);
+app.use('/admin', adminRouter);
 
 app.use((req, res, next) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
