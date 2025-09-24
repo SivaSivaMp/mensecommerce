@@ -1,50 +1,5 @@
 import AppError from '../../utils/appError.js';
 import User from '../../models/userSchema.js';
-import nocache from 'nocache';
-
-// const customerInfo = async (req, res) => {
-//     try {
-//         const search = req.query.search || '';
-//         const page = parseInt(req.query.page, 10) || 1;
-//         const limit = 10;
-
-//         // Common filter for search
-//         const filter = {
-//             isAdmin: false,
-//             $or: [
-//                 { name: { $regex: search, $options: 'i' } },
-//                 { email: { $regex: search, $options: 'i' } },
-//             ],
-//         };
-
-//         // First: count total matching users
-//         const count = await User.countDocuments(filter);
-
-//         // Second: fetch paginated data
-//         const userData = await User.find(filter)
-//             .sort({ createdAt: -1 })
-//             .skip((page - 1) * limit)
-//             .limit(limit)
-//             .exec();
-
-//         const totalPages = Math.ceil(count / limit);
-
-//         // Render page only if admin session exists
-//         if (req.session.admin) {
-//             return res.render('customers', {
-//                 data: userData,
-//                 search,
-//                 totalPages,
-//                 currentPage: page,
-//             });
-//         }
-
-//         res.redirect('/login'); // non-admin users
-//     } catch (error) {
-//         console.error('Error fetching customers:', error);
-//         res.redirect('/pageerror');
-//     }
-// };
 
 const customerInfo = async (req, res, next) => {
     try {

@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>::ecomus:: Customers </title>
+    <title>::ecomus:: Category </title>
     <link rel="icon"  href="/images/logo/favicon.png" type="image/png">
     <!-- plugin css file  -->
     <link rel="stylesheet" href="/assets/plugin/datatables/responsive.dataTables.min.css">
@@ -17,19 +17,19 @@
 <body>
     <div id="ebazar-layout" class="theme-blue">
         <!-- sidebar -->
-        <%- include('../partials/admin/admin-sidebar', { currentPage: 'customers' }) %>
+        <%- include('../partials/admin/admin-sidebar', { currentPage: 'categories' }) %>
         <!-- main body area -->
         <div class="main px-lg-4 px-md-4"> 
             <!-- Body: Header -->
             <%- include('../partials/admin/admin-header', { user: user || null }) %>
                 <div class="order-0 col-lg-4 col-md-4 col-sm-12 col-12 mb-3 mb-md-0">
-                    <form method="GET" action="/admin/users">
+                    <form method="GET" action="/admin/category">
                         <div class="input-group flex-nowrap input-group-sm">
                             <input 
                                 type="search" 
                                 name="search"
                                 class="form-control" 
-                                placeholder="Search customers..." 
+                                placeholder="Search categories..." 
                                 aria-label="search" 
                                 aria-describedby="addon-wrapping" 
                                 value="<%= search %>"
@@ -52,7 +52,12 @@
                             <div class="row align-items-center">
                                 <div class="border-0 mb-4">
                                     <div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
-                                        <h3 class="fw-bold mb-0">Customers Information</h3>                              
+                                        <h3 class="fw-bold mb-0">Category Information</h3>
+                                        <div class="col-auto d-flex w-sm-100">
+                                        <a href="/admin/category/category-add"class="btn btn-primary btn-set-task w-sm-100"><i class="icofont-plus-circle me-2 fs-6"></i>Add Category</a>
+    
+  
+                                       </div>                              
                                     </div>
                                 </div>
                             </div> <!-- Row end  -->
@@ -61,33 +66,57 @@
                                     <div class="card mb-3">
                                         <div class="card-body">
                                             <table id="myProjectTable" class="table table-hover align-middle mb-0" style="width:100%">
-                                                <small>user count :<%=currentCount%></small>
+                                                <small>categoty count :<%=currentCount%></small>
                                                 <thead>
                                                     <tr>
                                                         <th>Id</th>
                                                         <th>Customers</th>                                                 
-                                                        <th>Mail</th>
-                                                        <th>Phone</th> 
-                                                        <th>Actions</th>  
+                                                        <th>Description</th>
+                                                        <th>Date</th>
+                                                        <th>status</th>
+                                                        <th>Actions</th>
+                                                        <th>Edit</th>  
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <% data.forEach(function(user,index) { %>
+                                                    <% data.forEach(function(category,index) { %>
                                                         <tr>
                                                             <td><%=index+1%></td>
-                                                            <td><%= user.name %></td>
-                                                            <td><%= user.email %></td>
-                                                            <td><%= user.phone %></td>
+                                                            <td><%= category.categoryName %></td>
+                                                            <td><span class="d-inline-block text-truncate" style="max-width: 250px;" data-bs-toggle="tooltip" title="<%= category.description %>"> <%= category.description %> </span></td>
+                                                            <td><%= new Date(category.createdAt).toLocaleDateString('en-US', { 
+                                                            year: 'numeric', 
+                                                            month: 'long', 
+                                                            day: 'numeric' 
+                                                                }) %></td>
                                                             <td>
-                                                                <% if(user.isBlocked === false) { %>
+                                                                <% if(category.isListed){%>
+                                                                <span class="badge bg-success">listed</span>
+                                                                <%}else{%>
+                                                                <span class="badge bg-danger">unlisted</span>
+                                                                <%}%>
+                                                            </td>                                                               
+
+                                                            <td>
+                                                                
+                                                                <% if(category.isListed === true) { %>
                                                                     <button type="button" class="btn btn-danger" style="width: 80px;">
-                                                                        <a href="/admin/users/blockCustomer?id=<%= user._id %>" class="text-white" style="text-decoration: none;">Block</a>
+                                                                        <a href="/admin/category/unlistCategory?id=<%= category._id %>" class="text-white" style="text-decoration: none;">Unlist</a>
                                                                     </button>
                                                                 <% } else { %>
                                                                     <button type="button" class="btn btn-success" style="width: 80px;">
-                                                                        <a href="/admin/users/unblockCustomer?id=<%= user._id %>" class="text-white" style="text-decoration: none;">Unblock</a>
+                                                                        <a href="/admin/category/listCategory?id=<%= category._id %>" class="text-white" style="text-decoration: none;">List</a>
                                                                     </button>
                                                                 <% } %>
+                                                            </td>
+                                                            <td>
+                                                                <div class="btn-group" role="group" aria-label="Basic outlined example">
+                                                                    <button type="button" class="btn btn-outline-secondary">
+                                                                        <a   href="/admin/category/category-edit?id=<%= category._id %>"><i class="icofont-edit text-success"></i></a>
+                                                                        
+                                                                    </button>                                                        
+                                                                     
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                         <% }) %>
@@ -139,7 +168,7 @@
         const clearButton = document.getElementById('clear-search');
         if (clearButton) {
             clearButton.addEventListener('click', function() {
-                window.location.href = '/admin/users';
+                window.location.href = '/admin/category';
             });
         }
     });
