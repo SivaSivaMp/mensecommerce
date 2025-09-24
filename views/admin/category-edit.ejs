@@ -1,0 +1,159 @@
+<!doctype html>
+<html class="no-js" lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>::ecomus:: Category Add </title>
+    
+
+    <link rel="stylesheet" href="/assets/plugin/datatables/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="/assets/plugin/datatables/dataTables.bootstrap5.min.css">
+    
+    <!-- project css file  -->
+    <link rel="stylesheet" href="/assets/css/ebazar.style.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">    
+</head>
+<body>
+    <div id="ebazar-layout" class="theme-blue">
+
+        <!-- sidebar -->
+        <%- include('../partials/admin/admin-sidebar', { currentPage: 'category-add' }) %>
+
+        <!-- main body area -->
+        <div class="main px-lg-4 px-md-4"> 
+
+            <!-- Body: Header -->
+            <%- include('../partials/admin/admin-header', { user: user || null }) %>
+
+            <!-- Body: Body -->       
+            <div class="container-fluid mt-4">
+        <form id="categoryForm">
+            <div class="row">
+                <div class="col-md-12">
+                    <!-- Basic Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>Category Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Category Name *</label>
+                                    <input type="text" name="name" class="form-control" id="name" value="<%=category.categoryName%>">
+                                </div>
+                                <div class="col-md-12 mt-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea name="description" class="form-control" rows="4" id="description" value ><%=category.description%></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-success btn-lg ">Save Category</button>
+                    <button type="button" class="btn btn-outline-secondary btn-lg ms-2">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Jquery Core Js -->
+    <script src="../assets/bundles/libscripts.bundle.js"></script>
+
+    <!-- Plugin Js-->
+    <script src="../assets/bundles/dataTables.bundle.js"></script>
+
+    <!-- Jquery Page Js -->
+    <script src="../js/template.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>   
+
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+   <script>
+    document.querySelector('.btn-outline-secondary').addEventListener('click', () => {
+    window.location.href = '/admin/category';
+                        });
+   </script>
+   <script>
+    const form=document.getElementById('categoryForm')
+    form.addEventListener('submit',async(e)=>{
+
+        try {
+        e.preventDefault()
+        const categoryId = "<%= category._id %>";
+        const formData={
+            id:categoryId,
+            name:document.getElementById('name').value,
+            description:document.getElementById('description').value
+            
+        }
+        console.log(formData);
+        
+        const res=await axios.patch('/admin/category/category-edit',formData)
+        if(res.data.status==='success'){
+            const msg=res.data.message
+            showSuccessToast(msg)
+                    setTimeout(() => {
+          window.location.href = res.data.redirectUrl||'/admin/category';
+        }, 1000);
+        }   
+        } catch (error) {
+            const msg = error.response?.data?.message || "Something went wrong";
+            showWarningToast(msg)
+        }
+    })
+   </script>
+   <script>
+        function showSuccessToast(message) {
+                    if (typeof Toastify !== 'undefined') {
+                        Toastify({
+                            text: message,
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#28a745",
+                            close: true
+                        }).showToast();
+                    } else {
+                        alert(message); 
+                    }
+                }
+        function showWarningToast(message) {
+                    if (typeof Toastify !== 'undefined') {
+                        Toastify({
+                            text: message,
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#ffc107",
+                            close: true
+                        }).showToast();
+                    } else {
+                        alert(message); 
+                    }
+                }
+        function showErrorToast(message) {
+                    if (typeof Toastify !== 'undefined') {
+                        Toastify({
+                            text: message,
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#FF0000",
+                            close: true
+                        }).showToast();
+                    } else {
+                        alert(message); 
+                    }
+                }              
+   </script>
+
+</body>
+
+</html>
