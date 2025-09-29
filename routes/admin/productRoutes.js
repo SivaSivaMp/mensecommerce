@@ -3,9 +3,14 @@ import productController from '../../controllers/admin/productController.js';
 import upload from '../../middleware/uploadMiddleware.js';
 const router = Router();
 
+router.route('/').get(productController.getProductInfo);
+
 router
     .route('/product-add')
     .get(productController.getAddProduct)
     .post(upload.any(), productController.addProduct);
+
+router.route('/unlistProduct').get(productController.unlistProduct);
+router.route('/listProduct').get(productController.listProduct);
 
 export default router;

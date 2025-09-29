@@ -2,9 +2,74 @@ import Product from '../../models/productSchema.js';
 import AppError from '../../utils/appError.js';
 import Category from '../../models/categorySchema.js';
 import cloudinary from '../../config/cloudinaryConfig.js';
-import mongoose from 'mongoose';
 import ProductVariant from '../../models/productVarintSchema.js';
-import { json } from 'express';
+
+const getProductInfo = async (req, res, next) => {
+    try {
+        let search = req.query.search || '';
+        let page = parseInt(req.query.page) || 1;
+        const limit = 8;
+        const skip = (page - 1) * limit;
+        const productData = await Product.aggregate([
+            {
+                $match: {
+                    name: { $regex: new RegExp('.*' + search + '.*', 'i') },
+                },
+            },
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            {
+                $lookup: {
+                    from: Category.collection.name,
+                    localField: 'category',
+                    foreignField: '_id',
+                    as: 'category',
+                },
+            },
+            { $unwind: '$category' },
+            {
+                $lookup: {
+                    from: ProductVariant.collection.name,
+                    localField: '_id',
+                    foreignField: 'productId',
+                    as: 'variants',
+                },
+            },
+            {
+                $addFields: {
+                    totalQuantity: { $sum: '$variants.quantity' },
+                    availableSizes: {
+                        $setUnion: { $setUnion: ['$variants.size', []] },
+                    },
+                    computedStatus: {
+                        $cond: [
+                            { $eq: [{ $sum: '$variants.quantity' }, 0] },
+                            'out of stock',
+                            'Available',
+                        ],
+                    },
+                },
+            },
+        ]);
+        const count = await Product.countDocuments({
+            name: { $regex: new RegExp('.*' + search + '.*', 'i') },
+        });
+        const totalPages = Math.ceil(count / limit);
+        res.render('products', {
+            status: 'success',
+            message: 'product list loaded successfully',
+            search,
+            data: productData,
+            totalPages,
+            currentPage: page,
+            currentCount: count,
+        });
+    } catch (error) {
+        console.log('error while loading product');
+        next(error);
+    }
+};
 
 const getAddProduct = async (req, res, next) => {
     if (req.session.admin) {
@@ -12,6 +77,12 @@ const getAddProduct = async (req, res, next) => {
         res.render('add-product', {
             category,
         });
+    }
+};
+
+const getEditProduct = async (req, res, next) => {
+    if (req.session.admin) {
+        cons;
     }
 };
 const addProduct = async (req, res) => {
@@ -24,25 +95,24 @@ const addProduct = async (req, res) => {
             salesPrice,
             colorName,
             colorCode,
-            isListed,
             sizes = {},
         } = req.body;
 
         // 1. Validate required fields
         if (!name || !category || !originalPrice || !colorName) {
-            return res.status(400).json({
-                status: 'error',
-                message:
+            return next(
+                new AppError(
                     'Please provide name, category, original price and color name',
-            });
+                    400
+                )
+            );
         }
 
         // 2. Validate images
         if (!req.files || req.files.length < 1) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'Please upload at least one product image',
-            });
+            return next(
+                new AppError('Please upload at least one product image', 400)
+            );
         }
 
         // 3. Check for duplicate product name
@@ -50,19 +120,9 @@ const addProduct = async (req, res) => {
             name: { $regex: new RegExp(`^${name}$`, 'i') },
         });
         if (existing) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'A product with this name already exists',
-            });
-        }
-
-        // 4. Verify category
-        const categoryExists = await Category.findById(category);
-        if (!categoryExists) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'Invalid category selected',
-            });
+            return next(
+                new AppError('A product with this name already exists', 400)
+            );
         }
 
         // 5. Upload images sequentially to Cloudinary
@@ -113,7 +173,6 @@ const addProduct = async (req, res) => {
             colorName: colorName.trim(),
             colorCode: colorCode || '',
             images: imageUrls,
-            isListed: isListed === 'true' || isListed === true,
             totalStock,
         });
 
@@ -132,7 +191,7 @@ const addProduct = async (req, res) => {
                 product,
                 variants: variantDocs,
             },
-            redirectUrl: '/admin/product',
+            redirectUrl: '/admin/product/product-add',
         });
     } catch (err) {
         console.error('Error adding product:', err);
@@ -164,5 +223,36 @@ const addProduct = async (req, res) => {
         });
     }
 };
+const listProduct = async (req, res, next) => {
+    try {
+        if (req.session.admin) {
+            const id = req.query.id;
+            await Product.updateOne({ _id: id }, { $set: { isListed: true } });
+            res.redirect('/admin/product');
+        }
+    } catch (error) {
+        console.log('error while listing the category', error);
+        next(error);
+    }
+};
 
-export default { getAddProduct, addProduct };
+const unlistProduct = async (req, res, next) => {
+    try {
+        if (req.session.admin) {
+            const id = req.query.id;
+            await Product.updateOne({ _id: id }, { $set: { isListed: false } });
+            res.redirect('/admin/product');
+        }
+    } catch (error) {
+        console.log('error while listing the category', error);
+        next(error);
+    }
+};
+
+export default {
+    getAddProduct,
+    addProduct,
+    getProductInfo,
+    listProduct,
+    unlistProduct,
+};

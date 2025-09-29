@@ -1,0 +1,338 @@
+<%-include("../../views/partials/user/header")%>
+
+
+        <!-- /page-title -->
+        
+        <!-- Section Product -->
+   
+        <section class="flat-spacing-2">
+            <div class="container">
+                             <div class="order-0 col-lg-4 col-md-4 col-sm-12 col-12 mb-3 mb-md-0">
+                    <form method="GET" action="/shop">
+                        <div class="input-group flex-nowrap input-group-sm">
+                            <input 
+                                type="search" 
+                                name="query"
+                                class="form-control" 
+                                placeholder="Search Product..." 
+                                aria-label="search" 
+                                aria-describedby="addon-wrapping" 
+                                value="<%= search %>"
+                            >
+                            <button type="submit" class="input-group-text" id="addon-wrapping">
+                                <i class="icofont-search"></i>
+                            </button>
+                            <% if (search && search.length > 0) { %>
+                                <button type="button" class="input-group-text bg-danger text-white" id="clear-search">
+                                    <i class="icofont-close"></i>
+                                </button>
+                            <% } %>
+                        </div>
+                    </form>
+                </div>
+                <div class="tf-shop-control grid-3 align-items-center">
+                    <div class="tf-control-filter">
+                        <a href="#filterShop" data-bs-toggle="offcanvas" aria-controls="offcanvasLeft" class="tf-btn-filter"><span class="icon icon-filter"></span><span class="text">Filter</span></a>
+                    </div>
+                    <ul class="tf-control-layout d-flex justify-content-center">
+                        <li class="tf-view-layout-switch sw-layout-2" data-value-grid="grid-2">
+                            <div class="item"><span class="icon icon-grid-2"></span></div>
+                        </li>
+                        <li class="tf-view-layout-switch sw-layout-3" data-value-grid="grid-3">
+                            <div class="item"><span class="icon icon-grid-3"></span></div>
+                        </li>
+                        <li class="tf-view-layout-switch sw-layout-4 active" data-value-grid="grid-4">
+                            <div class="item"><span class="icon icon-grid-4"></span></div>
+                        </li>
+                        <li class="tf-view-layout-switch sw-layout-5" data-value-grid="grid-5">
+                            <div class="item"><span class="icon icon-grid-5"></span></div>
+                        </li>
+
+                    </ul>
+                    <div class="tf-control-sorting d-flex justify-content-end">
+                        <div class="tf-dropdown-sort" data-bs-toggle="dropdown">
+                            <div class="btn-select">
+                                <span class="text-sort-value">Featured</span>
+                                <span class="icon icon-arrow-down"></span>
+                            </div>
+                            <div class="dropdown-menu" >
+                                <div class="select-item"onclick="handleSort('default')">
+                                    <span class="text-value-item" <%=currentSort==='default' ? 'selected' : '' %>>Sort By</span>
+                                </div>   
+                                <div class="select-item"onclick="handleSort('nameAtoZ')">
+                                    <span class="text-value-item" <%=currentSort==='nameAtoZ' ? 'selected' : '' %>>Alphabetically, A-Z</span>
+                                </div>
+                                <div class="select-item"onclick="handleSort('nameZtoA')">
+                                    <span class="text-value-item" <%=currentSort==='nameZtoA' ? 'selected' : '' %>>Alphabetically, Z-A</span>
+                                </div>
+                                <div class="select-item"onclick="handleSort('priceLowToHigh')">
+                                    <span class="text-value-item" <%=currentSort==='priceLowToHigh' ? 'selected' : '' %>>Price, low to high</span>
+                                </div>
+                                <div class="select-item"onclick="handleSort('priceHighToLow')">
+                                    <span class="text-value-item" <%=currentSort==='priceHighToLow' ? 'selected' : '' %>>Price, high to low</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                    <div class="grid-layout wrapper-shop" data-grid="grid-4">
+                        <% if (products && products.length > 0) { %>
+                            <% products.forEach(function(product,i) { %>
+                            <div class="card-product">
+                                <div class="card-product-wrapper">
+                                <a href="#" class="product-img">
+                                    <img class="lazyload img-product"
+                                        src="<%= product.images && product.images[0] ? product.images[0] : '/images/placeholder.jpg' %>"
+                                        alt="<%= product.name %>">
+
+                                    <% if (product.images && product.images.length > 1) { %>
+                                    <img class="lazyload img-hover"
+                                        src="<%= product.images[1] %>"
+                                        alt="<%= product.name %>">
+                                    <% } %>
+                                </a>
+
+                                <% if (product.totalQuantity === 0) { %>
+                                    <div class="sold-out">
+                                    <span>Sold out</span>
+                                    </div>
+                                <% } %>
+
+                                <div class="list-product-btn">
+                                    <a href="#quick_add" data-bs-toggle="modal" class="box-icon bg_white quick-add tf-btn-loading">
+                                    <span class="icon icon-bag"></span>
+                                    <span class="tooltip">Quick Add</span>
+                                    </a>
+                                    <a href="javascript:void(0);" class="box-icon bg_white wishlist btn-icon-action">
+                                    <span class="icon icon-heart"></span>
+                                    <span class="tooltip">Add to Wishlist</span>
+                                    <span class="icon icon-delete"></span>
+                                    </a>
+                                    <a href="/product-details?id=<%=product._id%>"  class="box-icon bg_white quickview tf-btn-loading">
+                                    <span class="icon icon-view"></span>
+                                    <span class="tooltip">Quick View</span>
+                                    </a>
+                                </div>
+
+                                <% if (product.availableSizes && product.availableSizes.length > 0) { %>
+                                    <div class="size-list">
+                                    <% product.availableSizes.forEach(function(size) { %>
+                                        <span><%= size %></span>
+                                    <% }) %>
+                                    </div>
+                                <% } %>
+
+                                <% if (product.discountPercentage > 0) { %>
+                                    <div class="on-sale-wrap text-end">
+                                    <div class="on-sale-item">-<%= product.discountPercentage %>%</div>
+                                    </div>
+                                <% } %>
+                                </div>
+
+                                <div class="card-product-info">
+                                <a href="#" class="title link"><%= product.name %></a>
+                                <span class="price">
+                                    <% if (product.salesPrice) { %>
+                                    <span class="text-muted text-decoration-line-through">₹<%= product.originalPrice %></span>
+                                    ₹<%= product.salesPrice %>
+                                    <% } else { %>
+                                    ₹<%= product.originalPrice %>
+                                    <% } %>
+                                </span>
+
+                                <% if (product.colorName) { %>
+                                    <ul class="list-color-product">
+                                    <li class="list-color-item color-swatch active">
+                                        <span class="tooltip"><%= product.colorName %></span>
+                                        <span class="swatch-value" style="background-color:<%= product.colorCode %>;"></span>
+                                        <img class="lazyload"
+                                            src="<%= product.images && product.images[0] ? product.images[0] : '/images/placeholder.jpg' %>"
+                                            alt="<%= product.name %>">
+                                    </li>
+                                    </ul>
+                                <% } %>
+                                </div>
+                            </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="col-12 text-center">
+                            <h4>No products found</h4>
+                            <p>Try adjusting your filters or search terms.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+                <!-- pagination -->
+                    <ul class="tf-pagination-wrap tf-pagination-list">
+                    <% if (pagination.totalPages > 1) { %>
+                        
+                        <!-- Prev button -->
+                        <% if (pagination.hasPrev) { %>
+                        <li>
+                            <a href="?page=<%= pagination.currentPage - 1 %><%= queryString ? '&' + queryString : '' %>" 
+                            class="pagination-link animate-hover-btn">
+                            <span class="icon icon-arrow-left"></span>
+                            </a>
+                        </li>
+                        <% } %>
+
+                        <!-- Page numbers -->
+                        <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                        <li class="<%= i === pagination.currentPage ? 'active' : '' %>">
+                            <a href="?page=<%= i %><%= queryString ? '&' + queryString : '' %>" 
+                            class="pagination-link <%= i !== pagination.currentPage ? 'animate-hover-btn' : '' %>">
+                            <%= i %>
+                            </a>
+                        </li>
+                        <% } %>
+
+                        <!-- Next button -->
+                        <% if (pagination.hasNext) { %>
+                        <li>
+                            <a href="?page=<%= pagination.currentPage + 1 %><%= queryString ? '&' + queryString : '' %>" 
+                            class="pagination-link animate-hover-btn">
+                            <span class="icon icon-arrow-right"></span>
+                            </a>
+                        </li>
+                        <% } %>
+
+                    <% } %>
+                    </ul>
+
+
+            </div>
+        </section>
+            <div class="offcanvas offcanvas-start canvas-filter" id="filterShop">
+        <div class="canvas-wrapper">
+    <header class="canvas-header">
+        <div class="filter-icon">
+            <span class="icon icon-filter"></span>
+            <span>Filter</span>
+        </div>
+        <span class="icon-close icon-close-popup" data-bs-dismiss="offcanvas" aria-label="Close"></span>
+    </header>
+
+    <div class="canvas-body">
+        <!-- Categories -->
+
+        <!-- Filter form -->
+        <form action="/shop" id="facet-filter-form" class="facet-filter-form" method="get">
+                                   
+                    <div class="widget-facet wd-categories">
+            <div class="facet-title" data-bs-target="#categories" data-bs-toggle="collapse" aria-expanded="true" aria-controls="categories">
+                <span>Product categories</span>
+                <span class="icon icon-arrow-up"></span>
+            </div>
+            <div id="categories" class="collapse show">
+                <ul class="list-categoris current-scrollbar mb_36">
+                    <% categories.forEach(cat => { %>
+                        <li class="cate-item <%= selectedCategory == cat._id.toString() ? 'current' : '' %>">
+                            <label>
+                                <input type="radio" name="category" value="<%= cat._id %>" <%= selectedCategory == cat._id.toString() ? 'checked' : '' %> />
+                                <span><%= cat.categoryName %></span>
+                            </label>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+        </div>
+
+            
+            <!-- Price Filter -->
+            <!-- Price Filter -->
+<div class="widget-facet">
+    <div class="facet-title" data-bs-target="#price" data-bs-toggle="collapse" aria-expanded="true" aria-controls="price">
+        <span>Price</span>
+        <span class="icon icon-arrow-up"></span>
+    </div>
+    <div id="price" class="collapse show">
+        <div class="widget-price d-flex flex-wrap gap-2">
+
+    <input type="radio" class="btn-check" name="priceRange" id="price1"
+           onclick="setPriceRange(0,500)" <%= gt==0 && lt==500 ? 'checked' : '' %>>
+    <label class="btn btn-outline-primary" for="price1">0 – 500</label>
+
+    <input type="radio" class="btn-check" name="priceRange" id="price2"
+           onclick="setPriceRange(500,1000)" <%= gt==500 && lt==1000 ? 'checked' : '' %>>
+    <label class="btn btn-outline-primary" for="price2">500 – 1000</label>
+
+    <input type="radio" class="btn-check" name="priceRange" id="price3"
+           onclick="setPriceRange(1000,1500)" <%= gt==1000 && lt==1500 ? 'checked' : '' %>>
+    <label class="btn btn-outline-primary" for="price3">1000 – 1500</label>
+
+    <input type="radio" class="btn-check" name="priceRange" id="price4"
+           onclick="setPriceRange(1500,2000)" <%= gt==1500 && lt==2000 ? 'checked' : '' %>>
+    <label class="btn btn-outline-primary" for="price4">1500 – 2000</label>
+
+    <input type="radio" class="btn-check" name="priceRange" id="price5"
+           onclick="setPriceRange(2000,3000)" <%= gt==2000 && lt==3000 ? 'checked' : '' %>>
+    <label class="btn btn-outline-primary" for="price5">2000 – 3000</label>
+
+    <input type="radio" class="btn-check" name="priceRange" id="price6"
+           onclick="setPriceRange(3000,null)" <%= gt==3000 && !lt ? 'checked' : '' %>>
+    <label class="btn btn-outline-primary" for="price6">3000+</label>
+</div>
+    </div>
+</div>
+
+<!-- Hidden inputs for backend -->
+<input type="hidden" id="min-price" name="gt" value="<%= gt || '' %>">
+<input type="hidden" id="max-price" name="lt" value="<%= lt || '' %>">
+
+
+
+            <div class="widget-facet mt-3 d-flex gap-2">
+    <!-- Apply -->
+    <button type="submit" class="btn btn-primary flex-fill">
+        Apply Filters
+    </button>
+
+    <!-- Remove -->
+    <% if (selectedCategory || gt || lt) { %>
+        <a href="/shop" class="btn btn-outline-secondary flex-fill">
+            Remove Filters
+        </a>
+    <% } %>
+</div>
+        </form>
+    </div>
+</div>
+<script>
+function setPriceRange(min, max) {
+    document.getElementById("min-price").value = min ?? '';
+    document.getElementById("max-price").value = max ?? '';
+}
+</script> 
+    </div>
+        <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const clearButton = document.getElementById('clear-search');
+        if (clearButton) {
+            clearButton.addEventListener('click', function() {
+                window.location.href = '/shop';
+            });
+        }
+    });
+    function handleSort(sortOption) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set("sort", sortOption);
+            
+            const currentCategory = urlParams.get("category") || "";
+            const currentSearch = urlParams.get("query") || "";
+            const currentGt = urlParams.get("gt") || "0";
+            const currentLt = urlParams.get("lt") || "";
+            
+            const newUrl = `/shop?sort=${sortOption}` + 
+                        (currentCategory ? `&category=${currentCategory}` : "") +
+                        (currentSearch ? `&query=${currentSearch}` : "") +
+                        (currentGt ? `&gt=${currentGt}` : "") +
+                        (currentLt ? `&lt=${currentLt}` : "");
+                        
+            window.location.href = newUrl;
+        }
+    </script>
+    
+        <%-include("../../views/partials/user/footer")%>
+        <!-- /Section Product -->
