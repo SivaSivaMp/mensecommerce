@@ -91,8 +91,8 @@ const signup = async (req, res, next) => {
             );
         }
 
-  req.session.userOtp = otp;
-  req.session.userData = { name, email, password };
+        req.session.userOtp = otp;
+        req.session.userData = { name, email, password };
 
         res.status(200).json({
             status: 'success',
@@ -114,76 +114,81 @@ const getverifyOtp = async (req, res) => {
     }
 };
 
-const verifyOtp=async(req,res,next)=>{
-
+const verifyOtp = async (req, res, next) => {
     try {
-    
-    const {otp}=req.body
-    if(!req.session||!req.session.userOtp||!req.session.userData){
-        return next(new AppError('session expired or invalid, please try again',400))
-    }   
-    if(otp!==req.session.userOtp){
-    return next(new AppError('Invalid otp',400))
-    }
-       
-        const {name,email,password}=req.session.userData
-        const newUser=new User({name,email,password})
-        await newUser.save()
-        req.session.user={
-            id:newUser._id,
-            name:newUser.name,
-            email:newUser.email
+        const { otp } = req.body;
+        if (!req.session || !req.session.userOtp || !req.session.userData) {
+            return next(
+                new AppError(
+                    'session expired or invalid, please try again',
+                    400
+                )
+            );
         }
-        req.session.userOtp=null
-        req.session.userData=null
+        if (otp !== req.session.userOtp) {
+            return next(new AppError('Invalid otp', 400));
+        }
+
+        const { name, email, password } = req.session.userData;
+        const newUser = new User({ name, email, password });
+        await newUser.save();
+        req.session.user = {
+            id: newUser._id,
+            name: newUser.name,
+            email: newUser.email,
+        };
+        req.session.userOtp = null;
+        req.session.userData = null;
 
         return res.status(200).json({
-            status:'success',
-            message:'OTP verified succesfully, welcome',
-            redirectUrl:'/'
-        })
-       
-          
+            status: 'success',
+            message: 'OTP verified succesfully, welcome',
+            redirectUrl: '/',
+        });
     } catch (error) {
-        console.log('Error during verifying otp',error);
-        
+        console.log('Error during verifying otp', error);
     }
+};
 
-
-}
-
-const resendOtp=async(req,res,next)=>{
+const resendOtp = async (req, res, next) => {
     try {
-  const { email } = req.session.userData;
-  if (!email) {
-    return next(new AppError('Email not Found in the session', 400));
-  }
-  const otp = generateOtp();
-  console.log(`Resend OTP:`, otp);
+        const { email } = req.session.userData;
+        if (!email) {
+            return next(new AppError('Email not Found in the session', 400));
+        }
+        const otp = generateOtp();
+        console.log(`Resend OTP:`, otp);
 
-  const emailSent = await sendVerificationEmail(email, otp);
-  if (!emailSent) {
-    return next(new AppError('Failed to resend the OTP', 400));
-  }
-  req.session.userOtp = otp;
-  res.status(200).json({
-    success: true,
-    status: 'success',
-    message: 'OTP resent successfully',
-  });
+        const emailSent = await sendVerificationEmail(email, otp);
+        if (!emailSent) {
+            return next(new AppError('Failed to resend the OTP', 400));
+        }
+        req.session.userOtp = otp;
+        res.status(200).json({
+            success: true,
+            status: 'success',
+            message: 'OTP resent successfully',
+        });
     } catch (error) {
-        console.log('error during resending the otp',error);
-        
+        console.log('error during resending the otp', error);
     }
-}
+};
 
-const logout=async(req,res,next)=>{
-    
-    req.session.destroy((err)=>{
-        next (new AppError('logout unsuccsfull',400))
-    })
-      res.clearCookie('connect.sid');
+const logout = async (req, res, next) => {
+    req.session.destroy((err) => {
+        next(new AppError('logout unsuccsfull', 400));
+    });
+    res.clearCookie('connect.sid');
     return res.redirect('/');
-}
+};
 
-export default { loadLogin, loadSignup, login, signup, getverifyOtp,verifyOtp,resendOtp,logout };
+export default {
+    loadLogin,
+    loadSignup,
+    login,
+    signup,
+    getverifyOtp,
+    verifyOtp,
+    resendOtp,
+    logout,
+};
