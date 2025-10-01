@@ -62,7 +62,7 @@ const loadShoppingPage = async (req, res, next) => {
             lt: maxPrice,
         } = req.query;
 
-        const limit = 12;
+        const limit = 8;
         const skip = (parseInt(page) - 1) * limit;
 
         const match = {
@@ -173,7 +173,7 @@ const loadShoppingPage = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error loading the shop page:', error);
-        res.redirect('/pageNotFound');
+        res.redirect('/page-notfound');
     }
 };
 
@@ -246,7 +246,7 @@ const getProductDetails = async (req, res, next) => {
             },
         ]);
         if (!productAgg.length) {
-            res.redirect('/pageNotFound');
+            res.redirect('/page-notfound');
         }
         const product = productAgg[0];
         product.availableSizes = product.availableSizes.map((size) => ({
@@ -294,7 +294,6 @@ const getProductDetails = async (req, res, next) => {
                 },
             },
             { $match: { totalQuantity: { $gt: 0 } } },
-            { $limit: 3 },
         ]);
         console.log(similarProducts);
 

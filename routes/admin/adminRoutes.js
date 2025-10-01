@@ -11,4 +11,8 @@ adminRouter.use('/users', auth.adminCheck, customerRoutes);
 adminRouter.use('/category', auth.adminCheck, categoryRoutes);
 adminRouter.use('/product', auth.adminCheck, productRoutes);
 
+adminRouter.use('/pagenotfound', async (req, res) => {
+    res.render('adminpage-404');
+});
+
 export default adminRouter;

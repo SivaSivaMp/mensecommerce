@@ -12,7 +12,7 @@ import AppError from './utils/appError.js';
 import globalErrorHandler from './controllers/user/errorController.js';
 import userRouter from './routes/user/userRoutes.js';
 import adminRouter from './routes/admin/adminRoutes.js';
-import passport from './config/passport.js'
+import passport from './config/passport.js';
 
 const app = express();
 dotenv.config();
@@ -39,7 +39,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use((req, res, next) => {
     res.locals.user = req.session.user || req.user || null;
-    res.locals.admin=req.session.admin||null
+    res.locals.admin = req.session.admin || null;
     next();
 });
 app.use(nocache());
@@ -70,8 +70,18 @@ app.use('/', userRouter);
 app.use('/admin', adminRouter);
 
 app.use((req, res, next) => {
-    next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+    let url = req.originalUrl;
+    if (url.includes('/admin')) {
+        res.status(404).render('adminpage-404', {
+            url: req.originalUrl,
+        });
+    } else {
+        res.status(404).render('page-404', {
+            url: req.originalUrl,
+        });
+    }
 });
+
 app.use(globalErrorHandler);
 
 app.listen(process.env.PORT || 3000, () => {

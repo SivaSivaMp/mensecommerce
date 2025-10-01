@@ -209,10 +209,10 @@
 
     // Remove existing image
     function removeExistingImage(imageUrl, button) {
-        if(confirm('Are you sure you want to remove this image?')) {
+        
             removedImages.push(imageUrl);
             button.closest('.image-container').remove();
-        }
+        
     }
 
     // Setup image upload functionality
@@ -368,6 +368,10 @@
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (uploadedImages.length<removedImages.length ) {
+            showErrorToast("Please upload at least 3 images.");
+            return;
+        }
 
         try {
             spinner.classList.remove('d-none');
