@@ -9,7 +9,8 @@ import { ObjectId } from 'mongodb';
 // load home page
 const loadHomepage = async (req, res, next) => {
     try {
-        const userId = req.session.admin;
+        const userId = req.session.user;
+
         let productData = await Product.aggregate([
             {
                 $lookup: {

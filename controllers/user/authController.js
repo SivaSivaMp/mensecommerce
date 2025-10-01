@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import User from '../../models/userSchema.js';
 import { sendVerificationEmail } from '../../utils/email.js';
 import { generateOtp } from '../../utils/generateOtp.js';
+import validator from 'validator';
 // load login
 
 const loadLogin = async (req, res) => {
@@ -31,6 +32,9 @@ const loadSignup = async (req, res) => {
 const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
+        if (!validator.isEmail(email)) {
+            return next(new AppError('Invalid email', 400));
+        }
         if (req.session.user) {
             return next(new AppError('user already logged in', 400));
         }
@@ -71,12 +75,17 @@ const login = async (req, res, next) => {
 const signup = async (req, res, next) => {
     try {
         const { name, email, password, cpassword } = req.body;
+
         if (!name || !email || !password || !cpassword) {
             return next(new AppError('please add all necessary fields', 400));
         }
-        if (password !== cpassword) {
-            return next(new AppError('password do not match', 400));
+        if (!validator.isEmail(email)) {
+            return next(new AppError('Invalid email', 400));
         }
+        if (!validator.isStrongPassword(password))
+            if (password !== cpassword) {
+                return next(new AppError('password do not match', 400));
+            }
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return next(new AppError('this user already exists', 400));
@@ -147,6 +156,16 @@ const verifyOtp = async (req, res, next) => {
         });
     } catch (error) {
         console.log('Error during verifying otp', error);
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({
+                status: 'error',
+                message: Object.values(error.errors).map((e) => e.message),
+            });
+        }
+        return res.status(500).json({
+            status: 'error',
+            message: 'Something went wrong while adding product',
+        });
     }
 };
 

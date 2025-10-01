@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import authRoutes from './authRoutes.js';
 import viewRoutes from './viewRoutes.js';
-
+import auth from '../../middleware/auth.js';
 const userRouter = Router();
 // authenticaation related routes
 userRouter.use('/', authRoutes);
 
-userRouter.use('/', viewRoutes);
+userRouter.use('/', auth.blockCheck, viewRoutes);
 
 export default userRouter;

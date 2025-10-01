@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Category from '../../models/categorySchema.js';
 import AppError from '../../utils/appError.js';
+import validator from 'validator';
 // get category info for listing
 const categoryInfo = async (req, res, next) => {
     try {
@@ -57,6 +58,11 @@ const addCategory = async (req, res, next) => {
         if (!name.trim() || !description.trim()) {
             return next(new AppError('please fill the necessary field', 400));
         }
+        if (!validator.isLength(name, { min: 2, max: 50 })) {
+            return next(
+                new AppError('Name must be between 2 and 50 characters', 400)
+            );
+        }
 
         const existingCategory = await Category.findOne({
             categoryName: name,
@@ -110,6 +116,19 @@ const editCategory = async (req, res, next) => {
         if (!name.trim() || !description.trim()) {
             return next(
                 new AppError('name or description cannot be empty', 400)
+            );
+        }
+        if (!validator.isLength(name, { min: 2, max: 50 })) {
+            return next(
+                new AppError('Name must be between 2 and 50 characters', 400)
+            );
+        }
+        if (!validator.isLength(description, { min: 2, max: 1000 })) {
+            return next(
+                new AppError(
+                    'Description must be between 2 and 50 characters',
+                    400
+                )
             );
         }
         const existingCategory = await Category.findOne({ categoryName: name });

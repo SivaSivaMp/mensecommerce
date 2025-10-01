@@ -21,17 +21,16 @@ const customerInfo = async (req, res, next) => {
             .skip(skip)
             .exec();
         const totalPages = Math.ceil(userCount / limit);
-        if (req.session.admin) {
-            res.render('customers', {
-                status: 'success',
-                message: 'customer info loaded succesfully',
-                data: userData,
-                currentCount: userCount,
-                search: search,
-                totalPages: totalPages,
-                currentPage: page,
-            });
-        }
+
+        res.render('customers', {
+            status: 'success',
+            message: 'customer info loaded succesfully',
+            data: userData,
+            currentCount: userCount,
+            search: search,
+            totalPages: totalPages,
+            currentPage: page,
+        });
     } catch (error) {
         console.log('error while loading user info', error);
         next(error);

@@ -1,6 +1,8 @@
 import AppError from '../../utils/appError.js';
 import User from '../../models/userSchema.js';
-
+import { generateOtp } from '../../utils/generateOtp.js';
+import { sendVerificationEmail } from '../../utils/email.js';
+import validator from 'validator';
 const getForgotPassword = async (req, res) => {
     if (req.session?.user) {
         return res.redirect('/');
@@ -15,6 +17,9 @@ const emailVerification = async (req, res, next) => {
         const { email } = req.body;
         if (!email) {
             return next(new AppError('email field is missing'));
+        }
+        if (!validator.isEmail(email)) {
+            return next(new AppError('invalid email'));
         }
         const validEmail = await User.findOne({ email });
         if (!validEmail) {
@@ -73,6 +78,9 @@ const getResetPassword = async (req, res) => {
 const resetPassword = async (req, res, next) => {
     try {
         const { newPassword, resetPassword } = req.body;
+        if (validator.isStrongPassword(newPassword)) {
+            return next(new AppError('consider giving strong password', 400));
+        }
         const email = req.session.email;
         if (!newPassword || !resetPassword) {
             return next(new AppError('Enter new Password', 500));

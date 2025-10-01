@@ -9,7 +9,7 @@ const error2 = document.getElementById('error-2'); // email
 const error3 = document.getElementById('error-3'); // password
 const error4 = document.getElementById('error-4'); // confirm password
 
-const signform = document.getElementById('register-form');
+const form = document.getElementById('register-form');
 const loginform = document.getElementById('login-form');
 
 // --- Name validation ---
@@ -69,8 +69,8 @@ function passValidateChecking(isLogin = false) {
 }
 
 // --- On form submit ---
-if (signform) {
-    signform.addEventListener('submit', (e) => {
+if (form) {
+    form.addEventListener('submit', (e) => {
         nameValidateChecking();
         emailValidateChecking();
         passValidateChecking(false);

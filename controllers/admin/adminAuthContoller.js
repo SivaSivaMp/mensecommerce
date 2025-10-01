@@ -1,7 +1,7 @@
 import AppError from '../../utils/appError.js';
 import User from '../../models/userSchema.js';
 import bcrypt from 'bcryptjs';
-
+import validator from 'validator';
 // get login page
 const getAdminLogin = async (req, res, next) => {
     try {
@@ -33,6 +33,9 @@ const login = async (req, res, next) => {
         const { email, password } = req.body;
         if (!email || !password) {
             return next(new AppError('provide email and password', 400));
+        }
+        if (!validator.isEmail(email)) {
+            return next(new AppError('Invalid email', 400));
         }
         const admin = await User.findOne({ email, isAdmin: true }).select(
             '+password'
@@ -66,4 +69,4 @@ const login = async (req, res, next) => {
 const loadDashboard = async (req, res) => {
     return res.render('dashboard');
 };
-export default { getAdminLogin, loadDashboard, login };
+export default { getAdminLogin, loadDashboard, login, logout };

@@ -6,7 +6,7 @@ router
     .route('/login')
     .get(adminAuthContoller.getAdminLogin)
     .post(adminAuthContoller.login);
-
+router.route('/logout').get(adminAuthContoller.logout);
 router.route('/dashboard').get(adminAuthContoller.loadDashboard);
 
 export default router;

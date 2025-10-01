@@ -13,4 +13,9 @@ router
 router.route('/unlistProduct').get(productController.unlistProduct);
 router.route('/listProduct').get(productController.listProduct);
 
+router
+    .route('/edit-product/:id')
+    .get(productController.getEditProduct)
+    .post(upload.array('images[]', 10), productController.editProduct);
+
 export default router;

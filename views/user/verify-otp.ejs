@@ -140,8 +140,8 @@
                     window.location.href = res.data.redirectUrl;
                 }, 1000);
             }
-        } catch (err) {
-            const msg = err.response?.data?.message || 'Something went wrong';
+        } catch (error) {
+            const msg = error.response?.data?.message || 'Something went wrong';
             errorBox.textContent = msg;
             errorBox.classList.remove('d-none');
         }
