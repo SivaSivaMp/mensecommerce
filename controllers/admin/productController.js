@@ -367,10 +367,8 @@ const editProduct = async (req, res, next) => {
             }
         }
 
-        if (currentImages.length === 0) {
-            return next(
-                new AppError('Product must have at least one image', 400)
-            );
+        if (currentImages.length < 3) {
+            return next(new AppError('Product must have at 3 images', 400));
         }
 
         let totalStock = 0;

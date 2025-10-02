@@ -1,4 +1,167 @@
 <%-include("../../views/partials/user/header")%>
+<style>
+/* Rating Summary */
+.review-rating-summary {
+    text-align: center;
+    padding: 25px 0;
+    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 25px;
+}
+
+.rating-overview {
+    display: inline-block;
+}
+
+.rating-number {
+    font-size: 48px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.rating-stars {
+    margin-bottom: 8px;
+}
+
+.rating-stars i {
+    color: #ffa800;
+    font-size: 20px;
+    margin: 0 2px;
+}
+
+.rating-count {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Reviews List */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.review-item {
+    padding: 20px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.review-rating-badge {
+    background-color: #388e3c;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.review-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.review-text {
+    color: #333;
+    line-height: 1.6;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+}
+
+.review-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.reviewer-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.verified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #666;
+}
+
+.verified-badge i {
+    color: #388e3c;
+    font-size: 12px;
+}
+
+.review-location,
+.review-date {
+    color: #999;
+}
+
+.review-location::before,
+.review-date::before {
+    content: "•";
+    margin: 0 4px;
+    color: #ddd;
+}
+
+.review-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.review-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.review-action-btn:hover {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.review-action-btn i {
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .rating-number {
+        font-size: 36px;
+    }
+    
+    .rating-stars i {
+        font-size: 18px;
+    }
+    
+    .review-header {
+        flex-wrap: wrap;
+    }
+}
+</style>
         <!-- breadcrumb -->
         <div class="tf-breadcrumb">
             <div class="container">
@@ -56,7 +219,7 @@
                                         <% product.images.forEach(function(img) { %>
                                             <div class="swiper-slide">
                                                 <a href="<%= img %>" target="_blank" class="item" data-pswp-width="770px" data-pswp-height="1075px">
-                                                    <img class="tf-image-zoom-magnifier lazyload" data-zoom="<%= img %>" data-src="<%= img %>" src="<%= img %>" alt="<%= product.name %>">
+                                                    <img class="tf-image-zoom-magnifier drift-demo-trigger lazyload" data-zoom="<%= img %>" data-src="<%= img %>" src="<%= img %>" alt="<%= product.name %>">
                                                 </a>
                                             </div>
                                         <% }); %>
@@ -93,18 +256,20 @@
                                 <!-- Color Selection - Only if color data exists -->
                                 <% if (product.colorName) { %>
                                 <div class="variant-picker-item">
-                                    <div class="variant-picker-label">
-                                        Color: <span class="fw-6 variant-picker-label-value"><%= product.colorName %></span>
+                                    <div class="variant-picker-label" >
+                                        Color: <span class="fw-6 variant-picker-label-value" ><%= product.colorName %></span>
                                     </div>
                                     <div class="variant-picker-values">
                                         <input type="radio" name="color" id="color-<%= product.colorName %>" value="<%= product.colorName %>" checked>
                                         <label class="style-text" for="color-<%= product.colorName %>" data-value="<%= product.colorName %>">
                                             <p><%= product.colorName %></p>
                                         </label>
+
                                     </div>
                                 </div>
+ 
                                 <% } %>
-
+                              
                                 <!-- Size Selection -->
                                 <div class="variant-picker-item">
                                     <div class="d-flex justify-content-between align-items-center">
@@ -268,19 +433,19 @@
                                 <li class="item-title">
                                     <span class="inner">Review</span>
                                 </li>
-                                <li class="item-title">
+                                <!-- <li class="item-title">
                                     <span class="inner">Shipping</span>
-                                </li>
-                                <li class="item-title">
+                                </li> -->
+                                <!-- <li class="item-title">
                                     <span class="inner">Return Policies</span>
-                                </li>
+                                </li> -->
                             </ul>
                             <div class="widget-content-tab">
                                 <div class="widget-content-inner active">
                                     <div class="">
                                         <p class="mb_30"><%=product.description%>
                                         </p>
-                                        <div class="tf-product-des-demo">  
+                                        <!-- <div class="tf-product-des-demo">  
                                             <div class="left">
                                                 <h3 class="fs-16 fw-5">Materials Care</h3>
                                                 <div class="d-flex gap-10 mb_15 align-items-center">
@@ -314,27 +479,84 @@
                                                     <span>Tumble dry, medium hear.</span>
                                                 </div>
                                               </div>
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
-                                <div class="widget-content-inner">
-                                    <table class="tf-pr-attrs">
-                                        <tbody>
-                                            <tr class="tf-attr-pa-color">
-                                                <th class="tf-attr-label">Color</th>
-                                                <td class="tf-attr-value">
-                                                    <p>White, Pink, Black</p>
-                                                </td>
-                                            </tr>
-                                            <tr class="tf-attr-pa-size">
-                                                <th class="tf-attr-label">Size</th>
-                                                <td class="tf-attr-value">
-                                                    <p>S, M, L, XL</p>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+    
+
+<div class="widget-content-inner">
+    <!-- Overall Rating Summary -->
+    <div class="review-rating-summary">
+        <div class="rating-overview">
+            <div class="rating-number">4.5</div>
+            <div class="rating-stars">
+                <i class="icon-star"></i>
+                <i class="icon-star"></i>
+                <i class="icon-star"></i>
+                <i class="icon-star"></i>
+                <i class="icon-star-half"></i>
+            </div>
+            <div class="rating-count">Based on 245 reviews</div>
+        </div>
+    </div>
+
+    <!-- Individual Reviews -->
+    <div class="reviews-list">
+        <!-- Review 1 -->
+        <div class="review-item">
+            <div class="review-header">
+                <div class="review-rating-badge">5 ★</div>
+                <h4 class="review-title">Awesome</h4>
+            </div>
+            <p class="review-text">Nice shirt ❤️ ❤️</p>
+            <div class="review-footer">
+                <span class="reviewer-name">Deepak Kumar</span>
+                <span class="verified-badge">
+                    <i class="icon-check"></i> Certified Buyer
+                </span>
+                <!-- <span class="review-location">Hyderabad</span>
+                <span class="review-date">2 months ago</span> -->
+            </div>
+
+        </div>
+
+        <!-- Review 2 -->
+        <div class="review-item">
+            <div class="review-header">
+                <div class="review-rating-badge">4 ★</div>
+                <h4 class="review-title">Wonderful</h4>
+            </div>
+            <p class="review-text">good material</p>
+            <div class="review-footer">
+                <span class="reviewer-name">Flipkart Customer</span>
+                <span class="verified-badge">
+                    <i class="icon-check"></i> Certified Buyer
+                </span>
+                <!-- <span class="review-location">Sanawad</span>
+                <span class="review-date">2 months ago</span> -->
+            </div>
+
+        </div>
+
+        <!-- Review 3 -->
+        <div class="review-item">
+            <div class="review-header">
+                <div class="review-rating-badge">5 ★</div>
+                <h4 class="review-title">Excellent Product</h4>
+            </div>
+            <p class="review-text">Great quality and fast delivery. Highly recommend this product to everyone looking for value for money.</p>
+            <div class="review-footer">
+                <span class="reviewer-name">Rajesh Sharma</span>
+                <span class="verified-badge">
+                    <i class="icon-check"></i> Certified Buyer
+                </span>
+                <!-- <span class="review-location">Mumbai</span>
+                <span class="review-date">1 month ago</span> -->
+            </div>
+
+        </div>
+    </div>
+</div>
                                 <div class="widget-content-inner">
                                     <div class="tf-page-privacy-policy">
                                         <div class="title">The Company Private Limited Policy</div>
@@ -522,7 +744,7 @@
                         <div class="swiper-slide">
                             <div class="col-12 text-center p-5">
                                 <h4>No similar products found</h4>
-                                <p>Check back later for recommendations.</p>
+                                
                             </div>
                         </div>
                     <% } %>
@@ -539,6 +761,18 @@
     </div>
 </section>
  <script type="module" src="js/zoom.js"></script>
-        <!-- /product -->
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/drift-zoom/1.5.1/Drift.min.js"></script>
+ <script>
+document.querySelectorAll('.drift-demo-trigger').forEach(img => {
+    new Drift(img, {
+        paneContainer: document.querySelector('.tf-zoom-main'),
+        inlinePane: true,
+        zoomFactor: 3,
+        
+        
+    });
+});
+</script>
+ <!-- /product -->
         
          <%-include("../../views/partials/user/footer")%>

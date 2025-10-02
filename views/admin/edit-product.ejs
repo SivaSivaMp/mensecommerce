@@ -368,10 +368,7 @@
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (uploadedImages.length<removedImages.length ) {
-            showErrorToast("Please upload at least 3 images.");
-            return;
-        }
+       
 
         try {
             spinner.classList.remove('d-none');

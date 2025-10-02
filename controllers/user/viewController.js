@@ -295,7 +295,6 @@ const getProductDetails = async (req, res, next) => {
             },
             { $match: { totalQuantity: { $gt: 0 } } },
         ]);
-        console.log(similarProducts);
 
         res.render('product-details', {
             product,
