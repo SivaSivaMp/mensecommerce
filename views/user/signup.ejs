@@ -68,8 +68,9 @@
             </div>
         </section>
         <script src="/others/formvalidation.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>   
 <script>
+  document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("register-form");
   const errorBox = document.getElementById("error-message");
   const successBox = document.getElementById("success-message");
@@ -77,7 +78,6 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Clear messages first
     errorBox.classList.add("d-none");
     successBox.classList.add("d-none");
 
@@ -90,12 +90,9 @@
 
     try {
       const res = await axios.post("/signup", formData);
-
       if (res.data.status === "success") {
         successBox.textContent = res.data.message;
         successBox.classList.remove("d-none");
-
-        // redirect after short delay
         setTimeout(() => {
           window.location.href = res.data.redirectUrl;
         }, 1500);
@@ -106,6 +103,8 @@
       errorBox.classList.remove("d-none");
     }
   });
+});
+
 </script>
 
    <%-include("../../views/partials/user/footer")%>

@@ -82,10 +82,10 @@ const signup = async (req, res, next) => {
         if (!validator.isEmail(email)) {
             return next(new AppError('Invalid email', 400));
         }
-        if (!validator.isStrongPassword(password))
-            if (password !== cpassword) {
-                return next(new AppError('password do not match', 400));
-            }
+
+        if (password !== cpassword) {
+            return next(new AppError('password do not match', 400));
+        }
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return next(new AppError('this user already exists', 400));
@@ -110,6 +110,7 @@ const signup = async (req, res, next) => {
         });
     } catch (error) {
         console.log('Error occured', error);
+        next(error);
     }
 };
 
