@@ -2,7 +2,6 @@ import mongoose from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 
-
 const userSchema = new mongoose.Schema(
     {
         name: {
@@ -20,6 +19,8 @@ const userSchema = new mongoose.Schema(
         },
         profileImage: {
             type: String,
+            default:
+                'https://res.cloudinary.com/dukl8qjtu/image/upload/v1759648196/avatar4_djfdeo.svg',
         },
         password: {
             type: String,

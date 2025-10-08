@@ -1,0 +1,287 @@
+<%-include("../partials/user/header")%>
+<style>
+       
+        /* Profile Form Styles */
+        .profile-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-control:focus {
+            border-color: #088178;
+            box-shadow: 0 0 0 0.2rem rgba(8, 129, 120, 0.25);
+        }
+
+        .edit-profile-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #088178;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .edit-profile-btn:hover {
+            color: #006c5f;
+        }
+
+        .save-btn {
+            background-color: #f1f1f1;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background-color: #088178;
+            color: #fff;
+        }
+
+        
+
+        /* Password Input Styles */
+        .password-input {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+        }
+        .referral-container {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px dashed #088178;
+    }
+
+    .referral-container .form-control {
+        font-family: monospace;
+        font-size: 1.1em;
+        letter-spacing: 1px;
+        background-color: white;
+    }
+
+    .referral-container .btn-outline-primary {
+        border-color: #088178;
+        color: #088178;
+    }
+
+    .referral-container .btn-outline-primary:hover {
+        background-color: #088178;
+        color: white;
+    }
+
+    #copySuccess {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        background-color: #088178;
+        color: white;
+        border-radius: 8px;
+        display: none;
+        z-index: 1000;
+        animation: fadeInOut 2s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(-20px); }
+        20% { opacity: 1; transform: translateY(0); }
+        80% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-20px); }
+    }
+    </style>
+        <!-- page-title -->
+        
+        <!-- /page-title -->
+        
+        <!-- page-cart -->
+        <section class="flat-spacing-11">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <ul class="my-account-nav">
+                            <li><span class="my-account-nav-item active">My Profile</span></li>                            
+                            <li><a href="my-account-orders.html" class="my-account-nav-item">Orders</a></li>
+                            <li><a href="/profile/address" class="my-account-nav-item">Addresses</a></li>
+                            <li><a href="my-account.html" class="my-account-nav-item ">My Wallet</a></li>
+                            <li><a href="my-account-wishlist.html" class="my-account-nav-item">Wishlist</a></li>
+                            <li><a href="login.html" class="my-account-nav-item">Logout</a></li>
+                        </ul>
+                    </div>
+                <div class="col-md-9">
+                <!-- Profile Form -->
+                <div class="profile-card">
+                    <h4 class="mb-4">My Profile </h4>
+                    <!-- Edit Button -->
+                    <button class="edit-profile-btn" onclick="window.location.href='/profile/profile-edit'">
+                        <i class="icofont-edit text-success"></i>
+                    </button>
+
+                    
+                    
+                        <div class="row g-4">
+
+                             <div class="profile-block text-center w220 mx-auto">
+                                   <a href="#">
+                                        <img src="<%=user.profileImage%>" alt="" class="avatar xl rounded img-thumbnail shadow-sm">
+                                    </a>               
+                            </div>
+                            <!-- Full Name -->
+                            <div class="col-md-6">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" style="font-size: medium; font-weight: 600;" class="form-control " value="<%=user.name%>"  readonly>
+                            </div>
+
+                            <!-- Phone -->
+                            <div class="col-md-6">
+                                <label class="form-label">Mobile Number</label>
+                                <input type="tel" style="font-size: medium; font-weight: 600;"  class="form-control " value="<%=user.phone%>" readonly>
+                            </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label class="form-label">Email Id</label>
+                                <input type="email" style="font-size: medium; font-weight: 600;" class="form-control" value="<%=user.email%>" readonly>
+                            </div>
+                            
+                        </div>
+                    
+                </div>                
+                
+                <!-- Change Password Card -->
+                <div class="profile-card">
+                    <h4 class="mb-4">Change Password</h4>
+                    <form id="changepassword-from">
+                        <div class="row g-4">
+                            <!-- Current Password -->
+                            <div class="col-md-6">
+                                <label class="form-label">Current Password *</label>
+                                <div class="password-input">
+                                    <input type="password" id="current-password" class="form-control" name="currentPassword" placeholder="Enter current password">
+                                    <button type="button" class="toggle-password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- New Password -->
+                            <div class="col-md-6">
+                                <label class="form-label">New Password *</label>
+                                <div class="password-input">
+                                    <input type="password" id="new-password" class="form-control" name="newPassword" placeholder="Enter new password">
+                                    <button type="button" class="toggle-password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Confirm New Password -->
+                            <div class="col-md-6">
+                                <label class="form-label">Confirm New Password *</label>
+                                <div class="password-input">
+                                    <input type="password" id="confirm-password"  class="form-control" name="confirmNewPassword" placeholder="Confirm new password">
+                                    <button type="button" class="toggle-password">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+                            <div id="success-message" class="alert alert-success d-none" role="alert"></div>
+                            <!-- Submit Button -->
+                            <div class="col-12">
+                                <button type="submit" class="save-btn">UPDATE PASSWORD</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+                </div>
+            </div>
+        </section>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> 
+        <script>
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = btn.previousElementSibling;
+            const icon = btn.querySelector('i');
+            if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove("bi-eye");
+            icon.classList.add("bi-eye-slash");
+            } else {
+            input.type = "password";
+            icon.classList.remove("bi-eye-slash");
+            icon.classList.add("bi-eye");
+            }
+        });
+        });
+
+
+
+        // change password form sybmission
+
+        document.addEventListener('DOMContentLoaded',()=>{
+            const form=document.getElementById("changepassword-from")
+            const errorBox = document.getElementById("error-message");
+            const successBox = document.getElementById("success-message");
+            const submitBtn = form.querySelector('button[type="submit"]');
+            form.addEventListener('submit',async(e)=>{
+                e.preventDefault()
+                setTimeout(() => {
+                    successBox.classList.add("d-none");
+                    errorBox.classList.add("d-none");
+                }, 1500);
+                const formData={
+                    currentPassword:document.getElementById('current-password').value,
+                    newPassword:document.getElementById('new-password').value,
+                    confirmNewPassword:document.getElementById('confirm-password').value,
+                }
+                submitBtn.disabled = true;
+                try {
+                    const res=await axios.post('/profile/change-password',formData)
+                    if(res.data.status==='success'){
+                     successBox.textContent = res.data.message;
+                    successBox.classList.remove("d-none"); 
+                    form.reset();
+                    }
+                } catch (err) {
+                    const msg = err.response?.data?.message || "Something went wrong";
+                    errorBox.textContent = msg;
+                    errorBox.classList.remove("d-none");
+                }finally {
+                        
+                        submitBtn.disabled = false;
+                        
+                    }
+
+            })
+        })
+        </script>
+
+
+        <!-- page-cart -->
+
+    <%-include("../partials/user/footer")%>

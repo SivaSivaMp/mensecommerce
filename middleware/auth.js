@@ -1,11 +1,11 @@
 import User from '../models/userSchema.js';
-
+import { getCurrentUserId } from '../helpers/getCurrentUserId.js';
 const userAuth = async (req, res, next) => {
     try {
-        if (!req.session.user) {
+        if (!getCurrentUserId(req)) {
             return res.redirect('/login');
         }
-        const user = await User.findById(req.session.user);
+        const user = await User.findById(getCurrentUserId(req));
 
         if (!user || user.isBlocked) {
             req.session.destroy((err) => {
@@ -16,7 +16,12 @@ const userAuth = async (req, res, next) => {
             });
             return;
         }
-        req.user = user;
+        req.session.user = {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            image: user.profileImage,
+        };
         next();
     } catch (error) {
         console.log('Error in user auth middleware:', error);
@@ -31,13 +36,12 @@ const userAuth = async (req, res, next) => {
 
 const blockCheck = async (req, res, next) => {
     try {
-        const userId = req.session.user;
+        const userId = getCurrentUserId(req);
         if (!userId) {
             return next();
         }
 
-        const userData = await User.findById(userId.id);
-        console.log(userData);
+        const userData = await User.findById(userId);
 
         if (userData.isBlocked) {
             req.session.destroy((err) => {

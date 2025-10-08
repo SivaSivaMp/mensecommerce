@@ -1,0 +1,247 @@
+<%-include("../partials/user/header")%>
+<style>
+       
+        /* Profile Form Styles */
+        .profile-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-control:focus {
+            border-color: #088178;
+            box-shadow: 0 0 0 0.2rem rgba(8, 129, 120, 0.25);
+        }
+
+        .edit-profile-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #088178;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .edit-profile-btn:hover {
+            color: #006c5f;
+        }
+
+        .save-btn {
+            background-color: #f1f1f1;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background-color: #088178;
+            color: #fff;
+        }
+
+        
+
+        /* Password Input Styles */
+        .password-input {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+        }
+        .saved-address {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .address-type {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 10px;
+      }
+
+      .address-type.home {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .address-type.work {
+        background-color: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .address-type.other {
+        background-color: #f3e5f5;
+        color: #7b1fa2;
+      }
+
+      .address-actions {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+      }
+
+      .address-actions button {
+        background: none;
+        border: none;
+        color: #6c757d;
+        margin-left: 10px;
+        padding: 5px;
+      }
+
+      .address-actions button:hover {
+        color: #088178;
+      }
+
+      .add-address-btn {
+        background-color: #088178;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .add-address-btn:hover {
+        background-color: #066c65;
+      }
+
+    
+
+    #copySuccess {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        background-color: #088178;
+        color: white;
+        border-radius: 8px;
+        display: none;
+        z-index: 1000;
+        animation: fadeInOut 2s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(-20px); }
+        20% { opacity: 1; transform: translateY(0); }
+        80% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-20px); }
+    }
+    </style>
+        <!-- page-title -->
+        
+        <!-- /page-title -->
+        
+        <!-- page-cart -->
+        <section class="flat-spacing-11">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <ul class="my-account-nav">
+                            <li><a href="/profile/address" class="my-account-nav-item">My Profile</a></li>                            
+                            <li><a href="my-account-orders.html" class="my-account-nav-item">Orders</a></li>
+                            <li><span class="my-account-nav-item active">Addresses</span></li>
+                            <li><a href="my-account.html" class="my-account-nav-item ">My Wallet</a></li>
+                            <li><a href="my-account-wishlist.html" class="my-account-nav-item">Wishlist</a></li>
+                            <li><a href="login.html" class="my-account-nav-item">Logout</a></li>
+                        </ul>
+                    </div>
+                <div class="col-md-9">
+                <!-- Profile Form -->
+<div class="profile-card">
+
+                    <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="">My Address </h4>
+                    <!-- Edit Button -->
+                    <button class="btn btn-outline-primary" onclick="window.location.href='/profile/address-add'">
+                       Add Address <i class="icofont-plus text-primary"></i>
+                    </button>
+                            </div>                    
+                    
+                </div>                   
+  
+                <div class="profile-card"> 
+                    <div class="saved-address">
+              <span class="address-type ">
+                fgdg
+              </span>
+              <div class="address-actions">
+                <button
+                  
+                  class="btn btn-link p-0 border-0"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <a
+                  href=""
+                  class="btn btn-link p-0 border-0"
+                >
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+              <h6>dfdf</h6>
+              <p class="mb-2">ccgdfgd
+                <br />
+                <br />
+                <br />
+                
+              </p>
+              <p class="mb-1"></p>
+              <p class="mb-0"></p>
+            </div>
+                </div>                
+                
+                <!-- Change Password Card -->
+                
+            </div>
+                </div>
+            </div>
+        </section>
+        <script>
+document.querySelectorAll('.toggle-password').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const input = btn.previousElementSibling;
+    const icon = btn.querySelector('i');
+    if (input.type === "password") {
+      input.type = "text";
+      icon.classList.remove("bi-eye");
+      icon.classList.add("bi-eye-slash");
+    } else {
+      input.type = "password";
+      icon.classList.remove("bi-eye-slash");
+      icon.classList.add("bi-eye");
+    }
+  });
+});
+</script>
+
+        <!-- page-cart -->
+
+   <%-include("../partials/user/footer")%>

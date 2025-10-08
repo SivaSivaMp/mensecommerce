@@ -58,6 +58,7 @@ const login = async (req, res, next) => {
             id: user._id,
             name: user.name,
             email: user.email,
+            image: user.profileImage,
         };
         res.status(200).json({
             status: 'success',
