@@ -124,48 +124,94 @@
                         </li>
                     </ul>
                     <div class="tab-content">
-                        <div class="tab-pane active show" id="bestSeller" role="tabpanel">
-                            <div class="grid-layout loadmore-item" data-grid="grid-4">
-                                
-                                 
-                                <% data.forEach(function(product, index) { %>
-                                <div class="card-product fl-item">
-                                    <div class="card-product-wrapper">
-                                        <a href="/product-details?id=<%=product._id%>" class="product-img">
-                                            <img class="lazyload img-product" 
-                                                src="<%= product.images[0] %>" 
-                                                alt="<%= product.name %>">
-                                            <% if (product.images.length > 1) { %>
-                                            <img class="lazyload img-hover" 
-                                                src="<%= product.images[1] %>" 
-                                                alt="<%= product.name %>">
-                                            <% } %>
-                                        </a>
+                        <div class="tab-pane active show" id="bestSeller" role="tabpanel">                            
 
-                                    <% if (product._totalQuantity === 0) { %>
-                                        <div class="sold-out">
-                                        <span>Sold out</span>
-                                        </div>
+                    <div class="grid-layout wrapper-shop" data-grid="grid-4">
+                        <% if (data && data.length > 0) { %>
+                            <% data.forEach(function(product,i) { %>
+                            <div class="card-product">
+                                <div class="card-product-wrapper">
+                                <a href="#" class="product-img">
+                                    <img class="lazyload img-product"
+                                        src="<%= product.images && product.images[0] ? product.images[0] : '/images/placeholder.jpg' %>"
+                                        alt="<%= product.name %>">
+
+                                    <% if (product.images && product.images.length > 1) { %>
+                                    <img class="lazyload img-hover"
+                                        src="<%= product.images[1] %>"
+                                        alt="<%= product.name %>">
                                     <% } %>
+                                </a>
+
+                                <% if (product.totalQuantity === 0) { %>
+                                    <div class="sold-out">
+                                    <span>Sold out</span>
                                     </div>
+                                <% } %>
 
-                                    <div class="card-product-info">
-                                    <a href="product-detail.html" class="title link"><%= product.name %></a>
-                                    <span class="price"><strike><%= product.originalPrice %></strike></span>
-                                    <span class="price"><%= product.salesPrice %></span>
+                                <div class="list-product-btn">
+                                    <a href="javascript:void(0);" class="box-icon bg_white wishlist btn-icon-action">
+                                    <span class="icon icon-heart"></span>
+                                    <span class="tooltip">Add to Wishlist</span>
+                                    <span class="icon icon-delete"></span>
+                                    </a>
+                                    <a href="/product-details?id=<%=product._id%>"  class="box-icon bg_white quickview tf-btn-loading">
+                                    <span class="icon icon-view"></span>
+                                    <span class="tooltip">Quick View</span>
+                                    </a>
+                                </div>
 
+                                <% if (product.availableSizes && product.availableSizes.length > 0) { %>
+                                    <div class="size-list">
+                                    <% product.availableSizes.forEach(function(size) { %>
+                                        <span><%= size %></span>
+                                    <% }) %>
+                                    </div>
+                                <% } %>
+
+                                <% if (product.discountPercentage > 0) { %>
+                                    <div class="on-sale-wrap text-end">
+                                    <div class="on-sale-item">-<%= product.discountPercentage %>%</div>
+                                    </div>
+                                <% } %>
+                                </div>
+
+                                <div class="card-product-info">
+                                <a href="#" class="title link"><%= product.name %></a>
+                                <span class="price">
+                                    <% if (product.salesPrice) { %>
+                                    <span class="text-muted text-decoration-line-through">₹<%= product.originalPrice %></span>
+                                    ₹<%= product.salesPrice %>
+                                    <% } else { %>
+                                    ₹<%= product.originalPrice %>
+                                    <% } %>
+                                </span>
+
+                                <% if (product.colorName) { %>
                                     <ul class="list-color-product">
-                                        <li class="list-color-item color-swatch active">
+                                    <li class="list-color-item color-swatch active">
                                         <span class="tooltip"><%= product.colorName %></span>
                                         <span class="swatch-value" style="background-color:<%= product.colorCode %>;"></span>
-                                        <img class="lazyload" src="<%= product.images[0] %>" alt="<%= product.name %>">
-                                        </li>
+                                        <img class="lazyload"
+                                            src="<%= product.images && product.images[0] ? product.images[0] : '/images/placeholder.jpg' %>"
+                                            alt="<%= product.name %>">
+                                    </li>
                                     </ul>
-                                    </div>
+                                <% } %>
                                 </div>
-                                <% }) %>
-                                
                             </div>
+                            <% }) %>
+                        <% } else { %>
+                            <div class="col-12 text-center">
+                            <h4>No products found</h4>
+                            <p>Try adjusting your filters or search terms.</p>
+                            </div>
+                        <% } %>
+                    </div>                                
+                                 
+                               
+                                
+                            
                             <div class="tf-pagination-wrap view-more-button text-center">
                                 <button class="tf-btn-loading tf-loading-default style-2 btn-loadmore "><span class="text">Load more</span></button>
                             </div>

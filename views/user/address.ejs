@@ -175,72 +175,148 @@
                     </div>
                 <div class="col-md-9">
                 <!-- Profile Form -->
-<div class="profile-card">
-
+                <div class="profile-card">
                     <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="">My Address </h4>
+                      <h4 class="">My Address </h4>
                     <!-- Edit Button -->
-                    <button class="btn btn-outline-primary" onclick="window.location.href='/profile/address-add'">
+                      <button class="btn btn-outline-primary" onclick="window.location.href='/profile/address-add'">
                        Add Address <i class="icofont-plus text-primary"></i>
                     </button>
-                            </div>                    
-                    
+                      </div>     
                 </div>                   
   
                 <div class="profile-card"> 
-                    <div class="saved-address">
-              <span class="address-type ">
-                fgdg
-              </span>
-              <div class="address-actions">
-                <button
-                  
-                  class="btn btn-link p-0 border-0"
-                >
-                  <i class="bi bi-pencil"></i>
-                </button>
-                <a
-                  href=""
-                  class="btn btn-link p-0 border-0"
-                >
-                  <i class="bi bi-trash"></i>
-                </a>
-              </div>
-              <h6>dfdf</h6>
-              <p class="mb-2">ccgdfgd
-                <br />
-                <br />
-                <br />
-                
-              </p>
-              <p class="mb-1"></p>
-              <p class="mb-0"></p>
-            </div>
-                </div>                
-                
-                <!-- Change Password Card -->
+<div class="address-list">
+  <% if (userAddress && userAddress.length > 0) { %>
+    <% userAddress.forEach(address => { %>
+      <div class="saved-address mb-3 p-3 border rounded shadow-sm">
+        <div class="d-flex justify-content-between align-items-start">
+          <span class="address-type badge bg-success text-white px-3 py-2">
+            <%= address.addressType %>
+          </span>
+          <div class="address-actions">
+            <a href="/profile/address-edit/<%= address._id %>">
+              <i class="icofont-edit text-success fs-5"></i>
+            </a>
+            <a href="javascript:void(0);" 
+              class="delete-address" 
+              data-id="<%= address._id %>">
+              <i class="icofont-trash text-danger"></i>
+            </a>
+
+          </div>
+        </div>
+
+        <div class="mt-2 ">
+          <p class="mb-1 fw-semibold"><%= address.name %></p>
+          <p class="mb-1"><%= address.building %>, <%= address.street %></p>
+          <% if (address.landmark) { %><p class="mb-1"><%= address.landmark %></p><% } %>
+          <p class="mb-1">
+            <%= address.city %>, <%= address.state %> - <%= address.pincode %>
+          </p>
+          <p class="mb-0">📞 <%= address.phone %></p>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p class="text-muted">No addresses saved yet.</p>
+  <% } %>
+</div>
+
+                </div>  
+<ul class="tf-pagination-wrap tf-pagination-list">
+  <% if (pagination && pagination.totalPages > 1) { %>
+
+    <!-- Prev Button -->
+    <% if (pagination.hasPrev) { %>
+      <li>
+        <a href="?page=<%= pagination.currentPage - 1 %>" 
+           class="pagination-link animate-hover-btn">
+          <span class="icon icon-arrow-left"></span>
+        </a>
+      </li>
+    <% } %>
+
+    <!-- Page Numbers -->
+    <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+      <li class="<%= i === pagination.currentPage ? 'active' : '' %>">
+        <a href="?page=<%= i %>" 
+           class="pagination-link <%= i !== pagination.currentPage ? 'animate-hover-btn' : '' %>">
+          <%= i %>
+        </a>
+      </li>
+    <% } %>
+
+    <!-- Next Button -->
+    <% if (pagination.hasNext) { %>
+      <li>
+        <a href="?page=<%= pagination.currentPage + 1 %>" 
+           class="pagination-link animate-hover-btn">
+          <span class="icon icon-arrow-right"></span>
+        </a>
+      </li>
+    <% } %>
+
+  <% } %>
+</ul>
+
                 
             </div>
                 </div>
             </div>
         </section>
-        <script>
-document.querySelectorAll('.toggle-password').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const input = btn.previousElementSibling;
-    const icon = btn.querySelector('i');
-    if (input.type === "password") {
-      input.type = "text";
-      icon.classList.remove("bi-eye");
-      icon.classList.add("bi-eye-slash");
-    } else {
-      input.type = "password";
-      icon.classList.remove("bi-eye-slash");
-      icon.classList.add("bi-eye");
-    }
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const deleteButtons = document.querySelectorAll('.delete-address');
+
+  deleteButtons.forEach(button => {
+    button.addEventListener('click', async () => {
+      const addressId = button.dataset.id;
+
+      const result = await Swal.fire({
+        title: 'Delete this address?',
+        text: "You won't be able to recover it later.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (result.isConfirmed) {
+        try {
+          const res = await axios.delete(`/profile/address-delete/${addressId}`);
+
+          if (res.data.status === 'success') {
+            Swal.fire({
+              title: 'Deleted!',
+              text: res.data.message || 'Address deleted successfully.',
+              icon: 'success',
+              confirmButtonColor: '#088178',
+              timer: 1200,
+              showConfirmButton: false
+            });
+
+            // Remove deleted address card from DOM
+            const addressCard = button.closest('.saved-address');
+            if (addressCard) addressCard.remove();
+          } else {
+            Swal.fire('Error', res.data.message || 'Failed to delete address.', 'error');
+          }
+
+        } catch (err) {
+          const msg = err.response?.data?.message || 'Something went wrong.';
+          Swal.fire('Error', msg, 'error');
+        }
+      }
+    });
   });
 });
 </script>
+
 
         <!-- page-cart -->
 

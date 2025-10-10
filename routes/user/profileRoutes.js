@@ -22,5 +22,10 @@ router
     .route('/address-add')
     .get(addressController.getAddAddress)
     .post(addressController.addAddress);
+router.route('/address-delete/:id').delete(addressController.deleteAddress);
+router
+    .route('/address-edit/:id')
+    .get(addressController.getEditAddress)
+    .put(addressController.editAddress);
 
 export default router;
