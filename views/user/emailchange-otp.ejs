@@ -120,21 +120,25 @@
     const form = document.getElementById('verifyotp-form');
     const errorBox = document.getElementById('error-message');
     const successBox = document.getElementById('success-message');
-
+    const submitBtn = form.querySelector('button[type="submit"]');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        errorBox.classList.add('d-none');
-        successBox.classList.add('d-none');
+        setTimeout(() => {
+                    successBox1.classList.add("d-none");
+                    errorBox1.classList.add("d-none");
+                }, 1500);
 
         const formData = {
-            otp: document.getElementById('otp').value,
+            enteredOtp: document.getElementById('otp').value,
         };
+        submitBtn.disabled = true;
         try {
-            const res = await axios.post('/verify-otp', formData);
+            const res = await axios.post('/profile/email-change-otp', formData);
             if (res.data.status === 'success') {
                 successBox.textContent = res.data.message;
                 successBox.classList.remove('d-none');
+                form.reset();
 
                 setTimeout(() => {
                     window.location.href = res.data.redirectUrl;
@@ -144,6 +148,8 @@
             const msg = error.response?.data?.message || 'Something went wrong';
             errorBox.textContent = msg;
             errorBox.classList.remove('d-none');
+        }finally{
+          submitBtn.disabled = false;
         }
     });
     async function resendOTP() {

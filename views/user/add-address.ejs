@@ -1,0 +1,305 @@
+<%-include("../partials/user/header")%>
+<style>
+/* ---------------------------
+   General Card Styling
+---------------------------- */
+.profile-card {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  padding: 35px;
+  margin-bottom: 30px;
+  transition: all 0.3s ease;
+}
+
+.profile-card:hover {
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------------------------
+   Form Input Styling
+---------------------------- */
+.form-control {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #dfe3e8;
+  font-size: 15px;
+  color: #333;
+  background-color: #fafafa;
+  transition: all 0.2s ease;
+}
+
+.form-control::placeholder {
+  color: #adb5bd;
+}
+
+.form-control:focus {
+  background-color: #fff;
+  border-color: #088178;
+  box-shadow: 0 0 0 0.2rem rgba(8, 129, 120, 0.15);
+  outline: none;
+}
+
+/* ---------------------------
+   Section Headings
+---------------------------- */
+.profile-card h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #121313;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  letter-spacing: 0.3px;
+}
+
+/* ---------------------------
+   Radio Buttons (Home/Work/Other)
+---------------------------- */
+input[type="radio"] {
+  accent-color: #088178;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+label span {
+  font-weight: 500;
+  color: #444;
+}
+
+label span:hover {
+  color: #088178;
+}
+
+/* ---------------------------
+   Buttons
+---------------------------- */
+.save-btn {
+  background-color: #088178;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 36px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.save-btn:hover {
+  background-color: #066c65;
+  transform: translateY(-1px);
+}
+
+.save-btn:disabled {
+  background-color: #c2d3d0;
+  cursor: not-allowed;
+}
+
+/* ---------------------------
+   Alert Boxes
+---------------------------- */
+.alert {
+  border-radius: 8px;
+  font-size: 14px;
+  padding: 12px 18px;
+}
+
+.alert-danger {
+  background: #ffe5e5;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+
+.alert-success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+/* ---------------------------
+   Address Form Layout
+---------------------------- */
+#add-address-form .row {
+  row-gap: 18px;
+}
+
+#add-address-form input[type="text"],
+#add-address-form input[type="tel"] {
+  font-weight: 400;
+}
+
+/* ---------------------------
+   Success Toast
+---------------------------- */
+#copySuccess {
+  position: fixed;
+  top: 25px;
+  right: 25px;
+  padding: 14px 25px;
+  background-color: #088178;
+  color: white;
+  border-radius: 10px;
+  display: none;
+  z-index: 1000;
+  animation: fadeInOut 2s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-15px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-15px); }
+}
+</style>
+
+<section class="flat-spacing-11">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-3">
+        <ul class="my-account-nav">
+          <li><a href="/profile/address" class="my-account-nav-item">My Profile</a></li>
+          <li><a href="#" class="my-account-nav-item">Orders</a></li>
+          <li><span class="my-account-nav-item active">Addresses</span></li>
+          <li><a href="#" class="my-account-nav-item">My Wallet</a></li>
+          <li><a href="#" class="my-account-nav-item">Wishlist</a></li>
+          <li><a href="/logout" class="my-account-nav-item">Logout</a></li>
+        </ul>
+      </div>
+
+      <div class="col-md-9">
+        <div class="profile-card">
+          <h6 class="mb-3">Add New Address</h6>
+
+          <form id="add-address-form">
+            <div class="row g-1">
+              <!-- Address Info -->
+              <div class="col-md-6">
+                <small>Flat No/Building*</small>
+                <input type="text" id="building" class="form-control" placeholder="Flat No/Building*" />
+              </div>
+              <div class="col-md-6">
+                <small>Street Name/Area*</small>
+                <input type="text" id="street" class="form-control" placeholder="Street Name/Area*" />
+              </div>
+              <div class="col-md-6">
+                <small>Landmark</small>
+                <input type="text" id="landmark" class="form-control" placeholder="Landmark" />
+              </div>
+              <div class="col-md-6">
+                <small>Pincode*</small>
+                <input type="text" id="pincode" class="form-control" placeholder="Pincode*" />
+              </div>
+              <div class="col-md-6">
+                <small>City/District*</small>
+                <input type="text" id="city" class="form-control" placeholder="City/District*" />
+              </div>
+              <div class="col-md-6">
+                <small>State*</small>
+                <input type="text" id="state" class="form-control" placeholder="State*" />
+              </div>
+
+              <h6 class="mb-2 mt-3">Personal Information</h6>
+              <div class="col-md-12">
+                <small>Full Name</small>
+                <input type="text" id="name" class="form-control" placeholder="Full Name" />
+              </div>
+              <div class="col-md-6">
+                <small>Phone number*</small>
+                <input type="tel" id="phone" class="form-control" placeholder="Phone number*" />
+              </div>
+              <div class="col-md-6">
+                <small>Alternative Phone number</small>
+                <input type="tel" id="altPhone" class="form-control" placeholder="Alternative Phone number" />
+              </div>
+
+              <h6 class="mb-2 mt-3">Save Address as</h6>
+              <div class="col-md-12">
+                <label class="mx-2">
+                  <input type="radio" name="addressType" value="Home" />
+                  <span>Home</span>
+                </label>
+                <label class="mx-2">
+                  <input type="radio" name="addressType" value="Work" />
+                  <span>Work</span>
+                </label>
+                <label class="mx-2">
+                  <input type="radio" name="addressType" value="Other" />
+                  <span>Other</span>
+                </label>
+              </div>
+
+              <!-- Alert Messages -->
+              <div id="error-message" class="alert alert-danger d-none"></div>
+              <div id="success-message" class="alert alert-success d-none"></div>
+
+              <div class="col-12 mt-2">
+                <button type="submit" class="save-btn">Save Address</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const addressForm = document.getElementById('add-address-form');
+  const errorBox = document.getElementById('error-message');
+  const successBox = document.getElementById('success-message');
+  const submitBtn = addressForm.querySelector('button[type="submit"]');
+
+  addressForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = {
+      building: document.getElementById('building').value.trim(),
+      street: document.getElementById('street').value.trim(),
+      landmark: document.getElementById('landmark').value.trim(),
+      pincode: document.getElementById('pincode').value.trim(),
+      city: document.getElementById('city').value.trim(),
+      state: document.getElementById('state').value.trim(),
+      name: document.getElementById('name').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      altPhone: document.getElementById('altPhone').value.trim(),
+      addressType: document.querySelector('input[name="addressType"]:checked')?.value || ''
+    };
+
+    // quick front-end validation
+    if ( !formData.pincode || !formData.city || !formData.state || !formData.phone  || !formData.addressType) {
+      errorBox.textContent = 'Please fill all required fields.';
+      errorBox.classList.remove('d-none');
+      return;
+    }
+
+    errorBox.classList.add('d-none');
+    successBox.classList.add('d-none');
+    submitBtn.disabled = true;
+
+    try {
+      const res = await axios.post('/profile/address-add', formData);
+      if (res.data.status === 'success') {
+        successBox.textContent = res?.data?.message;
+        successBox.classList.remove('d-none');
+
+        setTimeout(() => {
+          window.location.href = res.data.redirectUrl || '/profile/address';
+        }, 1200);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Something went wrong while saving address.';
+      errorBox.textContent = msg;
+      errorBox.classList.remove('d-none');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+});
+</script>
+
+
+        <!-- page-cart -->
+
+   <%-include("../partials/user/footer")%>

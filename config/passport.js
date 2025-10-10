@@ -16,7 +16,6 @@ passport.use(
         async (accessToken, refreshToken, profile, done) => {
             try {
                 let user = await User.findOne({ googleId: profile.id });
-                console.log(user);
 
                 if (user && user.isBlocked) {
                     return done(null, false, { message: 'You are blocked!' });

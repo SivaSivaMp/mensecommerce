@@ -1,0 +1,275 @@
+<%-include("../partials/user/header")%>
+<style>
+       
+        /* Profile Form Styles */
+        .profile-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-control:focus {
+            border-color: #088178;
+            box-shadow: 0 0 0 0.2rem rgba(8, 129, 120, 0.25);
+        }
+
+        .edit-profile-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #088178;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .edit-profile-btn:hover {
+            color: #006c5f;
+        }
+
+        .save-btn {
+            background-color: #f1f1f1;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background-color: #088178;
+            color: #fff;
+        }
+
+        
+
+        /* Password Input Styles */
+        .password-input {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+        }
+        .referral-container {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px dashed #088178;
+    }
+
+    .referral-container .form-control {
+        font-family: monospace;
+        font-size: 1.1em;
+        letter-spacing: 1px;
+        background-color: white;
+    }
+
+    .referral-container .btn-outline-primary {
+        border-color: #088178;
+        color: #088178;
+    }
+
+    .referral-container .btn-outline-primary:hover {
+        background-color: #088178;
+        color: white;
+    }
+
+    #copySuccess {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        background-color: #088178;
+        color: white;
+        border-radius: 8px;
+        display: none;
+        z-index: 1000;
+        animation: fadeInOut 2s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(-20px); }
+        20% { opacity: 1; transform: translateY(0); }
+        80% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-20px); }
+    }
+    </style>
+        <!-- page-title -->
+        
+        <!-- /page-title -->
+        
+        <!-- page-cart -->
+        <section class="flat-spacing-11">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <ul class="my-account-nav">
+                            <li><span class="my-account-nav-item active">My Profile</span></li>                            
+                            <li><a href="my-account-orders.html" class="my-account-nav-item">Orders</a></li>
+                            <li><a href="/profile/address" class="my-account-nav-item">Addresses</a></li>
+                            <li><a href="my-account.html" class="my-account-nav-item ">My Wallet</a></li>
+                            <li><a href="my-account-wishlist.html" class="my-account-nav-item">Wishlist</a></li>
+                            <li><a href="login.html" class="my-account-nav-item">Logout</a></li>
+                        </ul>
+                    </div>
+                <div class="col-md-9">
+                <!-- Profile Form -->
+                <div class="profile-card">
+                    <h4 class="mb-4">Edit Personal Information </h4>
+                    <form id="edit-profile">
+                        <div class="row g-4">
+                             <div class="profile-block text-center w220 mx-auto">
+                                   <a href="#">
+                                        <img src="<%=user.profileImage%>" alt="" class="avatar xl rounded img-thumbnail shadow-sm">
+                                    </a>               
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" id="full-name" style="font-size: medium; font-weight: 600;" class="form-control " value="<%=user.name%>"  >
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Mobile Number</label>
+                                <input type="tel" id="phone" style="font-size: medium; font-weight: 600;"  class="form-control " value="<%=user.phone%>" >
+                            </div>
+                            <div id="error-message" class="alert alert-danger d-none" role="alert"></div>
+                            <div id="success-message" class="alert alert-success d-none" role="alert"></div>
+                            <!-- Submit Button -->
+                            <div class="col-12">
+                                <button type="submit" class="save-btn">UPDATE</button>
+                            </div>
+                        </div>
+                   </form>     
+                </div>
+               <div class="profile-card">
+                    <h4 class="mb-4">Edit Email </h4>
+                    <form id="edit-email">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Email Id</label>
+                                <input type="email" id="email" style="font-size: medium; font-weight: 600;" class="form-control" value="<%=user.email%>" >
+                            </div>
+                            <div id="error-message-email" class="alert alert-danger d-none" role="alert"></div>
+                            <div id="success-message-email" class="alert alert-success d-none" role="alert"></div>
+                            <!-- Submit Button -->
+                            <div class="col-12">
+                                <button type="submit" class="save-btn">UPDATE EMAIL</button>
+                            </div>
+                        </div>
+                   </form>     
+                </div>                
+              
+                
+            </div>
+                </div>
+            </div>
+        </section>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> 
+        <script>
+        
+
+        document.addEventListener('DOMContentLoaded',()=>{
+            // personal information edit
+            const form=document.getElementById("edit-profile")
+            const errorBox = document.getElementById("error-message");
+            const successBox = document.getElementById("success-message");
+            const submitBtn = form.querySelector('button[type="submit"]');
+            form.addEventListener('submit',async(e)=>{
+                e.preventDefault()
+                setTimeout(() => {
+                    successBox.classList.add("d-none");
+                    errorBox.classList.add("d-none");
+                }, 1500);
+                const formData={
+                    newName:document.getElementById('full-name').value,
+                    newPhone:document.getElementById('phone').value,
+                    
+                }
+                submitBtn.disabled = true;
+                try {
+                    const res=await axios.patch('/profile/profile-edit',formData)
+                    if(res.data.status==='success'){
+                     successBox.textContent = res.data.message;
+                    successBox.classList.remove("d-none"); 
+                    form.reset();
+                    setTimeout(()=>{
+                       window.location.href = res.data.redirectUrl||'/profile'; 
+                    },1500)
+                    }
+                } catch (err) {
+                    const msg = err.response?.data?.message || "Something went wrong";
+                    errorBox.textContent = msg;
+                    errorBox.classList.remove("d-none");
+                }finally {
+                        
+                        submitBtn.disabled = false;
+
+                    }
+
+            })
+
+
+
+            // email edit form
+
+            const emailform=document.getElementById('edit-email')
+            const errorBox1 = document.getElementById("error-message-email");
+            const successBox1 = document.getElementById("success-message-email");
+            emailform.addEventListener('submit',async(e)=>{
+                e.preventDefault()
+                setTimeout(() => {
+                    successBox1.classList.add("d-none");
+                    errorBox1.classList.add("d-none");
+                }, 1500);
+                const formData={
+                    newEmail:document.getElementById('email').value
+                }
+                submitBtn.disabled = true;
+                   try {
+                    const res=await axios.patch('/profile/email-edit',formData)
+                    if(res.data.status==='success'){
+                     successBox1.textContent = res.data.message;
+                    successBox1.classList.remove("d-none"); 
+                    emailform.reset();
+                    setTimeout(()=>{
+                       window.location.href = res.data.redirectUrl||'/profile'; 
+                    },1500)
+                    }
+                } catch (err) {
+                    const msg = err.response?.data?.message || "Something went wrong";
+                    errorBox1.textContent = msg;
+                    errorBox1.classList.remove("d-none");
+                }finally {
+                        
+                        submitBtn.disabled = false;
+
+                    }
+
+
+            })
+        })
+        </script>
+
+
+        <!-- page-cart -->
+
+    <%-include("../partials/user/footer")%>

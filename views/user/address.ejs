@@ -1,0 +1,323 @@
+<%-include("../partials/user/header")%>
+<style>
+       
+        /* Profile Form Styles */
+        .profile-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-control:focus {
+            border-color: #088178;
+            box-shadow: 0 0 0 0.2rem rgba(8, 129, 120, 0.25);
+        }
+
+        .edit-profile-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #088178;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .edit-profile-btn:hover {
+            color: #006c5f;
+        }
+
+        .save-btn {
+            background-color: #f1f1f1;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background-color: #088178;
+            color: #fff;
+        }
+
+        
+
+        /* Password Input Styles */
+        .password-input {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+        }
+        .saved-address {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .address-type {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 10px;
+      }
+
+      .address-type.home {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .address-type.work {
+        background-color: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .address-type.other {
+        background-color: #f3e5f5;
+        color: #7b1fa2;
+      }
+
+      .address-actions {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+      }
+
+      .address-actions button {
+        background: none;
+        border: none;
+        color: #6c757d;
+        margin-left: 10px;
+        padding: 5px;
+      }
+
+      .address-actions button:hover {
+        color: #088178;
+      }
+
+      .add-address-btn {
+        background-color: #088178;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .add-address-btn:hover {
+        background-color: #066c65;
+      }
+
+    
+
+    #copySuccess {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        background-color: #088178;
+        color: white;
+        border-radius: 8px;
+        display: none;
+        z-index: 1000;
+        animation: fadeInOut 2s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(-20px); }
+        20% { opacity: 1; transform: translateY(0); }
+        80% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-20px); }
+    }
+    </style>
+        <!-- page-title -->
+        
+        <!-- /page-title -->
+        
+        <!-- page-cart -->
+        <section class="flat-spacing-11">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <ul class="my-account-nav">
+                            <li><a href="/profile/address" class="my-account-nav-item">My Profile</a></li>                            
+                            <li><a href="my-account-orders.html" class="my-account-nav-item">Orders</a></li>
+                            <li><span class="my-account-nav-item active">Addresses</span></li>
+                            <li><a href="my-account.html" class="my-account-nav-item ">My Wallet</a></li>
+                            <li><a href="my-account-wishlist.html" class="my-account-nav-item">Wishlist</a></li>
+                            <li><a href="login.html" class="my-account-nav-item">Logout</a></li>
+                        </ul>
+                    </div>
+                <div class="col-md-9">
+                <!-- Profile Form -->
+                <div class="profile-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <h4 class="">My Address </h4>
+                    <!-- Edit Button -->
+                      <button class="btn btn-outline-primary" onclick="window.location.href='/profile/address-add'">
+                       Add Address <i class="icofont-plus text-primary"></i>
+                    </button>
+                      </div>     
+                </div>                   
+  
+                <div class="profile-card"> 
+<div class="address-list">
+  <% if (userAddress && userAddress.length > 0) { %>
+    <% userAddress.forEach(address => { %>
+      <div class="saved-address mb-3 p-3 border rounded shadow-sm">
+        <div class="d-flex justify-content-between align-items-start">
+          <span class="address-type badge bg-success text-white px-3 py-2">
+            <%= address.addressType %>
+          </span>
+          <div class="address-actions">
+            <a href="/profile/address-edit/<%= address._id %>">
+              <i class="icofont-edit text-success fs-5"></i>
+            </a>
+            <a href="javascript:void(0);" 
+              class="delete-address" 
+              data-id="<%= address._id %>">
+              <i class="icofont-trash text-danger"></i>
+            </a>
+
+          </div>
+        </div>
+
+        <div class="mt-2 ">
+          <p class="mb-1 fw-semibold"><%= address.name %></p>
+          <p class="mb-1"><%= address.building %>, <%= address.street %></p>
+          <% if (address.landmark) { %><p class="mb-1"><%= address.landmark %></p><% } %>
+          <p class="mb-1">
+            <%= address.city %>, <%= address.state %> - <%= address.pincode %>
+          </p>
+          <p class="mb-0">📞 <%= address.phone %></p>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p class="text-muted">No addresses saved yet.</p>
+  <% } %>
+</div>
+
+                </div>  
+<ul class="tf-pagination-wrap tf-pagination-list">
+  <% if (pagination && pagination.totalPages > 1) { %>
+
+    <!-- Prev Button -->
+    <% if (pagination.hasPrev) { %>
+      <li>
+        <a href="?page=<%= pagination.currentPage - 1 %>" 
+           class="pagination-link animate-hover-btn">
+          <span class="icon icon-arrow-left"></span>
+        </a>
+      </li>
+    <% } %>
+
+    <!-- Page Numbers -->
+    <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+      <li class="<%= i === pagination.currentPage ? 'active' : '' %>">
+        <a href="?page=<%= i %>" 
+           class="pagination-link <%= i !== pagination.currentPage ? 'animate-hover-btn' : '' %>">
+          <%= i %>
+        </a>
+      </li>
+    <% } %>
+
+    <!-- Next Button -->
+    <% if (pagination.hasNext) { %>
+      <li>
+        <a href="?page=<%= pagination.currentPage + 1 %>" 
+           class="pagination-link animate-hover-btn">
+          <span class="icon icon-arrow-right"></span>
+        </a>
+      </li>
+    <% } %>
+
+  <% } %>
+</ul>
+
+                
+            </div>
+                </div>
+            </div>
+        </section>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const deleteButtons = document.querySelectorAll('.delete-address');
+
+  deleteButtons.forEach(button => {
+    button.addEventListener('click', async () => {
+      const addressId = button.dataset.id;
+
+      const result = await Swal.fire({
+        title: 'Delete this address?',
+        text: "You won't be able to recover it later.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+      });
+
+      if (result.isConfirmed) {
+        try {
+          const res = await axios.delete(`/profile/address-delete/${addressId}`);
+
+          if (res.data.status === 'success') {
+            Swal.fire({
+              title: 'Deleted!',
+              text: res.data.message || 'Address deleted successfully.',
+              icon: 'success',
+              confirmButtonColor: '#088178',
+              timer: 1200,
+              showConfirmButton: false
+            });
+
+            // Remove deleted address card from DOM
+            const addressCard = button.closest('.saved-address');
+            if (addressCard) addressCard.remove();
+          } else {
+            Swal.fire('Error', res.data.message || 'Failed to delete address.', 'error');
+          }
+
+        } catch (err) {
+          const msg = err.response?.data?.message || 'Something went wrong.';
+          Swal.fire('Error', msg, 'error');
+        }
+      }
+    });
+  });
+});
+</script>
+
+
+        <!-- page-cart -->
+
+   <%-include("../partials/user/footer")%>
