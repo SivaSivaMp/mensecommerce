@@ -1,0 +1,178 @@
+<%-include("../partials/user/header")%>
+        
+        <!-- page-cart -->
+        <section class="flat-spacing-11">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <ul class="my-account-nav">
+                            <li><a href="/profile/dashboard" class="my-account-nav-item">Dashboard</a></li>
+                            <li><span class="my-account-nav-item active">Orders</span></li>
+                            <li><a href="/profile/addresses" class="my-account-nav-item">Addresses</a></li>
+                            <li><a href="/profile/account-details" class="my-account-nav-item">Account Details</a></li>
+                            <li><a href="/profile/wishlist" class="my-account-nav-item">Wishlist</a></li>
+                            <li><a href="/logout" class="my-account-nav-item">Logout</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-lg-9">
+                        <div class="my-account-content account-order">
+                            <!-- Search Bar -->
+                            <div class="order-0 col-lg-4 col-md-6 col-sm-12 col-12 mb-3 mb-md-4">
+                                <form method="GET" action="/profile/orders">
+                                    <div class="input-group flex-nowrap input-group-sm">
+                                        <input type="search" name="query" class="form-control" placeholder="Search by Order ID or Product..." aria-label="search" aria-describedby="addon-wrapping" value="<%= searchQuery %>">
+                                        <button type="submit" class="input-group-text" id="addon-wrapping">
+                                            <i class="icofont-search"></i>
+                                        </button>
+                                        <% if (searchQuery) { %>
+                                            <button type="button" class="input-group-text bg-danger text-white" id="clear-search">
+                                                <i class="icofont-close"></i>
+                                            </button>
+                                        <% } %>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <% if (orders.length > 0) { %>
+                                <div class="wrap-account-order">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th class="fw-6">Product</th>
+                                                <th class="fw-6">Date</th>
+                                                <th class="fw-6">Status</th>
+                                                <th class="fw-6">Total</th>
+                                                <th class="fw-6">Actions</th>
+                                                <th class="fw-6">Feedback</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% orders.forEach((order) => { %>
+                                                <tr class="tf-cart-item">
+                                                    <td class="tf-cart-item_product">
+                                                        <a href="/profile/order-details/<%= order.orderId %>" class="img-box">
+                                                            <img src="<%= order.productImage %>" alt="<%= order.productName %>">
+                                                        </a>
+                                                        <div class="cart-info">
+                                                            <a href="/order-details/<%= order.orderId %>" class="cart-title link"><%= order.productName %></a>
+                                                            <div class="cart-meta-variant"><%= order.size %> / Qty: <%= order.quantity %></div>
+                                                            <div class="cart-meta-variant text-muted" style="font-size: 12px;">Order ID: <%= order.orderId %></div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <%= new Date(order.orderDate).toLocaleDateString('en-US', { 
+                                                            year: 'numeric', 
+                                                            month: 'long', 
+                                                            day: 'numeric' 
+                                                        }) %>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge 
+                                                            <%= order.status === 'Delivered' ? 'bg-success' : '' %>
+                                                            <%= order.status === 'Cancelled' ? 'bg-danger' : '' %>
+                                                            <%= order.status === 'Pending' || order.status === 'Processing' ? 'bg-warning' : '' %>
+                                                            <%= order.status === 'Shipped' || order.status === 'Out for Delivery' ? 'bg-info' : '' %>
+                                                            <%= order.status === 'Returned' || order.status === 'Return Request' ? 'bg-secondary' : '' %>
+                                                        ">
+                                                            <%= order.status %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="tf-cart-item_price">
+                                                        <div class="cart-price">₹<%= order.totalPrice.toLocaleString('en-IN') %></div>
+                                                    </td>
+                                                    <td>
+                                                        <a href="/profile/order-details/<%= order.orderId %>" class="tf-btn btn-fill animate-hover-btn rounded-0 justify-content-center">
+                                                            <span>View</span>
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <% if (order.canReview) { %>
+                                                            <a href="/profile/feedback/<%= order.orderMongoId %>" class="cart-title link">Rate & Review</a>
+                                                        <% } else { %>
+                                                            <span class="text-muted">-</span>
+                                                        <% } %>
+                                                    </td>
+                                                </tr>
+                                            <% }); %>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Pagination -->
+                                <% if (pagination.totalPages > 1) { %>
+                                    <ul class="tf-pagination-wrap tf-pagination-list mt-4">
+                                        <!-- Previous Button -->
+                                        <% if (pagination.hasPrevPage) { %>
+                                            <li>
+                                                <a href="/profile/orders?page=<%= pagination.prevPage %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %>" class="pagination-link animate-hover-btn">
+                                                    <span class="icon icon-arrow-left"></span>
+                                                </a>
+                                            </li>
+                                        <% } %>
+
+                                        <!-- Page Numbers -->
+                                        <% pagination.pages.forEach((pageNum) => { %>
+                                            <li class="<%= pageNum === pagination.currentPage ? 'active' : '' %>">
+                                                <a href="/profile/orders?page=<%= pageNum %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %>" class="pagination-link <%= pageNum === pagination.currentPage ? '' : 'animate-hover-btn' %>">
+                                                    <%= pageNum %>
+                                                </a>
+                                            </li>
+                                        <% }); %>
+
+                                        <!-- Next Button -->
+                                        <% if (pagination.hasNextPage) { %>
+                                            <li>
+                                                <a href="/profile/orders?page=<%= pagination.nextPage %><%= searchQuery ? '&query=' + encodeURIComponent(searchQuery) : '' %>" class="pagination-link animate-hover-btn">
+                                                    <span class="icon icon-arrow-right"></span>
+                                                </a>
+                                            </li>
+                                        <% } %>
+                                    </ul>
+                                <% } %>
+                            <% } else { %>
+                                <div style="text-align: center; padding: 60px 20px;">
+                                    <i class="icofont-shopping-cart" style="font-size: 64px; color: #ccc; margin-bottom: 20px;"></i>
+                                    <h4 style="color: #666; margin-bottom: 10px;">
+                                        <% if (searchQuery) { %>
+                                            No orders found for "<%= searchQuery %>"
+                                        <% } else { %>
+                                            No orders yet
+                                        <% } %>
+                                    </h4>
+                                    <p style="color: #999; margin-bottom: 20px;">
+                                        <% if (searchQuery) { %>
+                                            Try searching with a different term
+                                        <% } else { %>
+                                            Start shopping to see your orders here
+                                        <% } %>
+                                    </p>
+                                    <% if (searchQuery) { %>
+                                        <a href="/profile/orders" class="tf-btn btn-fill animate-hover-btn radius-3">
+                                            <span>View All Orders</span>
+                                        </a>
+                                    <% } else { %>
+                                        <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3">
+                                            <span>Start Shopping</span>
+                                        </a>
+                                    <% } %>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const clearButton = document.getElementById('clear-search');
+                if (clearButton) {
+                    clearButton.addEventListener('click', function() {
+                        window.location.href = '/profile/orders';
+                    });
+                }
+            });
+        </script>
+        <!-- page-cart -->
+
+<%-include("../partials/user/footer")%>

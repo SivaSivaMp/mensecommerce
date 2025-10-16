@@ -32,14 +32,12 @@ const viewCart = async (req, res, next) => {
                 priceDetails: {
                     totalPrice: 0,
                     discount: 0,
-                    platformFee: 0,
                     totalAmount: 0,
                     savings: 0,
                 },
             });
         }
 
-        // Calculate price details
         let totalPrice = 0;
         let totalDiscount = 0;
 
@@ -84,14 +82,12 @@ const viewCart = async (req, res, next) => {
             };
         });
 
-        const platformFee = 7;
-        const totalAmount = totalPrice - totalDiscount + platformFee;
+        const totalAmount = totalPrice - totalDiscount;
         const savings = totalDiscount;
 
         const priceDetails = {
             totalPrice: totalPrice,
             discount: totalDiscount,
-            platformFee: platformFee,
             totalAmount: totalAmount,
             savings: savings,
         };

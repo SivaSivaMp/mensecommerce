@@ -1,4 +1,11 @@
 <%-include("../partials/user/header")%>
+        <!-- page-title -->
+        <div class="tf-page-title style-2">
+            <div class="container-full">
+                <div class="heading text-center ">Shopping Cart</div>
+            </div>
+        </div>
+        <!-- /page-title -->
 
 <!-- page-cart -->
 <section class="flat-spacing-11">
@@ -27,7 +34,7 @@
                       </a>
                       <div class="cart-info">
                         <a href="/product-detail/<%= item.productId %>" class="cart-title link"><%= item.productName %></a>
-                        <div class="cart-meta-variant"><%= item.size %></div>
+                        <div class="cart-meta-variant"><%= item.size %><strike><div class="cart-meta-variant" >₹<%= item.originalPrice.toLocaleString('en-IN') %></div></strike></div>
                         <% if (isOutOfStock) { %>
                           <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Out of Stock</span>
                           <span class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</span>
@@ -37,6 +44,9 @@
                       </div>
                     </td>
                     <td class="tf-cart-item_price" cart-data-title="Price">
+                      
+                      
+                      
                       <div class="cart-price">₹<%= item.salePrice.toLocaleString('en-IN') %></div>
                     </td>
                     <td class="tf-cart-item_quantity" cart-data-title="Quantity">
@@ -94,12 +104,6 @@
                     <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
                   </div>
                 <% } %>
-
-                <div class="price-row">
-                  <span>Platform Fee</span>
-                  <span>₹<%= priceDetails.platformFee %></span>
-                </div>
-
                 <hr class="divider">
 
                 <div class="price-row total">
