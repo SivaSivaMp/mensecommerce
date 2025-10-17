@@ -315,22 +315,23 @@
                            
                             <!-- Buy Buttons -->
                             <div class="tf-product-info-buy-button">
-                                <form action="/cart/add" method="POST" id="add-to-cart-form">
-                                    <input type="hidden" name="productId" value="<%= product._id %>">
+                                <form  id="add-to-cart-form">
+                                    <input type="hidden" name="productId" id="cart-productId" value="<%= product._id %>">
                                     <input type="hidden" name="color" id="form-color" value="<%= product.colorName || '' %>">
                                     <input type="hidden" name="size" id="form-size" value="<%= availableSizes?.[0]?.label || '' %>">
                                     <input type="hidden" name="quantity" id="form-quantity" value="1">
                                     
-                                    <button type="submit" class="tf-btn btn-fill justify-content-center fw-6 fs-16 flex-grow-1 animate-hover-btn">
+                                    <button type="button" id="addToCartBtn" class="tf-btn btn-fill justify-content-center fw-6 fs-16 flex-grow-1 animate-hover-btn">
                                         <span>Add to cart </span>
                                     </button>
                                     
-                                    <button type="button" class="tf-product-btn-wishlist hover-tooltip box-icon bg_white wishlist btn-icon-action" data-product-id="<%= product._id %>">
+                                    <button type="button" id="addToWishlistBtn" class="tf-product-btn-wishlist hover-tooltip box-icon bg_white wishlist btn-icon-action" >
                                         <span class="icon icon-heart"></span>
                                         <span class="tooltip">Add to Wishlist</span>
                                         <span class="icon icon-delete"></span>
                                     </button>
                                 </form>
+                                
                             </div>
                             <!-- Delivery Info -->
                             <div class="tf-product-info-delivery-return">
@@ -386,41 +387,6 @@
                                     <div class="">
                                         <p class="mb_30"><%=product.description%>
                                         </p>
-                                        <!-- <div class="tf-product-des-demo">  
-                                            <div class="left">
-                                                <h3 class="fs-16 fw-5">Materials Care</h3>
-                                                <div class="d-flex gap-10 mb_15 align-items-center">
-                                                    <div class="icon">
-                                                        <i class="icon-machine"></i>
-                                                    </div>
-                                                  <span>Machine wash max. 30ºC. Short spin.</span>
-                                                </div>
-                                                <div class="d-flex gap-10 mb_15 align-items-center">
-                                                    <div class="icon">
-                                                        <i class="icon-iron"></i>
-                                                    </div>
-                                                    <span>Iron maximum 110ºC.</span>
-                                                </div>
-                                                <div class="d-flex gap-10 mb_15 align-items-center">
-                                                    <div class="icon">
-                                                        <i class="icon-bleach"></i>
-                                                    </div>
-                                                    <span>Do not bleach/bleach.</span>
-                                                </div>
-                                                <div class="d-flex gap-10 mb_15 align-items-center">
-                                                    <div class="icon">
-                                                        <i class="icon-dry-clean"></i>
-                                                    </div>
-                                                    <span>Do not dry clean.</span>
-                                                </div>
-                                                <div class="d-flex gap-10 align-items-center">
-                                                    <div class="icon">
-                                                        <i class="icon-tumble-dry"></i>
-                                                    </div>
-                                                    <span>Tumble dry, medium hear.</span>
-                                                </div>
-                                              </div>
-                                        </div> -->
                                     </div>
                                 </div>
     
@@ -709,5 +675,150 @@ document.querySelectorAll('.drift-demo-trigger').forEach(img => {
 });
 </script>
  <!-- /product -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // Update hidden fields when size changes
+    document.querySelectorAll('input[name="size"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            document.getElementById('form-size').value = e.target.value;
+            document.getElementById('selected-size').textContent = e.target.value;
+        });
+    });
+
+    // Update hidden fields when color changes
+    document.querySelectorAll('input[name="color"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            document.getElementById('form-color').value = e.target.value;
+        });
+    });
+
+    // ---------- ADD TO CART ----------
+    document.getElementById('addToCartBtn').addEventListener('click', async() => {
+        const productId = document.getElementById('cart-productId').value;
+        const size = document.getElementById('form-size').value;
+        const color = document.getElementById('form-color').value;
+        const quantity = document.getElementById('form-quantity').value;
+        
+        try {
+            Swal.fire({
+                title: 'Adding to cart...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const response = await axios.post(`/cart/${productId}`, {
+                productId, size, color, quantity
+            });
+
+            Swal.close();
+
+            if (response.data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Added to cart!',
+                    text: response.data.message || 'Item successfully added.',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+            } else if (response.data.alreadyInCart) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Already in cart!',
+                    text: 'This product is already in your cart, quanity is increased by 1',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Something went wrong!',
+                    text: response.data.message || 'Try again later.',
+                });
+            }
+
+        } catch (error) {
+            Swal.close();
+            handleAuthError(error);
+        }
+    });
+
+    // ---------- ADD TO WISHLIST ----------
+    document.getElementById('addToWishlistBtn').addEventListener('click', async () => {
+        const productId = document.getElementById('cart-productId').value;
+        const btn = document.getElementById('addToWishlistBtn');
+        
+        try {
+            Swal.fire({
+                title: 'Updating wishlist...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const response = await axios.post(`/wishlist/${productId}`);
+
+            Swal.close();
+
+            if (response.data.added) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Added to wishlist!',
+                    text: 'You can view it in your wishlist page.',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+                btn.classList.add("active");
+            } else if (response.data.removed) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Removed from wishlist!',
+                    text: 'Item removed successfully.',
+                    timer: 1800,
+                    showConfirmButton: false
+                });
+                btn.classList.remove("active");
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Something went wrong!',
+                    text: response.data.message || 'Try again later.',
+                });
+            }
+
+        } catch (error) {
+            Swal.close();
+            handleAuthError(error);
+        }        
+    });
+    
+    // ---------- COMMON AUTH HANDLER ----------
+    function handleAuthError(error) {
+        if (error.response && error.response.status === 401) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Login Required',
+                text: 'You must be logged in to continue.',
+                showCancelButton: true,
+                confirmButtonText: 'Login Now',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) window.location.href = '/login';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: error.response?.data?.message || 'Something went wrong.',
+            });
+        }
+    }
+});
+</script>
+
         
          <%-include("../partials/user/footer")%>

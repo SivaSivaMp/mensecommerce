@@ -6,7 +6,7 @@ import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 const getForgotPassword = async (req, res) => {
-    if (req.session?.user) {
+    if (getCurrentUserId(req)) {
         return res.redirect('/');
     }
     res.render('forgot-password', {
@@ -133,17 +133,17 @@ const profileChangePassword = async (req, res, next) => {
         ) {
             return next(new AppError('please provide required fields', 400));
         }
-        const userId = req.session.user.id;
+        const userId = getCurrentUserId(req);
         const userData = await User.findById(userId).select('+password');
         const isPasswordCorrect = await bcrypt.compare(
             currentPassword,
             userData.password
         );
-        // exisiting password vaidation
+
         if (!isPasswordCorrect) {
             return next(new AppError('Invalid user credentials', 400));
         }
-        // strong password validation
+
         const isStrong = validator.isStrongPassword(newPassword, {
             minLength: 8,
             minLowercase: 1,
@@ -186,7 +186,7 @@ const profileChangePassword = async (req, res, next) => {
 // get edit profil
 const getEditProfile = async (req, res, next) => {
     try {
-        const userId = req.session.user.id;
+        const userId = getCurrentUserId(req);
         const userData = await User.findById(userId);
         res.render('account-edit', {
             user: userData,
@@ -217,7 +217,7 @@ const editPersonalInformation = async (req, res, next) => {
         if (!validator.isMobilePhone(phone, 'en-IN')) {
             return next(new AppError('Invalid phone number', 400));
         }
-        const userId = req.session.user.id;
+        const userId = getCurrentUserId(req);
         const userData = await User.findById(userId);
         userData.name = name;
         userData.phone == phone;

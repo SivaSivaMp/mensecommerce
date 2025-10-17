@@ -1,0 +1,577 @@
+<%-include("../partials/user/header")%>
+
+<style>
+.order-details-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.order-header h3 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+}
+
+.order-date {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Product Card */
+.product-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.product-item {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.product-image {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.product-details {
+    flex: 1;
+}
+
+.product-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.product-meta {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.product-price {
+    font-size: 18px;
+    font-weight: 600;
+    color: #088178;
+    margin-top: 10px;
+}
+
+.return-window {
+    color: #666;
+    font-size: 13px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Status Timeline */
+.status-timeline {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin: 30px 0;
+    padding: 0 20px;
+}
+
+.status-timeline::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    height: 3px;
+    background: #e9ecef;
+    z-index: 0;
+}
+
+.timeline-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    flex: 1;
+}
+
+.timeline-dot {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.timeline-dot.completed {
+    background: #088178;
+    color: white;
+}
+
+.timeline-dot.current {
+    background: #ff9800;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.timeline-label {
+    font-size: 13px;
+    color: #666;
+    text-align: center;
+    font-weight: 500;
+}
+
+.timeline-label.completed {
+    color: #088178;
+    font-weight: 600;
+}
+
+.timeline-label.current {
+    color: #ff9800;
+    font-weight: 600;
+}
+
+/* Tracking Info */
+.tracking-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.tracking-info p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.track-link {
+    color: #088178;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* Price Details Box (from checkout) */
+.price-details-box {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px 24px;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.price-details-box h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    color: #555;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+    font-size: 15px;
+    color: #333;
+}
+
+.price-row.discount span:last-child {
+    color: #2ca02c;
+    font-weight: 500;
+}
+
+.price-row.total {
+    font-size: 17px;
+    font-weight: 600;
+    color: #000;
+    padding-top: 10px;
+    border-top: 2px solid #e9ecef;
+    margin-top: 10px;
+}
+
+.divider {
+    border: none;
+    border-top: 1px dashed #ddd;
+    margin: 10px 0;
+}
+
+.save-text {
+    color: #2ca02c;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 8px;
+}
+
+/* Shipping Address */
+.address-box {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.address-box h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #555;
+    text-transform: uppercase;
+}
+
+.address-box p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.layout-container {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 30px;
+    margin-top: 30px;
+}
+
+@media (max-width: 768px) {
+    .layout-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-timeline {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .status-timeline::before {
+        display: none;
+    }
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-cancel, .btn-return {
+    padding: 8px 20px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #c82333;
+}
+
+.btn-return {
+    background: #ffc107;
+    color: #333;
+}
+
+.btn-return:hover {
+    background: #e0a800;
+}
+</style>
+
+<!-- Order Details Section -->
+<section class="order-details-container">
+    <div class="order-header">
+        <div>
+            <h3>Order ID: <%= order.orderId %></h3>
+            <p class="order-date">
+                Placed on <%= new Date(order.createdAt).toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                }) %>
+            </p>
+        </div>
+        <div>
+            <a href="/profile/orders" class="tf-btn btn-outline animate-hover-btn radius-3">
+                <span>← Back to Orders</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Order Status Timeline -->
+    <% if (!['Cancelled', 'Returned', 'Return Request'].includes(order.status)) { %>
+        <div class="status-timeline">
+            <% statusTimeline.forEach((step) => { %>
+                <div class="timeline-item">
+                    <div class="timeline-dot <%= step.completed ? 'completed' : '' %> <%= step.current ? 'current' : '' %>">
+                        <% if (step.completed) { %>
+                            ✓
+                        <% } %>
+                    </div>
+                    <span class="timeline-label <%= step.completed ? 'completed' : '' %> <%= step.current ? 'current' : '' %>">
+                        <%= step.label %>
+                    </span>
+                </div>
+            <% }); %>
+        </div>
+    <% } else { %>
+        <div style="text-align: center; padding: 20px; background: #f8d7da; border-radius: 8px; color: #721c24; margin-bottom: 20px;">
+            <strong>Order Status: <%= order.status %></strong>
+        </div>
+    <% } %>
+
+    <!-- Tracking Information -->
+    <% if (trackingInfo.trackingNumber) { %>
+        <div class="tracking-info">
+            <p><strong>Tracking Number:</strong> <%= trackingInfo.trackingNumber %></p>
+            <p><strong>Courier:</strong> <%= trackingInfo.courier %></p>
+            <% if (trackingInfo.estimatedDelivery) { %>
+                <p><strong>Estimated Delivery:</strong> <%= new Date(trackingInfo.estimatedDelivery).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %></p>
+            <% } %>
+            <a href="#" class="track-link">Track</a>
+        </div>
+    <% } %>
+
+    <!-- Layout: Products on left, Price & Address on right -->
+    <div class="layout-container">
+        <!-- Left: Product Items -->
+        <div>
+            <% orderedItems.forEach((item) => { %>
+                <div class="product-card">
+                    <div class="product-item">
+                        <img src="<%= item.productImage %>" alt="<%= item.productName %>" class="product-image">
+                        <div class="product-details">
+                            <h4 class="product-name"><%= item.productName %></h4>
+                            <p class="product-meta">Size: <%= item.size %> | Qty: <%= item.quantity %></p>
+                            <p class="product-price">₹<%= item.totalPrice.toLocaleString('en-IN') %></p>
+                            
+                            <% if (item.status === 'Delivered' && item.deliveredDate) { %>
+                                <p class="return-window">
+                                    <span>ℹ️</span> Return window closes on <%= new Date(new Date(item.deliveredDate).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+                                </p>
+                            <% } %>
+
+                            <% if (item.cancellationReason) { %>
+                                <p style="color: #dc3545; font-size: 13px; margin-top: 10px;">
+                                    <strong>Cancellation Reason:</strong> <%= item.cancellationReason %>
+                                </p>
+                            <% } %>
+
+                            <% if (item.returnReason) { %>
+                                <p style="color: #ffc107; font-size: 13px; margin-top: 10px;">
+                                    <strong>Return Reason:</strong> <%= item.returnReason %>
+                                </p>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <% if (item.canCancel) { %>
+                            <button class="btn-cancel" onclick="cancelItem('<%= item._id %>')">Cancel Item</button>
+                        <% } %>
+                        <% if (item.canReturn) { %>
+                            <button class="btn-return" onclick="returnItem('<%= item._id %>')">Return Item</button>
+                        <% } %>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+
+        <!-- Right: Price Details & Shipping Address -->
+        <div>
+            <!-- Price Details -->
+            <div class="price-details-box">
+                <h2>Price Details</h2>
+                <div class="price-row">
+                    <span>Price (<%= orderedItems.length %> item<%= orderedItems.length !== 1 ? 's' : '' %>)</span>
+                    <span>₹<%= orderSummary.totalPrice.toLocaleString('en-IN') %></span>
+                </div>
+                <% if (orderSummary.discount > 0) { %>
+                    <div class="price-row discount">
+                        <span>Discount</span>
+                        <span>- ₹<%= orderSummary.discount.toLocaleString('en-IN') %></span>
+                    </div>
+                <% } %>
+                <% if (orderSummary.shipping > 0) { %>
+                    <div class="price-row">
+                        <span>Shipping</span>
+                        <span>₹<%= orderSummary.shipping.toLocaleString('en-IN') %></span>
+                    </div>
+                <% } %>
+                <div class="price-row total">
+                    <strong>Total Amount</strong>
+                    <strong>₹<%= orderSummary.finalAmount.toLocaleString('en-IN') %></strong>
+                </div>
+                <% if (orderSummary.savings > 0) { %>
+                    <hr class="divider">
+                    <div class="save-text">
+                        You saved ₹<%= orderSummary.savings.toLocaleString('en-IN') %> on this order
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="price-details-box">
+                <h2>Payment Method</h2>
+                <p style="color: #666; font-size: 14px; margin: 0;">
+                    <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %>
+                </p>
+                <p style="color: #666; font-size: 13px; margin-top: 5px;">
+                    Status: <strong><%= order.paymentStatus %></strong>
+                </p>
+            </div>
+
+            <!-- Shipping Address -->
+            <div class="address-box">
+                <h3>Shipping Address</h3>
+                <p><strong><%= shippingAddress.name %></strong></p>
+                <p><%= shippingAddress.building %>, <%= shippingAddress.street %></p>
+                <% if (shippingAddress.landmark) { %>
+                    <p><%= shippingAddress.landmark %></p>
+                <% } %>
+                <p><%= shippingAddress.city %>, <%= shippingAddress.state %> - <%= shippingAddress.pincode %></p>
+                <p>📞 <%= shippingAddress.phone %></p>
+                <% if (shippingAddress.altPhone) { %>
+                    <p>📞 <%= shippingAddress.altPhone %> (Alt)</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</section>
+
+<%-include("../partials/user/footer")%>
+
+<!-- Sweet Alert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+async function cancelItem(itemId) {
+    const { value: reason } = await Swal.fire({
+        title: 'Cancel Item',
+        text: 'Please provide a reason for cancellation',
+        input: 'textarea',
+        inputPlaceholder: 'Enter cancellation reason...',
+        inputAttributes: {
+            'aria-label': 'Enter cancellation reason'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Cancel Item',
+        cancelButtonText: 'Go Back',
+        confirmButtonColor: '#dc3545',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Please provide a reason!'
+            }
+        }
+    });
+
+    if (reason) {
+        try {
+            const response = await axios.post('/order/cancel-item', {
+                itemId: itemId,
+                reason: reason
+            });
+
+            if (response.data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Item Cancelled',
+                    text: 'Your item has been cancelled successfully',
+                    confirmButtonColor: '#3085d6'
+                }).then(() => {
+                    location.reload();
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'Failed to cancel item',
+                confirmButtonColor: '#d32f2f'
+            });
+        }
+    }
+}
+
+async function returnItem(itemId) {
+    const { value: reason } = await Swal.fire({
+        title: 'Return Item',
+        text: 'Please provide a reason for return',
+        input: 'textarea',
+        inputPlaceholder: 'Enter return reason...',
+        inputAttributes: {
+            'aria-label': 'Enter return reason'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Request Return',
+        cancelButtonText: 'Go Back',
+        confirmButtonColor: '#ffc107',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Please provide a reason!'
+            }
+        }
+    });
+
+    if (reason) {
+        try {
+            const response = await axios.post('/order/return-item', {
+                itemId: itemId,
+                reason: reason
+            });
+
+            if (response.data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Return Requested',
+                    text: 'Your return request has been submitted successfully',
+                    confirmButtonColor: '#3085d6'
+                }).then(() => {
+                    location.reload();
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'Failed to request return',
+                confirmButtonColor: '#d32f2f'
+            });
+        }
+    }
+}
+</script>

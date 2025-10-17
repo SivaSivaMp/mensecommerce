@@ -1,0 +1,536 @@
+<%-include("../partials/user/header")%>
+<style>
+       
+        /* Profile Form Styles */
+        .profile-card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .form-control {
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .form-control:focus {
+            border-color: #088178;
+            box-shadow: 0 0 0 0.2rem rgba(8, 129, 120, 0.25);
+        }
+
+        .edit-profile-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #088178;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .edit-profile-btn:hover {
+            color: #006c5f;
+        }
+
+        .save-btn {
+            background-color: #f1f1f1;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn:hover {
+            background-color: #088178;
+            color: #fff;
+        }
+
+        
+
+        /* Password Input Styles */
+        .password-input {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+        }
+        .saved-address {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      .address-type {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 10px;
+      }
+
+      .address-type.home {
+        background-color: #e8f5e9;
+        color: #2e7d32;
+      }
+
+      .address-type.work {
+        background-color: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .address-type.other {
+        background-color: #f3e5f5;
+        color: #7b1fa2;
+      }
+
+      .address-actions {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+      }
+
+      .address-actions button {
+        background: none;
+        border: none;
+        color: #6c757d;
+        margin-left: 10px;
+        padding: 5px;
+      }
+
+      .address-actions button:hover {
+        color: #088178;
+      }
+
+      .add-address-btn {
+        background-color: #088178;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 30px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+
+      .add-address-btn:hover {
+        background-color: #066c65;
+      }
+
+    
+
+    #copySuccess {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        background-color: #088178;
+        color: white;
+        border-radius: 8px;
+        display: none;
+        z-index: 1000;
+        animation: fadeInOut 2s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+        0% { opacity: 0; transform: translateY(-20px); }
+        20% { opacity: 1; transform: translateY(0); }
+        80% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-20px); }
+    }
+
+    /* Payment Method Section Styles */
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #088178;
+    }
+
+    .payment-options {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .payment-option {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: #fff;
+    }
+
+    .payment-option:hover {
+        border-color: #088178;
+        background-color: #f8fffe;
+    }
+
+    .payment-option.selected {
+        border-color: #088178;
+        background-color: #f0fdfb;
+    }
+
+    .payment-option input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        margin-right: 15px;
+        cursor: pointer;
+        accent-color: #088178;
+        flex-shrink: 0;
+    }
+
+    .payment-option-content {
+        flex: 1;
+    }
+
+    .payment-option-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .payment-option-desc {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .payment-option-icon {
+        margin-left: auto;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+</style>
+        <!-- page-title -->
+        <div class="tf-page-title style-2">
+            <div class="container-full">
+                <div class="heading text-center ">Checkout</div>
+            </div>
+        </div>
+        <!-- /page-title -->
+
+<!-- page-cart -->
+<section class="flat-spacing-11">
+  <div class="container">
+    <div class="tf-page-cart-wrap">
+      <div class="tf-page-cart-item">
+                <div class="profile-card">
+          <h6 class="mb-3">Add New Address</h6>
+          <form id="add-address-form">
+            <div class="row g-1">
+              <!-- Address Info -->
+              <div class="col-md-6">
+                <small>Flat No/Building*</small>
+                <input type="text" id="building" class="form-control" placeholder="Flat No/Building*" />
+              </div>
+              <div class="col-md-6">
+                <small>Street Name/Area*</small>
+                <input type="text" id="street" class="form-control" placeholder="Street Name/Area*" />
+              </div>
+              <div class="col-md-6">
+                <small>Landmark</small>
+                <input type="text" id="landmark" class="form-control" placeholder="Landmark" />
+              </div>
+              <div class="col-md-6">
+                <small>Pincode*</small>
+                <input type="text" id="pincode" class="form-control" placeholder="Pincode*" />
+              </div>
+              <div class="col-md-6">
+                <small>City/District*</small>
+                <input type="text" id="city" class="form-control" placeholder="City/District*" />
+              </div>
+              <div class="col-md-6">
+                <small>State*</small>
+                <input type="text" id="state" class="form-control" placeholder="State*" />
+              </div>
+
+              <h6 class="mb-2 mt-3">Personal Information</h6>
+              <div class="col-md-12">
+                <small>Full Name</small>
+                <input type="text" id="name" class="form-control" placeholder="Full Name" />
+              </div>
+              <div class="col-md-6">
+                <small>Phone number*</small>
+                <input type="tel" id="phone" class="form-control" placeholder="Phone number*" />
+              </div>
+              <div class="col-md-6">
+                <small>Alternative Phone number</small>
+                <input type="tel" id="altPhone" class="form-control" placeholder="Alternative Phone number" />
+              </div>
+              <h6 class="mb-2 mt-3">Save Address as</h6>
+              <div class="col-md-12">
+                <label class="mx-2">
+                  <input type="radio" name="addressType" value="Home" />
+                  <span>Home</span>
+                </label>
+                <label class="mx-2">
+                  <input type="radio" name="addressType" value="Work" />
+                  <span>Work</span>
+                </label>
+                <label class="mx-2">
+                  <input type="radio" name="addressType" value="Other" />
+                  <span>Other</span>
+                </label>
+              </div>
+              <!-- Alert Messages -->
+              <div id="error-message" class="alert alert-danger d-none"></div>
+              <div id="success-message" class="alert alert-success d-none"></div>
+              <div class="col-12 mt-2">
+                <button type="submit" class="save-btn">Save Address</button>
+              </div>
+            </div>
+          </form>
+          </div>
+          <div style="text-align: center; padding: 40px;">
+            <p style="font-size: 18px; color: #666;">Your cart is empty</p>
+            <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3" style="display: inline-block; margin-top: 20px;">
+              <span>Continue Shopping</span>
+            </a>
+          </div>
+      </div>
+        <!-- Price Details Section -->
+        <div class="tf-page-cart-footer">
+    <div class="tf-cart-footer-inner">
+        <div class="tf-page-cart-checkout">
+            <div class="price-details-box">
+                <h2>PRICE DETAILS</h2>
+                
+                <div class="price-row">
+                    <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %>)</span>
+                    <span>₹<%= priceDetails.totalPrice.toLocaleString('en-IN') %></span>
+                </div>
+                
+                <% if (priceDetails.discount > 0) { %>
+                    <div class="price-row discount">
+                        <span>Discount</span>
+                        <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
+                    </div>
+                <% } %>
+                
+                <% if (priceDetails.platformFee > 0) { %>
+                    <div class="price-row">
+                        <span>Platform Fee</span>
+                        <span>₹<%= priceDetails.platformFee %></span>
+                    </div>
+                <% } %>
+                
+                <hr class="divider">
+                
+                <div class="price-row total">
+                    <strong>Total Amount</strong>
+                    <strong>₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
+                </div>
+                
+                <hr class="divider">
+                
+                <% if (priceDetails.savings > 0) { %>
+                    <div class="save-text">
+                        You will save <span class="green">₹<%= priceDetails.savings.toLocaleString('en-IN') %></span> on this order
+                    </div>
+                <% } %>
+            </div>
+            
+            <div class="cart-checkout-btn">
+                <button type="button" class="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center checkout-btn" onclick="window.location.href='/checkout'">
+                    <span>Continue Payment</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+        <!-- End of Price Details Section -->
+      
+    </div>
+  </div>
+</section>
+<!-- page-cart -->
+
+<%-include("../partials/user/footer")%>
+
+<!-- Sweet Alert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Axios CDN -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<style>
+.price-details-box {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px 24px;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto 20px;
+  font-family: "Inter", sans-serif;
+  box-sizing: border-box;
+}
+
+.price-details-box h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.price-row.discount span:last-child {
+  color: #2ca02c;
+  font-weight: 500;
+}
+
+.price-row.total {
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+}
+
+.divider {
+  border: none;
+  border-top: 1px dashed #ddd;
+  margin: 10px 0;
+}
+
+.save-text {
+  color: #2ca02c;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.green {
+  font-weight: 600;
+}
+
+.tf-page-cart-checkout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-checkout-btn {
+  width: 100%;
+  max-width: 340px;
+}
+
+.tf-cart-item[data-in-stock="false"] {
+  opacity: 0.7;
+  background-color: #f5f5f5;
+}
+
+.out-of-stock-badge {
+  display: inline-block;
+  margin-top: 5px;
+}
+</style>
+
+<script>
+function selectPaymentMethod(element) {
+  // Remove selected class from all payment options
+  const allOptions = document.querySelectorAll('.payment-option');
+  allOptions.forEach(option => {
+    option.classList.remove('selected');
+  });
+
+  // Add selected class to the clicked option
+  element.closest('.payment-option').classList.add('selected');
+
+  // Log selected payment method
+  console.log('Selected payment method:', element.value);
+}
+
+// Set initial selected state on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const firstOption = document.querySelector('input[name="paymentMethod"]:checked');
+  if (firstOption) {
+    firstOption.closest('.payment-option').classList.add('selected');
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const addressForm = document.getElementById('add-address-form');
+  const errorBox = document.getElementById('error-message');
+  const successBox = document.getElementById('success-message');
+  const submitBtn = addressForm.querySelector('button[type="submit"]');
+
+  addressForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = {
+      building: document.getElementById('building').value.trim(),
+      street: document.getElementById('street').value.trim(),
+      landmark: document.getElementById('landmark').value.trim(),
+      pincode: document.getElementById('pincode').value.trim(),
+      city: document.getElementById('city').value.trim(),
+      state: document.getElementById('state').value.trim(),
+      name: document.getElementById('name').value.trim(),
+      phone: document.getElementById('phone').value.trim(),
+      altPhone: document.getElementById('altPhone').value.trim(),
+      addressType: document.querySelector('input[name="addressType"]:checked')?.value || ''
+    };
+
+    // quick front-end validation
+    if ( !formData.pincode || !formData.city || !formData.state || !formData.phone  || !formData.addressType) {
+      errorBox.textContent = 'Please fill all required fields.';
+      errorBox.classList.remove('d-none');
+      return;
+    }
+
+    errorBox.classList.add('d-none');
+    successBox.classList.add('d-none');
+    submitBtn.disabled = true;
+
+    try {
+      const res = await axios.post('/profile/address-add', formData);
+      if (res.data.status === 'success') {
+        successBox.textContent = res?.data?.message;
+        successBox.classList.remove('d-none');
+
+        setTimeout(() => {
+          window.location.href =  '/checkout/add-address';
+        }, 1200);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Something went wrong while saving address.';
+      errorBox.textContent = msg;
+      errorBox.classList.remove('d-none');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+});
+</script>

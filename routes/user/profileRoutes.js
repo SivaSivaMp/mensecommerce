@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import profileController from '../../controllers/user/profileController.js';
 import addressController from '../../controllers/user/addressController.js';
+import orderController from '../../controllers/user/orderController.js';
 const router = Router();
 
 router.route('/').get(profileController.getProfile);
 router.route('/address').get(addressController.getAddressInfo);
-router.route('/orders').get(addressController.getMyOrderInfo);
+
 router.route('/change-password').post(profileController.profileChangePassword);
 router
     .route('/profile-edit')
@@ -27,5 +28,11 @@ router
     .route('/address-edit/:id')
     .get(addressController.getEditAddress)
     .put(addressController.editAddress);
+
+// order management
+router.route('/orders').get(orderController.getOrders);
+router.get('/order-details/:orderId', orderController.getOrderDetails);
+// router.post('/order/cancel-item', cancelItemController);
+// router.post('/order/return-item', returnItemController);
 
 export default router;

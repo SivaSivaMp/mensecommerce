@@ -1,0 +1,320 @@
+<!doctype html>
+<html class="no-js" lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>::ecomus:: Order Details </title>
+    
+    <link rel="stylesheet" href="/assets/plugin/datatables/responsive.dataTables.min.css">
+    <link rel="stylesheet" href="/assets/plugin/datatables/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="/assets/css/ebazar.style.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">    
+</head>
+<body>
+    <div id="ebazar-layout" class="theme-blue">
+        <!-- sidebar -->
+        <%- include('../partials/admin/admin-sidebar', { currentPage: 'orders' }) %>
+
+        <!-- main body area -->
+        <div class="main px-lg-4 px-md-4"> 
+            <!-- Body: Header -->
+            <%- include('../partials/admin/admin-header', { user: user || null }) %>
+
+            <!-- Body: Body -->       
+            <div class="body d-flex py-3">
+                <div class="container-xxl">
+                    <div class="row align-items-center">
+                        <div class="border-0 mb-4">
+                            <div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
+                                <h3 class="fw-bold mb-0">Order Details: #<%= order.orderId %></h3>
+                                <a href="/admin/orders" class="btn btn-primary">
+                                    <i class="icofont-arrow-left"></i> Back to Orders
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Address and Invoice Details -->
+                    <div class="row g-3 mb-3 row-cols-1 row-cols-md-1 row-cols-lg-2 row-cols-xl-2 row-cols-xxl-2 row-deck">
+                        <!-- Delivery Address -->
+                        <div class="col">
+                            <div class="card auth-detailblock">
+                                <div class="card-header py-3 d-flex justify-content-between bg-transparent border-bottom-0">
+                                    <h6 class="mb-0 fw-bold">Delivery Address</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Address Type:</label>
+                                            <span><strong><%= shippingAddress.addressType %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Name:</label>
+                                            <span><strong><%= shippingAddress.name %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Building:</label>
+                                            <span><strong><%= shippingAddress.building %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Street:</label>
+                                            <span><strong><%= shippingAddress.street %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Landmark:</label>
+                                            <span><strong><%= shippingAddress.landmark %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">City:</label>
+                                            <span><strong><%= shippingAddress.city %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">State:</label>
+                                            <span><strong><%= shippingAddress.state %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Pincode:</label>
+                                            <span><strong><%= shippingAddress.pincode %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Phone:</label>
+                                            <span><strong><%= shippingAddress.phone %></strong></span>
+                                        </div>
+                                        <% if (shippingAddress.altPhone && shippingAddress.altPhone !== 'N/A') { %>
+                                            <div class="col-12">
+                                                <label class="form-label col-6 col-sm-5">Alt Phone:</label>
+                                                <span><strong><%= shippingAddress.altPhone %></strong></span>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Invoice Detail -->
+                        <div class="col">
+                            <div class="card">
+                                <div class="card-header py-3 d-flex justify-content-between bg-transparent border-bottom-0">
+                                    <h6 class="mb-0 fw-bold">Invoice Detail</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Order ID:</label>
+                                            <span><strong><%= order.orderId %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Total Quantity:</label>
+                                            <span><strong><%= order.totalQuantity %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Payment Method:</label>
+                                            <span><strong><%= order.paymentMethod %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Payment Status:</label>
+                                            <span><strong><%= order.paymentStatus %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Order Date:</label>
+                                            <span><strong><%= new Date(order.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %></strong></span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label col-6 col-sm-5">Order Status:</label>
+                                            <span class="badge 
+                                                <%= order.status === 'Delivered' ? 'bg-success' : '' %>
+                                                <%= order.status === 'Cancelled' ? 'bg-danger' : '' %>
+                                                <%= order.status === 'Pending' ? 'bg-warning' : '' %>
+                                                <%= order.status === 'Processing' ? 'bg-info' : '' %>
+                                                <%= order.status === 'Shipped' ? 'bg-primary' : '' %>
+                                            "><strong><%= order.status %></strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Summary Table -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-xl-12 col-xxl-12">
+                            <div class="card">
+                                <div class="card-header py-3 d-flex justify-content-between bg-transparent border-bottom-0">
+                                    <h6 class="mb-0 fw-bold">Order Summary</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="product-cart">
+                                        <div class="checkout-table table-responsive">
+                                            <table id="myCartTable" class="table display dataTable table-hover align-middle" style="width: 100%">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Product Image</th>
+                                                        <th>Product Name</th>
+                                                        
+                                                        <th>Original Price</th>
+                                                        <th>Sales Price</th>
+                                                        <th>Total</th>
+                                                        <th>Order Status</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <% orderedItems.forEach((item) => { %>
+                                                        <tr data-item-id="<%= item._id %>">
+                                                            <td>
+                                                                <img src="<%= item.productImage %>" class="avatar rounded lg" alt="<%= item.productName %>" style="width: 60px; height: 60px; object-fit: cover;">
+                                                            </td>
+                                                            <td>
+                                                                <h6 class="title"><%= item.productName %></h6>
+                                                                <span class="d-block fs-6 text-primary">Size:<%= item.size %>/Quantity:<%= item.quantity %></span>
+                                                            </td>
+                                                            
+                                                            <td>
+                                                                <p class="price">₹<%= item.originalPrice.toLocaleString('en-IN') %></p>
+                                                            </td>
+                                                            <td>
+                                                                <p class="price">₹<%= item.salesPrice.toLocaleString('en-IN') %></p>
+                                                            </td>
+                                                            <td>
+                                                                <p class="price fw-bold">₹<%= item.totalPrice.toLocaleString('en-IN') %></p>
+                                                            </td>
+                                                            <td>
+                                                                <select class="form-select order-status-select" data-item-id="<%= item._id %>">
+                                                                    <option value="Pending" <%= item.status === 'Pending' ? 'selected' : '' %>>Pending</option>
+                                                                    <option value="Processing" <%= item.status === 'Processing' ? 'selected' : '' %>>Processing</option>
+                                                                    <option value="Shipped" <%= item.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
+                                                                    <option value="Out for Delivery" <%= item.status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                                                                    <option value="Delivered" <%= item.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
+                                                                    <option value="Cancelled" <%= item.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                                                </select>
+                                                            </td>
+                                                            <td>
+                                                                <button type="button" class="btn btn-primary btn-sm update-status-btn" data-item-id="<%= item._id %>">
+                                                                    Update
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    <% }); %>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <!-- Price Summary -->
+                                        <div class="checkout-coupon-total checkout-coupon-total-2 d-flex flex-wrap justify-content-end">
+                                            <div class="checkout-total">
+                                                <div class="single-total">
+                                                    <p class="value">Subtotal Price:</p>
+                                                    <p class="price">₹<%= order.totalPrice.toLocaleString('en-IN') %></p>
+                                                </div>
+                                                <% if (order.discount > 0) { %>
+                                                    <div class="single-total">
+                                                        <p class="value">Discount (-):</p>
+                                                        <p class="price">₹<%= order.discount.toLocaleString('en-IN') %></p>
+                                                    </div>
+                                                <% } %>
+                                                <% if (order.shipping > 0) { %>
+                                                    <div class="single-total">
+                                                        <p class="value">Shipping (+):</p>
+                                                        <p class="price">₹<%= order.shipping.toLocaleString('en-IN') %></p>
+                                                    </div>
+                                                <% } %>
+                                                <div class="single-total total-payable">
+                                                    <p class="value">Total Payable:</p>
+                                                    <p class="price">₹<%= order.finalAmount.toLocaleString('en-IN') %></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Jquery Core Js -->
+    <script src="/assets/bundles/libscripts.bundle.js"></script>
+    <script src="/assets/bundles/dataTables.bundle.js"></script>
+    <script src="/js/template.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>   
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#myCartTable').addClass('nowrap').dataTable({
+                responsive: true,
+                paging: false,
+                searching: false,
+                columnDefs: [
+                    { targets: [-1, -2], className: 'dt-body-right' }
+                ]
+            });
+        });
+    </script>
+
+    <script>
+        // Update order item status
+        document.querySelectorAll('.update-status-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const itemId = this.getAttribute('data-item-id');
+                const selectElement = document.querySelector(`.order-status-select[data-item-id="${itemId}"]`);
+                const newStatus = selectElement.value;
+                const orderId = '<%= order.orderId %>';
+
+                try {
+                    const response = await axios.post('/admin/orders/update-status', {
+                        orderId: orderId,
+                        itemId: itemId,
+                        status: newStatus
+                    });
+
+                    if (response.data.status === 'success') {
+                        showSuccessToast(response.data.message);
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1500);
+                    }
+                } catch (error) {
+                    const message = error.response?.data?.message || 'Failed to update status';
+                    showErrorToast(message);
+                }
+            });
+        });
+
+        function showSuccessToast(message) {
+            if (typeof Toastify !== 'undefined') {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "#28a745",
+                    close: true
+                }).showToast();
+            } else {
+                alert(message); 
+            }
+        }
+
+        function showErrorToast(message) {
+            if (typeof Toastify !== 'undefined') {
+                Toastify({
+                    text: message,
+                    duration: 3000,
+                    gravity: "top",
+                    position: "right",
+                    backgroundColor: "#FF0000",
+                    close: true
+                }).showToast();
+            } else {
+                alert(message); 
+            }
+        }
+    </script>
+</body>
+</html>

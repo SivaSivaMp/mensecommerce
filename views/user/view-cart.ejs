@@ -1,0 +1,382 @@
+<%-include("../partials/user/header")%>
+        <!-- page-title -->
+        <div class="tf-page-title style-2">
+            <div class="container-full">
+                <div class="heading text-center ">Shopping Cart</div>
+            </div>
+        </div>
+        <!-- /page-title -->
+
+<!-- page-cart -->
+<section class="flat-spacing-11">
+  <div class="container">
+    <div class="tf-page-cart-wrap">
+      <div class="tf-page-cart-item">
+        <% if (cartItems.length > 0) { %>
+          <form id="cart-form">
+            <table class="tf-table-page-cart">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% cartItems.forEach((item) => {
+                  const isOutOfStock = item.isOutOfStock;
+                %>
+                  <tr class="tf-cart-item file-delete" data-product-id="<%= item.productId %>" data-in-stock="<%= !isOutOfStock %>">
+                    <td class="tf-cart-item_product">
+                      <a href="/product-detail/<%= item.productId %>" class="img-box">
+                        <img src="<%= item.productImage %>" alt="<%= item.productName %>">
+                      </a>
+                      <div class="cart-info">
+                        <a href="/product-detail/<%= item.productId %>" class="cart-title link"><%= item.productName %></a>
+                        <div class="cart-meta-variant"><%= item.size %><strike><div class="cart-meta-variant" >₹<%= item.originalPrice.toLocaleString('en-IN') %></div></strike></div>
+                        <% if (isOutOfStock) { %>
+                          <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Out of Stock</span>
+                          <span class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</span>
+                        <% } else { %>
+                          <span class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</span>
+                        <% } %>
+                      </div>
+                    </td>
+                    <td class="tf-cart-item_price" cart-data-title="Price">
+                      
+                      
+                      
+                      <div class="cart-price">₹<%= item.salePrice.toLocaleString('en-IN') %></div>
+                    </td>
+                    <td class="tf-cart-item_quantity" cart-data-title="Quantity">
+                      <div class="cart-quantity">
+                        <div class="wg-quantity" <%= isOutOfStock ? 'style="opacity: 0.5; pointer-events: none;"' : '' %>>
+                          <span class="btn-quantity minus-btn" data-item-id="<%= item._id %>">
+                            <svg class="d-inline-block" width="9" height="1" viewBox="0 0 9 1" fill="currentColor">
+                              <path d="M9 1H0V0H9V1Z"></path>
+                            </svg>
+                          </span>
+                          <input type="text" name="quantity" value="<%= item.quantity %>" data-item-id="<%= item._id %>" readonly>
+                          <span class="btn-quantity plus-btn" data-item-id="<%= item._id %>">
+                            <svg class="d-inline-block" width="9" height="9" viewBox="0 0 9 9" fill="currentColor">
+                              <path d="M9 5.14286H5.14286V9H3.85714V5.14286H0V3.85714H3.85714V0H5.14286V3.85714H9V5.14286Z"></path>
+                            </svg>
+                          </span>
+                        </div>
+                       
+                      </div>
+                    </td>
+                    <td class="tf-cart-item_total" cart-data-title="Total">
+                      <div class="cart-total">₹<%= (item.salePrice * item.quantity).toLocaleString('en-IN') %></div>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </form>
+        <% } else { %>
+          <div style="text-align: center; padding: 40px;">
+            <p style="font-size: 18px; color: #666;">Your cart is empty</p>
+            <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3" style="display: inline-block; margin-top: 20px;">
+              <span>Continue Shopping</span>
+            </a>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (cartItems.length > 0) { %>
+        <!-- Price Details Section -->
+        <div class="tf-page-cart-footer">
+          <div class="tf-cart-footer-inner">
+            <div class="tf-page-cart-checkout">
+              <div class="price-details-box">
+                <h2>PRICE DETAILS</h2>
+
+                <div class="price-row">
+                  <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %>)</span>
+                  <span>₹<%= priceDetails.totalPrice.toLocaleString('en-IN') %></span>
+                </div>
+
+                <% if (priceDetails.discount > 0) { %>
+                  <div class="price-row discount">
+                    <span>Discount</span>
+                    <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
+                  </div>
+                <% } %>
+                <hr class="divider">
+
+                <div class="price-row total">
+                  <strong>Total Amount</strong>
+                  <strong>₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
+                </div>
+
+                <hr class="divider">
+
+                <% if (priceDetails.savings > 0) { %>
+                  <div class="save-text">
+                    You will save <span class="green">₹<%= priceDetails.savings.toLocaleString('en-IN') %></span> on this order
+                  </div>
+                <% } %>
+              </div>
+
+              <div class="cart-checkout-btn">
+                <button type="button" class="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center checkout-btn">
+                  <span>Check out</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- End of Price Details Section -->
+      <% } %>
+    </div>
+  </div>
+</section>
+<!-- page-cart -->
+
+<%-include("../partials/user/footer")%>
+
+<!-- Sweet Alert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Axios CDN -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<style>
+.price-details-box {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px 24px;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto 20px;
+  font-family: "Inter", sans-serif;
+  box-sizing: border-box;
+}
+
+.price-details-box h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.price-row.discount span:last-child {
+  color: #2ca02c;
+  font-weight: 500;
+}
+
+.price-row.total {
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+}
+
+.divider {
+  border: none;
+  border-top: 1px dashed #ddd;
+  margin: 10px 0;
+}
+
+.save-text {
+  color: #2ca02c;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.green {
+  font-weight: 600;
+}
+
+.tf-page-cart-checkout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-checkout-btn {
+  width: 100%;
+  max-width: 340px;
+}
+
+.tf-cart-item[data-in-stock="false"] {
+  opacity: 0.7;
+  background-color: #f5f5f5;
+}
+
+.out-of-stock-badge {
+  display: inline-block;
+  margin-top: 5px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const checkoutBtn = document.querySelector('.checkout-btn');
+  
+  // Checkout functionality
+  checkoutBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    const outOfStockRows = document.querySelectorAll('[data-in-stock="false"]');
+    
+    if (outOfStockRows.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Out of Stock Items',
+        text: 'Please remove out of stock items before proceeding to checkout.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#3085d6'
+      });
+      return;
+    }
+    
+    // Proceed to checkout
+    window.location.href = '/checkout';
+  });
+
+  // Remove item functionality
+  document.querySelectorAll('.remove-cart').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const itemId = this.getAttribute('data-item-id');
+      
+      Swal.fire({
+        icon: 'question',
+        title: 'Remove Item',
+        text: 'Are you sure you want to remove this item from your cart?',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Remove',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#d32f2f',
+        cancelButtonColor: '#6c757d'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          removeFromCart(itemId);
+        }
+      });
+    });
+  });
+
+  document.querySelectorAll('.minus-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const itemId = this.getAttribute('data-item-id');
+      const quantityInput = document.querySelector(`input[data-item-id="${itemId}"]`);
+      const originalQuantity = parseInt(quantityInput.value);
+      updateQuantity(itemId, -1, originalQuantity);
+    });
+  });
+
+  document.querySelectorAll('.plus-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const itemId = this.getAttribute('data-item-id');
+      const quantityInput = document.querySelector(`input[data-item-id="${itemId}"]`);
+      const originalQuantity = parseInt(quantityInput.value);
+      updateQuantity(itemId, 1, originalQuantity);
+    });
+  });
+});
+
+async function removeFromCart(itemId) {
+  try {
+    const response = await axios.delete(`/cart/remove/${itemId}`);
+    
+    if (response.data.success) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Removed',
+        text: 'Item removed from cart successfully',
+        confirmButtonColor: '#3085d6',
+        timer: 1500
+      }).then(() => {
+        location.reload();
+      });
+    }
+  } catch (error) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.response?.data?.message || 'Failed to remove item from cart',
+      confirmButtonColor: '#d32f2f'
+    });
+  }
+}
+
+async function updateQuantity(itemId, change, originalQuantity) {
+  try {
+    // Get the quantity input and buttons
+    const quantityInput = document.querySelector(`input[data-item-id="${itemId}"]`);
+    const minusBtn = document.querySelector(`.minus-btn[data-item-id="${itemId}"]`);
+    const plusBtn = document.querySelector(`.plus-btn[data-item-id="${itemId}"]`);
+    
+    // Disable buttons while request is pending
+    minusBtn.disabled = true;
+    plusBtn.disabled = true;
+    minusBtn.style.opacity = '0.5';
+    minusBtn.style.pointerEvents = 'none';
+    plusBtn.style.opacity = '0.5';
+    plusBtn.style.pointerEvents = 'none';
+    
+    // Optimistically update the UI
+    const newQuantity = originalQuantity + change;
+    quantityInput.value = newQuantity;
+    
+    // Make the request
+    const response = await axios.put(`/cart/update/${itemId}`, {
+      quantityChange: change
+    });
+    
+    if (response.data.success) {
+      // Success - keep the updated quantity and reload
+      Swal.fire({
+        icon: 'success',
+        title: 'Updated',
+        text: `Quantity updated to ${newQuantity}`,
+        confirmButtonColor: '#3085d6',
+        timer: 1000
+      }).then(() => {
+        location.reload();
+      });
+    }
+  } catch (error) {
+    // Error - revert the quantity back to original
+    const quantityInput = document.querySelector(`input[data-item-id="${itemId}"]`);
+    const minusBtn = document.querySelector(`.minus-btn[data-item-id="${itemId}"]`);
+    const plusBtn = document.querySelector(`.plus-btn[data-item-id="${itemId}"]`);
+    
+    quantityInput.value = originalQuantity;
+    
+    const message = error.response?.data?.message || 'Failed to update quantity';
+    
+    Swal.fire({
+      icon: 'warning',
+      title: 'Error',
+      text: message,
+      confirmButtonColor: '#3085d6'
+    });
+    
+    // Re-enable buttons
+    minusBtn.disabled = false;
+    plusBtn.disabled = false;
+    minusBtn.style.opacity = '1';
+    minusBtn.style.pointerEvents = 'auto';
+    plusBtn.style.opacity = '1';
+    plusBtn.style.pointerEvents = 'auto';
+  }
+}
+</script>

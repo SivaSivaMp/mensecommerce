@@ -4,10 +4,12 @@ import User from '../../models/userSchema.js';
 import { sendVerificationEmail } from '../../utils/email.js';
 import { generateOtp } from '../../utils/generateOtp.js';
 import validator from 'validator';
+import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
+import { get } from 'mongoose';
 // load login
 
 const loadLogin = async (req, res) => {
-    if (req.session?.user) {
+    if (getCurrentUserId(req)) {
         return res.redirect('/');
     }
     res.render('login', {
@@ -18,7 +20,7 @@ const loadLogin = async (req, res) => {
 
 // load signup
 const loadSignup = async (req, res) => {
-    if (req.session?.user) {
+    if (getCurrentUserId(req)) {
         return res.redirect('/');
     }
     res.render('signup', {
@@ -35,7 +37,7 @@ const login = async (req, res, next) => {
         if (!validator.isEmail(email)) {
             return next(new AppError('Invalid email', 400));
         }
-        if (req.session.user) {
+        if (getCurrentUserId(req)) {
             return next(new AppError('user already logged in', 400));
         }
         if (!email || !password) {

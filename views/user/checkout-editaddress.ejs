@@ -151,23 +151,22 @@ label span:hover {
   100% { opacity: 0; transform: translateY(-15px); }
 }
 </style>
+        <!-- page-title -->
+        <div class="tf-page-title style-2">
+            <div class="container-full">
+                <div class="heading text-center ">Checkout</div>
+            </div>
+        </div>
+        <!-- /page-title -->
 
+<!-- page-cart -->
 <section class="flat-spacing-11">
   <div class="container">
-    <div class="row">
-      <div class="col-lg-3">
-        <ul class="my-account-nav">
-                            <li><a href="/profile" class="my-account-nav-item">My Profile</a></li>                            
-                            <li><a href="/profile/orders" class="my-account-nav-item">Orders</a></li>
-                            <li><a href="/profile/address" class="my-account-nav-item">Addresses</a></li>
-                            <li><a href="my-account.html" class="my-account-nav-item ">My Wallet</a></li>
-                            <li><a href="/wishlist" class="my-account-nav-item">Wishlist</a></li>
-                            <li><a href="/logout" class="my-account-nav-item">Logout</a></li>
-        </ul>
-      </div>
-
-      <div class="col-md-9">
-        <div class="profile-card p-4 shadow-sm rounded">
+    <div class="tf-page-cart-wrap">
+      <div class="tf-page-cart-item">
+                
+        
+          <div class="profile-card p-4 shadow-sm rounded">
           <h6 class="mb-3">Edit Address</h6>
 
           <form id="edit-address-form">
@@ -235,15 +234,189 @@ label span:hover {
             </div>
           </form>
         </div>
+        
+
+        
+          <div style="text-align: center; padding: 40px;">
+            <p style="font-size: 18px; color: #666;">Your cart is empty</p>
+            <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3" style="display: inline-block; margin-top: 20px;">
+              <span>Continue Shopping</span>
+            </a>
+          </div>
+       
       </div>
+
+      
+        <!-- Price Details Section -->
+  <div class="tf-page-cart-footer">
+    <div class="tf-cart-footer-inner">
+        <div class="tf-page-cart-checkout">
+            <div class="price-details-box">
+                <h2>PRICE DETAILS</h2>
+                
+                <div class="price-row">
+                    <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %>)</span>
+                    <span>₹<%= priceDetails.totalPrice.toLocaleString('en-IN') %></span>
+                </div>
+                
+                <% if (priceDetails.discount > 0) { %>
+                    <div class="price-row discount">
+                        <span>Discount</span>
+                        <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
+                    </div>
+                <% } %>
+                
+                <% if (priceDetails.platformFee > 0) { %>
+                    <div class="price-row">
+                        <span>Platform Fee</span>
+                        <span>₹<%= priceDetails.platformFee %></span>
+                    </div>
+                <% } %>
+                
+                <hr class="divider">
+                
+                <div class="price-row total">
+                    <strong>Total Amount</strong>
+                    <strong>₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
+                </div>
+                
+                <hr class="divider">
+                
+                <% if (priceDetails.savings > 0) { %>
+                    <div class="save-text">
+                        You will save <span class="green">₹<%= priceDetails.savings.toLocaleString('en-IN') %></span> on this order
+                    </div>
+                <% } %>
+            </div>
+            
+            <div class="cart-checkout-btn">
+                <button type="button" class="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center checkout-btn" onclick="window.location.href='/checkout'">
+                    <span>Continue Payment</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+        <!-- End of Price Details Section -->
+      
     </div>
   </div>
 </section>
+<!-- page-cart -->
 
+<%-include("../partials/user/footer")%>
+
+<!-- Sweet Alert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Axios CDN -->
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<style>
+.price-details-box {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px 24px;
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto 20px;
+  font-family: "Inter", sans-serif;
+  box-sizing: border-box;
+}
 
+.price-details-box h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.price-row.discount span:last-child {
+  color: #2ca02c;
+  font-weight: 500;
+}
+
+.price-row.total {
+  font-size: 17px;
+  font-weight: 600;
+  color: #000;
+}
+
+.divider {
+  border: none;
+  border-top: 1px dashed #ddd;
+  margin: 10px 0;
+}
+
+.save-text {
+  color: #2ca02c;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.green {
+  font-weight: 600;
+}
+
+.tf-page-cart-checkout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-checkout-btn {
+  width: 100%;
+  max-width: 340px;
+}
+
+.tf-cart-item[data-in-stock="false"] {
+  opacity: 0.7;
+  background-color: #f5f5f5;
+}
+
+.out-of-stock-badge {
+  display: inline-block;
+  margin-top: 5px;
+}
+</style>
+
+<script>
+function selectPaymentMethod(element) {
+  // Remove selected class from all payment options
+  const allOptions = document.querySelectorAll('.payment-option');
+  allOptions.forEach(option => {
+    option.classList.remove('selected');
+  });
+
+  // Add selected class to the clicked option
+  element.closest('.payment-option').classList.add('selected');
+
+  // Log selected payment method
+  console.log('Selected payment method:', element.value);
+}
+
+// Set initial selected state on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const firstOption = document.querySelector('input[name="paymentMethod"]:checked');
+  if (firstOption) {
+    firstOption.closest('.payment-option').classList.add('selected');
+  }
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('edit-address-form');
@@ -289,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
         successBox.classList.remove('d-none');
 
         setTimeout(() => {
-          window.location.href = res.data.redirectUrl || '/profile/address';
+          window.location.href =  '/checkout';
         }, 1200);
       }
     } catch (error) {
@@ -302,8 +475,3 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
-
-
-
-
-   <%-include("../partials/user/footer")%>

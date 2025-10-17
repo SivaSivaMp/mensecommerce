@@ -283,12 +283,8 @@ const editAddress = async (req, res, next) => {
     }
 };
 
-const getMyOrderInfo = async (req, res) => {
-    res.render('my-wallet');
-};
 export default {
     getAddressInfo,
-    getMyOrderInfo,
     getAddAddress,
     addAddress,
     deleteAddress,
