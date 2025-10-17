@@ -182,7 +182,7 @@ const getProductDetails = async (req, res, next) => {
         const productId = req.query.id;
         if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
             return next(
-                new AppError('product doest exist, please refresh', 400)
+                new AppError('product doest exist, please refresh', 404)
             );
         }
         const productAgg = await Product.aggregate([

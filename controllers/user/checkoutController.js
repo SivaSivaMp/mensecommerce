@@ -17,7 +17,6 @@ const getCheckout = async (req, res, next) => {
             );
         }
 
-        // Get user's cart
         const cart = await Cart.findOne({ userId })
             .populate({
                 path: 'items.productId',
@@ -50,7 +49,6 @@ const getCheckout = async (req, res, next) => {
             });
         }
 
-        // Calculate cart totals
         let totalPrice = 0;
         let totalDiscount = 0;
 
@@ -97,11 +95,9 @@ const getCheckout = async (req, res, next) => {
             savings: savings,
         };
 
-        // Get user's addresses with pagination
         const totalAddresses = await Address.countDocuments({ userId });
         const totalPages = Math.ceil(totalAddresses / itemsPerPage);
 
-        // Validate page number
         const validPage = Math.min(Math.max(page, 1), totalPages || 1);
 
         const addresses = await Address.find({ userId })
@@ -109,7 +105,6 @@ const getCheckout = async (req, res, next) => {
             .skip((validPage - 1) * itemsPerPage)
             .limit(itemsPerPage);
 
-        // Format addresses for display
         const formattedAddresses = addresses.map((addr) => ({
             _id: addr._id,
             addressType: addr.addressType,
@@ -127,7 +122,6 @@ const getCheckout = async (req, res, next) => {
             }, ${addr.city}, ${addr.state} - ${addr.pincode}`,
         }));
 
-        // Calculate pagination
         const pagination = {
             hasNextPage: validPage < totalPages,
             hasPrevPage: validPage > 1,
@@ -152,13 +146,131 @@ const getCheckout = async (req, res, next) => {
 };
 const getCheckoutAddAddress = async (req, res, next) => {
     try {
-        res.render('checkout-addaddress');
+        const userId = getCurrentUserId(req);
+
+        if (!userId) {
+            return next(new AppError('Please login to view cart', 401));
+        }
+        const cart = await Cart.findOne({ userId }).populate({
+            path: 'items.productId',
+            select: 'originalPrice salesPrice',
+        });
+
+        if (!cart || cart.items.length === 0) {
+            return res.render('cart', {
+                priceDetails: {
+                    totalPrice: 0,
+                    discount: 0,
+
+                    totalAmount: 0,
+                    savings: 0,
+                },
+                itemCount: 0,
+            });
+        }
+        let totalPrice = 0;
+        let totalDiscount = 0;
+
+        cart.items.forEach((item) => {
+            const originalPrice = Number(item.productId.originalPrice) || 0;
+            const salePrice =
+                item.productId.salesPrice &&
+                Number(item.productId.salesPrice) > 0
+                    ? Number(item.productId.salesPrice)
+                    : originalPrice;
+
+            const itemOriginalTotal = originalPrice * item.quantity;
+            const itemSaleTotal = salePrice * item.quantity;
+            const itemDiscount = itemOriginalTotal - itemSaleTotal;
+
+            totalPrice += itemOriginalTotal;
+            totalDiscount += itemDiscount;
+        });
+
+        const totalAmount = totalPrice - totalDiscount;
+        const savings = totalDiscount;
+
+        const priceDetails = {
+            totalPrice: totalPrice,
+            discount: totalDiscount,
+
+            totalAmount: totalAmount,
+            savings: savings,
+        };
+        return res.render('checkout-addaddress', {
+            priceDetails: priceDetails,
+            itemCount: cart.items.length,
+        });
     } catch (error) {}
 };
 const getCheckoutEditAddress = async (req, res, next) => {
     try {
-        res.render('checkout-editaddress');
-    } catch (error) {}
+        const { id } = req.params;
+        const userAddress = await Address.findById(id);
+
+        if (!userAddress) {
+            return next(new AppError('address not found', 400));
+        }
+        const userId = getCurrentUserId(req);
+
+        if (!userId) {
+            return next(new AppError('Please login to view cart', 401));
+        }
+        const cart = await Cart.findOne({ userId }).populate({
+            path: 'items.productId',
+            select: 'originalPrice salesPrice',
+        });
+
+        if (!cart || cart.items.length === 0) {
+            return res.render('cart', {
+                priceDetails: {
+                    totalPrice: 0,
+                    discount: 0,
+
+                    totalAmount: 0,
+                    savings: 0,
+                },
+                itemCount: 0,
+            });
+        }
+        let totalPrice = 0;
+        let totalDiscount = 0;
+
+        cart.items.forEach((item) => {
+            const originalPrice = Number(item.productId.originalPrice) || 0;
+            const salePrice =
+                item.productId.salesPrice &&
+                Number(item.productId.salesPrice) > 0
+                    ? Number(item.productId.salesPrice)
+                    : originalPrice;
+
+            const itemOriginalTotal = originalPrice * item.quantity;
+            const itemSaleTotal = salePrice * item.quantity;
+            const itemDiscount = itemOriginalTotal - itemSaleTotal;
+
+            totalPrice += itemOriginalTotal;
+            totalDiscount += itemDiscount;
+        });
+
+        const totalAmount = totalPrice - totalDiscount;
+        const savings = totalDiscount;
+
+        const priceDetails = {
+            totalPrice: totalPrice,
+            discount: totalDiscount,
+
+            totalAmount: totalAmount,
+            savings: savings,
+        };
+        res.render('checkout-editaddress', {
+            address: userAddress,
+            priceDetails: priceDetails,
+            itemCount: cart.items.length,
+        });
+    } catch (error) {
+        console.log('error while geting edit address');
+        next(error);
+    }
 };
 export default {
     getCheckout,

@@ -11,7 +11,7 @@ adminRouter.use('/', authRoutes);
 adminRouter.use('/users', auth.adminCheck, customerRoutes);
 adminRouter.use('/category', auth.adminCheck, categoryRoutes);
 adminRouter.use('/product', auth.adminCheck, productRoutes);
-adminRouter.use('/orders', orderRoutes);
+adminRouter.use('/orders', auth.adminCheck, orderRoutes);
 adminRouter.use('/pagenotfound', async (req, res) => {
     res.render('adminpage-404');
 });

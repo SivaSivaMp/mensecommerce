@@ -191,7 +191,7 @@ const orderSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// Index for common queries
+// Index
 orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
 

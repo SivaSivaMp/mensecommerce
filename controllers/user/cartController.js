@@ -42,7 +42,6 @@ const viewCart = async (req, res, next) => {
         let totalDiscount = 0;
 
         const cartItems = cart.items.map((item) => {
-            // Ensure prices are valid numbers
             const originalPrice = item.productId.originalPrice
                 ? Number(item.productId.originalPrice)
                 : 0;
@@ -52,7 +51,6 @@ const viewCart = async (req, res, next) => {
                     ? Number(item.productId.salesPrice)
                     : originalPrice;
 
-            // Get variant quantity
             const variantQuantity = item.variantId
                 ? item.variantId.quantity
                 : 0;
@@ -269,7 +267,6 @@ const updateCartQuantity = async (req, res, next) => {
 
         const newQuantity = cartItem.quantity + quantityChange;
 
-        // Validate quantity is between 1 and 5
         if (newQuantity < 1) {
             return next(new AppError('Quantity cannot be less than 1', 400));
         }
@@ -281,7 +278,6 @@ const updateCartQuantity = async (req, res, next) => {
             });
         }
 
-        // Check stock availability
         const variant = await ProductVariant.findById(cartItem.variantId);
         if (!variant) {
             return next(new AppError('Product variant not found', 404));
@@ -294,7 +290,6 @@ const updateCartQuantity = async (req, res, next) => {
             });
         }
 
-        // Get product details for pricing
         const product = await Product.findById(cartItem.productId);
         if (!product) {
             return next(new AppError('Product not found', 404));

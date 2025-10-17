@@ -10,7 +10,6 @@ const placeOrder = async (req, res, next) => {
         const userId = getCurrentUserId(req);
         const { shippingAddressId, paymentMethod } = req.body;
 
-        // Validation
         if (!userId) {
             return next(new AppError('Please login to place an order', 401));
         }
@@ -28,7 +27,6 @@ const placeOrder = async (req, res, next) => {
             return next(new AppError('Invalid payment method', 400));
         }
 
-        // Get user's cart
         const cart = await Cart.findOne({ userId })
             .populate({
                 path: 'items.productId',
@@ -43,7 +41,6 @@ const placeOrder = async (req, res, next) => {
             return next(new AppError('Cart is empty', 400));
         }
 
-        // Get and validate shipping address
         const shippingAddress = await Address.findById(shippingAddressId);
         if (
             !shippingAddress ||
@@ -52,7 +49,6 @@ const placeOrder = async (req, res, next) => {
             return next(new AppError('Invalid shipping address', 404));
         }
 
-        // Calculate order totals and create ordered items
         let totalPrice = 0;
         let totalDiscount = 0;
         const orderedItems = [];
@@ -65,14 +61,12 @@ const placeOrder = async (req, res, next) => {
                 return next(new AppError('Product or variant not found', 404));
             }
 
-            // Check stock availability
             if (variant.quantity < item.quantity) {
                 return next(
                     new AppError(`Insufficient stock for ${product.name}`, 400)
                 );
             }
 
-            // Calculate price
             const originalPrice = Number(product.originalPrice) || 0;
             const salePrice =
                 product.salesPrice && Number(product.salesPrice) > 0
@@ -86,7 +80,6 @@ const placeOrder = async (req, res, next) => {
             totalPrice += itemOriginalTotal;
             totalDiscount += itemDiscount;
 
-            // Create ordered item
             orderedItems.push({
                 product: item.productId._id,
                 variant: item.variantId._id,
@@ -97,16 +90,13 @@ const placeOrder = async (req, res, next) => {
                 status: 'Pending',
             });
 
-            // Reduce variant stock
             variant.quantity -= item.quantity;
             await variant.save();
         }
 
-        // Calculate final amount (no platform fee)
-        const shipping = 0; // Can be changed based on your logic
+        const shipping = 0;
         const finalAmount = totalPrice - totalDiscount + shipping;
 
-        // Create order
         const order = new Order({
             userId,
             orderedItems,
@@ -134,7 +124,6 @@ const placeOrder = async (req, res, next) => {
 
         await order.save();
 
-        // Clear user's cart
         await Cart.deleteOne({ userId });
 
         return res.status(201).json({
@@ -158,7 +147,7 @@ const getOrders = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
         const page = parseInt(req.query.page) || 1;
-        const limit = 10; // Orders per page
+        const limit = 10;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.query || '';
 
@@ -166,11 +155,9 @@ const getOrders = async (req, res, next) => {
             return next(new AppError('Please login to view your orders', 401));
         }
 
-        // Build search filter
         let searchFilter = { userId };
 
         if (searchQuery) {
-            // Search by product name or order ID
             searchFilter.$or = [
                 { orderId: { $regex: searchQuery, $options: 'i' } },
                 {
@@ -182,11 +169,9 @@ const getOrders = async (req, res, next) => {
             ];
         }
 
-        // Get total count for pagination
         const totalOrders = await Order.countDocuments(searchFilter);
         const totalPages = Math.ceil(totalOrders / limit);
 
-        // Fetch orders with pagination
         const orders = await Order.find(searchFilter)
             .populate({
                 path: 'orderedItems.product',
@@ -196,7 +181,6 @@ const getOrders = async (req, res, next) => {
             .skip(skip)
             .limit(limit);
 
-        // Format orders for display
         const formattedOrders = [];
 
         orders.forEach((order) => {
@@ -220,7 +204,6 @@ const getOrders = async (req, res, next) => {
             });
         });
 
-        // Pagination data
         const pagination = {
             currentPage: page,
             totalPages: totalPages,
@@ -231,7 +214,6 @@ const getOrders = async (req, res, next) => {
             pages: [],
         };
 
-        // Generate page numbers (show max 5 pages)
         const startPage = Math.max(1, page - 2);
         const endPage = Math.min(totalPages, page + 2);
 
@@ -262,7 +244,6 @@ const getOrderDetails = async (req, res, next) => {
             );
         }
 
-        // Find order by orderId (UUID string, not MongoDB _id)
         const order = await Order.findOne({ orderId: orderId })
             .populate({
                 path: 'orderedItems.product',
@@ -277,12 +258,10 @@ const getOrderDetails = async (req, res, next) => {
             return next(new AppError('Order not found', 404));
         }
 
-        // Verify order belongs to user
         if (order.userId.toString() !== userId.toString()) {
             return next(new AppError('Unauthorized access', 403));
         }
 
-        // Format ordered items
         const orderedItems = order.orderedItems.map((item) => ({
             _id: item._id,
             productId: item.product._id,
@@ -303,10 +282,9 @@ const getOrderDetails = async (req, res, next) => {
                 item.status === 'Delivered' &&
                 item.deliveredDate &&
                 new Date() - new Date(item.deliveredDate) <=
-                    7 * 24 * 60 * 60 * 1000, // 7 days
+                    7 * 24 * 60 * 60 * 1000,
         }));
 
-        // Calculate order summary
         const orderSummary = {
             totalPrice: order.totalPrice,
             discount: order.discount,
@@ -315,7 +293,6 @@ const getOrderDetails = async (req, res, next) => {
             savings: order.discount,
         };
 
-        // Format shipping address
         const shippingAddress = {
             addressType: order.shippingAddress.addressType,
             name: order.shippingAddress.name,
@@ -329,7 +306,6 @@ const getOrderDetails = async (req, res, next) => {
             altPhone: order.shippingAddress.altPhone,
         };
 
-        // Order status timeline
         const statusTimeline = [
             {
                 status: 'Pending',
@@ -374,7 +350,6 @@ const getOrderDetails = async (req, res, next) => {
             },
         ];
 
-        // Tracking info
         const trackingInfo = order.trackingInfo || {};
 
         return res.render('order-details', {

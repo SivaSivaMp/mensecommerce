@@ -248,53 +248,55 @@ label span:hover {
 
       
         <!-- Price Details Section -->
-        <div class="tf-page-cart-footer">
-          <div class="tf-cart-footer-inner">
-            <div class="tf-page-cart-checkout">
-              <div class="price-details-box">
+  <div class="tf-page-cart-footer">
+    <div class="tf-cart-footer-inner">
+        <div class="tf-page-cart-checkout">
+            <div class="price-details-box">
                 <h2>PRICE DETAILS</h2>
-
-                <div class="price-row">
-                  <span>Price </span>
-                  <span>₹234</span>
-                </div>
-
                 
-                  <div class="price-row discount">
-                    <span>Discount</span>
-                    <span>- ₹</span>
-                  </div>
-                
-
                 <div class="price-row">
-                  <span>Platform Fee</span>
-                  <span>₹</span>
+                    <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %>)</span>
+                    <span>₹<%= priceDetails.totalPrice.toLocaleString('en-IN') %></span>
                 </div>
-
+                
+                <% if (priceDetails.discount > 0) { %>
+                    <div class="price-row discount">
+                        <span>Discount</span>
+                        <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
+                    </div>
+                <% } %>
+                
+                <% if (priceDetails.platformFee > 0) { %>
+                    <div class="price-row">
+                        <span>Platform Fee</span>
+                        <span>₹<%= priceDetails.platformFee %></span>
+                    </div>
+                <% } %>
+                
                 <hr class="divider">
-
+                
                 <div class="price-row total">
-                  <strong>Total Amount</strong>
-                  <strong>₹</strong>
+                    <strong>Total Amount</strong>
+                    <strong>₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
                 </div>
-
+                
                 <hr class="divider">
-
                 
-                  <div class="save-text">
-                    You will save <span class="green">₹</span> on this order
-                  </div>
-                
-              </div>
-
-              <div class="cart-checkout-btn">
-                <button type="button" class="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center checkout-btn">
-                  <span>Continue Payment</span>
-                </button>
-              </div>
+                <% if (priceDetails.savings > 0) { %>
+                    <div class="save-text">
+                        You will save <span class="green">₹<%= priceDetails.savings.toLocaleString('en-IN') %></span> on this order
+                    </div>
+                <% } %>
             </div>
-          </div>
+            
+            <div class="cart-checkout-btn">
+                <button type="button" class="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center checkout-btn" onclick="window.location.href='/checkout'">
+                    <span>Continue Payment</span>
+                </button>
+            </div>
         </div>
+    </div>
+</div>
         <!-- End of Price Details Section -->
       
     </div>
@@ -460,7 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
         successBox.classList.remove('d-none');
 
         setTimeout(() => {
-          window.location.href = res.data.redirectUrl || '/profile/address';
+          window.location.href =  '/checkout';
         }, 1200);
       }
     } catch (error) {

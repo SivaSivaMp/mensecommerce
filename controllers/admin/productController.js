@@ -321,10 +321,8 @@ const editProduct = async (req, res, next) => {
         const imagesToRemove = JSON.parse(removedImages);
 
         if (imagesToRemove.length > 0) {
-            // Remove from Cloudinary
             for (const imageUrl of imagesToRemove) {
                 try {
-                    // Extract public_id from Cloudinary URL
                     const parts = imageUrl.split('/');
                     const filename = parts[parts.length - 1];
                     const publicId = `products/${filename.split('.')[0]}`;
@@ -397,7 +395,6 @@ const editProduct = async (req, res, next) => {
             { new: true, runValidators: true }
         );
 
-        // 9. Update product variants
         await ProductVariant.deleteMany({ productId });
 
         const variantDocs = sizeVariants.map((v) => ({

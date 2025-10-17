@@ -65,7 +65,7 @@ const addCategory = async (req, res, next) => {
         }
 
         const existingCategory = await Category.findOne({
-            categoryName: name,
+            categoryName: { $regex: name.trim(), $options: 'i' },
         });
         if (existingCategory) {
             return next(
@@ -131,7 +131,9 @@ const editCategory = async (req, res, next) => {
                 )
             );
         }
-        const existingCategory = await Category.findOne({ categoryName: name });
+        const existingCategory = await Category.findOne({
+            categoryName: { $regex: name.trim(), $options: 'i' },
+        });
         if (existingCategory) {
             return next(
                 new AppError(
