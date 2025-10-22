@@ -185,6 +185,7 @@ const getProductDetails = async (req, res, next) => {
                 new AppError('product doest exist, please refresh', 404)
             );
         }
+
         const productAgg = await Product.aggregate([
             {
                 $match: {
@@ -253,6 +254,11 @@ const getProductDetails = async (req, res, next) => {
             ...size,
             isLowStock: size.stock > 0 && size.stock <= 2,
         }));
+        if (!product.isListed) {
+            return next(
+                new AppError('this product currently not available', 404)
+            );
+        }
         const similarProducts = await Product.aggregate([
             {
                 $match: {

@@ -117,7 +117,7 @@ const addProduct = async (req, res, next) => {
         if (originalPrice < 0 || salesPrice < 0) {
             return next(new AppError('price should not be less than 0', 400));
         }
-        if (originalPrice < salesPrice) {
+        if (originalPrice > salesPrice) {
             return next(
                 new AppError(
                     'sale price should be less than original price',

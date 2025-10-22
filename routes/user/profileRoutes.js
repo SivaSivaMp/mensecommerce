@@ -2,6 +2,7 @@ import { Router } from 'express';
 import profileController from '../../controllers/user/profileController.js';
 import addressController from '../../controllers/user/addressController.js';
 import orderController from '../../controllers/user/orderController.js';
+import upload from '../../middleware/uploadMiddleware.js';
 const router = Router();
 
 router.route('/').get(profileController.getProfile);
@@ -12,6 +13,9 @@ router
     .route('/profile-edit')
     .get(profileController.getEditProfile)
     .patch(profileController.editPersonalInformation);
+router
+    .route('/upload-image')
+    .post(upload.single('profileImage'), profileController.uploadProfileImage);
 
 router.route('/email-edit').patch(profileController.editEmail);
 router

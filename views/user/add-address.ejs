@@ -143,6 +143,13 @@ label span:hover {
   z-index: 1000;
   animation: fadeInOut 2s ease-in-out;
 }
+  .error-message {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            margin-bottom: 0.5rem;
+            display: none;
+        }
 
 @keyframes fadeInOut {
   0% { opacity: 0; transform: translateY(-15px); }
@@ -151,6 +158,19 @@ label span:hover {
   100% { opacity: 0; transform: translateY(-15px); }
 }
 </style>
+<div class="tf-breadcrumb">
+            <div class="container">
+                <div class="tf-breadcrumb-wrap d-flex justify-content-between flex-wrap align-items-center">
+                    <div class="tf-breadcrumb-list">
+                        <a href="/" class="text">Home</a>
+                        <i class="icon icon-arrow-right"></i>
+                        <a href="/profile/address" class="text">Address</a>
+                        <i class="icon icon-arrow-right"></i>
+                        <span class="text">Add Address</span>
+                    </div> 
+                </div>
+            </div>
+        </div>
 
 <section class="flat-spacing-11">
   <div class="container">
@@ -176,10 +196,12 @@ label span:hover {
               <div class="col-md-6">
                 <small>Flat No/Building*</small>
                 <input type="text" id="building" class="form-control" placeholder="Flat No/Building*" />
+                <div id="error-1" class="error-message"></div>
               </div>
               <div class="col-md-6">
                 <small>Street Name/Area*</small>
                 <input type="text" id="street" class="form-control" placeholder="Street Name/Area*" />
+                <div id="error-2" class="error-message"></div>
               </div>
               <div class="col-md-6">
                 <small>Landmark</small>
@@ -188,14 +210,17 @@ label span:hover {
               <div class="col-md-6">
                 <small>Pincode*</small>
                 <input type="text" id="pincode" class="form-control" placeholder="Pincode*" />
+                <div id="error-3" class="error-message"></div>
               </div>
               <div class="col-md-6">
                 <small>City/District*</small>
                 <input type="text" id="city" class="form-control" placeholder="City/District*" />
+                <div id="error-4" class="error-message"></div>
               </div>
               <div class="col-md-6">
                 <small>State*</small>
                 <input type="text" id="state" class="form-control" placeholder="State*" />
+                <div id="error-5" class="error-message"></div>
               </div>
 
               <h6 class="mb-2 mt-3">Personal Information</h6>
@@ -206,10 +231,12 @@ label span:hover {
               <div class="col-md-6">
                 <small>Phone number*</small>
                 <input type="tel" id="phone" class="form-control" placeholder="Phone number*" />
+                <div id="error-6" class="error-message"></div>
               </div>
               <div class="col-md-6">
                 <small>Alternative Phone number</small>
                 <input type="tel" id="altPhone" class="form-control" placeholder="Alternative Phone number" />
+                <div id="error-7" class="error-message"></div>
               </div>
 
               <h6 class="mb-2 mt-3">Save Address as</h6>
@@ -226,6 +253,7 @@ label span:hover {
                   <input type="radio" name="addressType" value="Other" />
                   <span>Other</span>
                 </label>
+                <div id="error-8" class="error-message"></div>
               </div>
 
               <!-- Alert Messages -->
@@ -244,53 +272,133 @@ label span:hover {
 </section>
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script>
+<script src="https://cdn.jsdelivr.net/npm/validator@13.9.0/validator.min.js"></script>
+
+<!-- form validation -->
+ <script>
 document.addEventListener('DOMContentLoaded', () => {
   const addressForm = document.getElementById('add-address-form');
-  const errorBox = document.getElementById('error-message');
-  const successBox = document.getElementById('success-message');
-  const submitBtn = addressForm.querySelector('button[type="submit"]');
 
+  const fields = {
+    building: document.getElementById('building'),
+    street: document.getElementById('street'),
+    landmark: document.getElementById('landmark'),
+    pincode: document.getElementById('pincode'),
+    city: document.getElementById('city'),
+    state: document.getElementById('state'),
+    name: document.getElementById('name'),
+    phone: document.getElementById('phone'),
+    altPhone: document.getElementById('altPhone'),
+    addressType: () => document.querySelector('input[name="addressType"]:checked')
+  };
+
+  const errors = {
+    building: document.getElementById('error-1'),
+    street: document.getElementById('error-2'),
+    pincode: document.getElementById('error-3'),
+    city: document.getElementById('error-4'),
+    state: document.getElementById('error-5'),
+    phone: document.getElementById('error-6'),
+    altPhone: document.getElementById('error-7'),
+    addressType:document.getElementById('error-8')
+  };
+
+  const showError = (el, msg) => { el.textContent = msg; el.style.display = 'block'; };
+  const hideError = (el) => { el.textContent = ''; el.style.display = 'none'; };
+  const clearErrors = () => Object.values(errors).forEach(hideError);
+  const namepattern = /^[A-Za-z\s]+$/;
+  // Real-time validation on blur
+  Object.keys(fields).forEach(key => {
+    if (key !== 'addressType') {
+      fields[key].addEventListener('blur', () => validateField(key));
+    }
+  });
+
+  const validateField = (key) => {
+    const value = fields[key].value.trim();
+    switch(key) {
+      case 'building':
+      case 'street':
+        if (validator.isEmpty(value)) showError(errors[key], `${key.charAt(0).toUpperCase() + key.slice(1)} is required`);
+        else hideError(errors[key]);
+        break;
+      case 'pincode':
+        if (validator.isEmpty(value)) showError(errors.pincode, 'Pincode is required');
+        else if (!validator.isPostalCode(value, 'IN')) showError(errors.pincode, 'Invalid pincode');
+        else hideError(errors.pincode);
+        break;
+      case 'city':
+        if (validator.isEmpty(value)) showError(errors[key], `${key.charAt(0).toUpperCase() + key.slice(1)} is required`);
+        
+        else hideError(errors[key]);
+        break;
+
+      case 'state':
+        if (validator.isEmpty(value)) showError(errors[key], `${key.charAt(0).toUpperCase() + key.slice(1)} is required`);
+        if(!namepattern.test(value))showError(errors[key], ` Only alphabets are allowed`);
+        else hideError(errors[key]);
+        break;
+      case 'phone':
+        if (validator.isEmpty(value)) showError(errors.phone, 'Phone is required');
+        else if (!validator.isMobilePhone(value, 'en-IN')) showError(errors.phone, 'Invalid phone number');
+        else hideError(errors.phone);
+        break;
+      case 'altPhone':
+        if (value && !validator.isMobilePhone(value, 'en-IN')) showError(errors.altPhone, 'Invalid alternate phone');
+        else hideError(errors.altPhone);
+        break;
+    }
+  };
+
+  // Final validation on submit
   addressForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    clearErrors();
+    let hasError = false;
 
-    const formData = {
-      building: document.getElementById('building').value.trim(),
-      street: document.getElementById('street').value.trim(),
-      landmark: document.getElementById('landmark').value.trim(),
-      pincode: document.getElementById('pincode').value.trim(),
-      city: document.getElementById('city').value.trim(),
-      state: document.getElementById('state').value.trim(),
-      name: document.getElementById('name').value.trim(),
-      phone: document.getElementById('phone').value.trim(),
-      altPhone: document.getElementById('altPhone').value.trim(),
-      addressType: document.querySelector('input[name="addressType"]:checked')?.value || ''
-    };
+    // Validate all fields
+    Object.keys(fields).forEach(key => {
+      if (key !== 'addressType') validateField(key);
+      if (errors[key] && errors[key].textContent) hasError = true;
+    });
 
-    // quick front-end validation
-    if ( !formData.pincode || !formData.city || !formData.state || !formData.phone  || !formData.addressType) {
-      errorBox.textContent = 'Please fill all required fields.';
-      errorBox.classList.remove('d-none');
-      return;
+    // Validate address type radio
+    if (!fields.addressType()) {
+      showError(errors.altPhaddressTypeone, 'Please select an address type (Home/Work/Other)')
+      
+      hasError = true;
     }
 
-    errorBox.classList.add('d-none');
-    successBox.classList.add('d-none');
+    if (hasError) return;
+
+    // Prepare form data
+    const formData = {
+      building: fields.building.value.trim(),
+      street: fields.street.value.trim(),
+      landmark: fields.landmark.value.trim(),
+      pincode: fields.pincode.value.trim(),
+      city: fields.city.value.trim(),
+      state: fields.state.value.trim(),
+      name: fields.name.value.trim(),
+      phone: fields.phone.value.trim(),
+      altPhone: fields.altPhone.value.trim(),
+      addressType: fields.addressType().value
+    };
+
+    const submitBtn = addressForm.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
 
     try {
       const res = await axios.post('/profile/address-add', formData);
       if (res.data.status === 'success') {
-        successBox.textContent = res?.data?.message;
+        const successBox = document.getElementById('success-message');
+        successBox.textContent = res.data.message || 'Address saved successfully!';
         successBox.classList.remove('d-none');
-
-        setTimeout(() => {
-          window.location.href = res.data.redirectUrl || '/profile/address';
-        }, 1200);
+        setTimeout(() => window.location.href = res.data.redirectUrl || '/profile/address', 1200);
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Something went wrong while saving address.';
-      errorBox.textContent = msg;
+      const errorBox = document.getElementById('error-message');
+      errorBox.textContent = err.response?.data?.message || 'Something went wrong.';
       errorBox.classList.remove('d-none');
     } finally {
       submitBtn.disabled = false;
@@ -298,8 +406,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
-
-
         <!-- page-cart -->
 
    <%-include("../partials/user/footer")%>

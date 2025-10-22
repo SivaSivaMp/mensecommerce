@@ -10,7 +10,7 @@
     <!-- plugin css file  -->
     <link rel="stylesheet" href="/assets/plugin/datatables/responsive.dataTables.min.css">
     <link rel="stylesheet" href="/assets/plugin/datatables/dataTables.bootstrap5.min.css">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <!-- project css file  -->
     <link rel="stylesheet" href="/assets/css/ebazar.style.min.css">
 </head>
@@ -79,15 +79,12 @@
                                                             <td><%= user.email %></td>
                                                             <td><%= user.phone %></td>
                                                             <td>
-                                                                <% if(user.isBlocked === false) { %>
-                                                                    <button type="button" class="btn btn-danger" style="width: 80px;">
-                                                                        <a href="/admin/users/blockCustomer?id=<%= user._id %>" class="text-white" style="text-decoration: none;">Block</a>
-                                                                    </button>
-                                                                <% } else { %>
-                                                                    <button type="button" class="btn btn-success" style="width: 80px;">
-                                                                        <a href="/admin/users/unblockCustomer?id=<%= user._id %>" class="text-white" style="text-decoration: none;">Unblock</a>
-                                                                    </button>
-                                                                <% } %>
+                                                            <button 
+                                                                class="btn toggle-block-btn <%= user.isBlocked ? 'btn-success' : 'btn-danger' %>" 
+                                                                data-user-id="<%= user._id %>"
+                                                                data-status="<%= user.isBlocked ? 'unblock' : 'block' %>">
+                                                                <%= user.isBlocked ? 'Unblock' : 'Block' %>
+                                                            </button>
                                                             </td>
                                                         </tr>
                                                         <% }) %>
@@ -133,6 +130,8 @@
 
     <!-- Jquery Page Js -->
     <script src="../js/template.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script>
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -161,5 +160,80 @@
             
         });
     </script>
+  <script>
+    function showSuccessToast(message) {
+        if (typeof Toastify !== 'undefined') {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "#28a745",
+                close: true
+            }).showToast();
+        } else alert(message);
+    }
+    function showErrorToast(message) {
+        if (typeof Toastify !== 'undefined') {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: "#FF0000",
+                close: true
+            }).showToast();
+        } else alert(message);
+    }
+        function showWarningToast(message) {
+                    if (typeof Toastify !== 'undefined') {
+                        Toastify({
+                            text: message,
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#ffc107",
+                            close: true
+                        }).showToast();
+                    } else {
+                        alert(message); 
+                    }
+                }
+  </script>  
+<script>
+document.querySelectorAll('.toggle-block-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const userId = btn.dataset.userId;
+    const action = btn.dataset.status; 
+    
+    
+
+    try {
+      const res = await axios.patch(`/admin/users/${action}Customer`, { id: userId });
+      if (res.data.status === 'success') {
+        // Toggle UI instantly
+        if (action === 'block') {
+          btn.textContent = 'Unblock';
+          btn.classList.remove('btn-danger');
+          btn.classList.add('btn-success');
+          btn.dataset.status = 'unblock';
+          showWarningToast(res.data.message)
+        } else {
+          btn.textContent = 'Block';
+          btn.classList.remove('btn-success');
+          btn.classList.add('btn-danger');
+          btn.dataset.status = 'block';
+          showSuccessToast(res.data.message)
+        }
+      }
+    } catch (err) {
+      console.error('Error updating user:', err);
+      showErrorToast('Failed to update user status');
+    }
+  });
+
+  
+});
+</script>
 </body>
 </html>

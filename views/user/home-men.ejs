@@ -148,9 +148,10 @@
                                     <span>Sold out</span>
                                     </div>
                                 <% } %>
-
+                                    <form id="wishlist-form">
                                 <div class="list-product-btn">
-                                    <a href="javascript:void(0);" class="box-icon bg_white wishlist btn-icon-action">
+                                    <input type="hidden" name="productId" id="cart-productId" value="<%= product._id %>">
+                                    <a href="javascript:void(0);" class="box-icon bg_white wishlist btn-icon-action" id="wishist-remove">
                                     <span class="icon icon-heart"></span>
                                     <span class="tooltip">Add to Wishlist</span>
                                     <span class="icon icon-delete"></span>
@@ -160,6 +161,7 @@
                                     <span class="tooltip">Quick View</span>
                                     </a>
                                 </div>
+                                </form>
 
                                 <% if (product.availableSizes && product.availableSizes.length > 0) { %>
                                     <div class="size-list">
@@ -279,5 +281,121 @@
                 </div>
             </div>
         </section>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+           
+            document.querySelectorAll('#wishist-remove').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    
+                    // Get the form and extract productId
+                    const form = btn.closest('#wishlist-form');
+                    const productId = form.querySelector('#cart-productId').value;
+                    
+                    if (!productId) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: 'Product ID not found',
+                        });
+                        return;
+                    }
+
+                    try {
+                        Swal.fire({
+                            title: 'Updating wishlist...',
+                            allowOutsideClick: false,
+                            didOpen: () => Swal.showLoading()
+                        });
+
+                        const response = await axios.post(`/wishlist/${productId}`);
+
+                        Swal.close();
+
+                        if (response.data.status === 'success') {
+                            // Item was added to wishlist
+                            if (response.data.added) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Added to Wishlist!',
+                                    text: response.data.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                
+                                // Change icon from heart to delete
+                                const heartIcon = btn.querySelector('.icon-heart');
+                                const deleteIcon = btn.querySelector('.icon-delete');
+                                const tooltip = btn.querySelector('.tooltip');
+                                
+                                if (heartIcon) heartIcon.style.display = 'none';
+                                if (deleteIcon) deleteIcon.style.display = 'inline-block';
+                                if (tooltip) tooltip.textContent = 'Remove from Wishlist';
+                                
+                                btn.classList.add('active');
+                            } 
+                            // Item was removed from wishlist
+                            else if (response.data.removed) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Removed from Wishlist!',
+                                    text: response.data.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                                
+                                // Change icon from delete back to heart
+                                const heartIcon = btn.querySelector('.icon-heart');
+                                const deleteIcon = btn.querySelector('.icon-delete');
+                                const tooltip = btn.querySelector('.tooltip');
+                                
+                                if (heartIcon) heartIcon.style.display = 'inline-block';
+                                if (deleteIcon) deleteIcon.style.display = 'none';
+                                if (tooltip) tooltip.textContent = 'Add to Wishlist';
+                                
+                                btn.classList.remove('active');
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Something went wrong!',
+                                text: response.data.message || 'Try again later.',
+                            });
+                        }
+
+                    } catch (error) {
+                        Swal.close();
+                        handleAuthError(error);
+                    }
+                });
+            });
+        });
+
+        // Common auth error handler
+        function handleAuthError(error) {
+            if (error.response?.status === 401) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Login Required',
+                    text: 'You must be logged in to continue.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Login Now',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33'
+                }).then((result) => {
+                    if (result.isConfirmed) window.location.href = '/login';
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error!',
+                    text: error.response?.data?.message || 'Something went wrong',
+                });
+            }
+}
+        </script>
 
   <%-include("../partials/user/footer")%>

@@ -113,13 +113,27 @@
         100% { opacity: 0; transform: translateY(-20px); }
     }
     </style>
-        <!-- page-title -->
-        
-        <!-- /page-title -->
+<!-- breadcrumb -->
+<div class="tf-breadcrumb">
+            <div class="container">
+                <div class="tf-breadcrumb-wrap d-flex justify-content-between flex-wrap align-items-center">
+                    <div class="tf-breadcrumb-list">
+                        <a href="/" class="text">Home</a>
+                        <i class="icon icon-arrow-right"></i>
+                        <span class="text">profile</span>
+                        
+                    </div> 
+                </div>
+            </div>
+        </div>
+        <!-- /breadcrumb -->
         
         <!-- page-cart -->
         <section class="flat-spacing-11">
             <div class="container">
+                
+                
+                
                 <div class="row">
                     <div class="col-lg-3">
                         <ul class="my-account-nav">
@@ -131,7 +145,9 @@
                             <li><a href="/logout" class="my-account-nav-item">Logout</a></li>
                         </ul>
                     </div>
+                    
                 <div class="col-md-9">
+                    
                 <!-- Profile Form -->
                 <div class="profile-card">
                     <h4 class="mb-4">My Profile </h4>
@@ -253,7 +269,7 @@
                 setTimeout(() => {
                     successBox.classList.add("d-none");
                     errorBox.classList.add("d-none");
-                }, 1500);
+                }, 3000);
                 const formData={
                     currentPassword:document.getElementById('current-password').value,
                     newPassword:document.getElementById('new-password').value,

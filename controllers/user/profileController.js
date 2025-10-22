@@ -5,6 +5,8 @@ import { sendVerificationEmail } from '../../utils/email.js';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
+import cloudinary from '../../config/cloudinaryConfig.js';
+import upload from '../../middleware/uploadMiddleware.js';
 const getForgotPassword = async (req, res) => {
     if (getCurrentUserId(req)) {
         return res.redirect('/');
@@ -314,7 +316,45 @@ const resetEmailOtpVerification = async (req, res, next) => {
         next(error);
     }
 };
+const uploadProfileImage = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'No image file provided.',
+            });
+        }
 
+        // Upload to Cloudinary (use buffer since using memoryStorage)
+        const uploadResult = await new Promise((resolve, reject) => {
+            cloudinary.uploader
+                .upload_stream(
+                    { folder: 'profile_images', resource_type: 'image' },
+                    (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }
+                )
+                .end(req.file.buffer);
+        });
+
+        await User.findByIdAndUpdate(getCurrentUserId(req), {
+            profileImage: uploadResult.secure_url,
+        });
+
+        res.json({
+            status: 'success',
+            message: 'Profile image updated successfully.',
+            imageUrl: uploadResult.secure_url,
+        });
+    } catch (error) {
+        console.error('Cloudinary upload error:', error);
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error uploading profile image.',
+        });
+    }
+};
 export default {
     getForgotPassword,
     emailVerification,
@@ -323,7 +363,7 @@ export default {
     getResetPassword,
     resetPassword,
     getProfile,
-
+    uploadProfileImage,
     profileChangePassword,
     getEditProfile,
     editPersonalInformation,

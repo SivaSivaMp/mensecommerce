@@ -201,7 +201,7 @@ const logout = async (req, res, next) => {
     req.session.destroy((err) => {
         next(new AppError('logout unsuccsfull', 400));
     });
-    res.clearCookie('connect.sid');
+    res.clearCookie('user_session');
     return res.redirect('/');
 };
 

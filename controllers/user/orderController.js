@@ -147,7 +147,7 @@ const getOrders = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
         const page = parseInt(req.query.page) || 1;
-        const limit = 10;
+        const limit = 2;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.query || '';
 
@@ -175,6 +175,7 @@ const getOrders = async (req, res, next) => {
         const orders = await Order.find(searchFilter)
             .populate({
                 path: 'orderedItems.product',
+
                 select: 'name images',
             })
             .sort({ createdAt: -1 })

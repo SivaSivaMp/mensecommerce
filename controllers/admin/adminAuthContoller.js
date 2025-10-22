@@ -14,18 +14,13 @@ const getAdminLogin = async (req, res, next) => {
     }
 };
 // logout
-const logout = async (req, res) => {
-    try {
-        if (req.session.admin) {
-            delete req.session.admin;
-        }
-        res.redirect('/admin/login');
-    } catch (error) {
-        console.log('unexpected error during logout');
-        res.redirect('/admin/dashbord');
-    }
+const logout = async (req, res, next) => {
+    req.session.destroy((err) => {
+        next(new AppError('logout unsuccsfull', 400));
+    });
+    res.clearCookie('admin_session');
+    return res.redirect('/admin/login');
 };
-
 // login
 
 const login = async (req, res, next) => {

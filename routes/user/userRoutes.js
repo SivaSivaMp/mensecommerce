@@ -16,10 +16,10 @@ userRouter.use('/profile', auth.userAuth, profileRoutes);
 // main view routes
 userRouter.use('/', auth.blockCheck, viewRoutes);
 // wishlist related routes
-userRouter.use('/wishlist', auth.userAuth, wishlistRoutes);
+userRouter.use('/wishlist', wishlistRoutes);
 
 // cart routes
-userRouter.use('/cart', auth.userAuth, cartRoutes);
+userRouter.use('/cart', cartRoutes);
 // checkout routes
 userRouter.use('/checkout', auth.userAuth, checkoutRoutes);
 // order routes

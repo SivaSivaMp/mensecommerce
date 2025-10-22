@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Schema } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-
+import Counter from './counterSchema.js';
 const orderedItemSchema = new mongoose.Schema(
     {
         product: {
@@ -96,7 +96,6 @@ const orderSchema = new mongoose.Schema(
     {
         orderId: {
             type: String,
-            default: () => uuidv4(),
             unique: true,
             index: true,
         },
@@ -194,6 +193,28 @@ const orderSchema = new mongoose.Schema(
 // Index
 orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
+orderSchema.pre('save', async function (next) {
+    if (!this.isNew) return next();
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear()).slice(-2);
+    const dateCode = `${day}${month}${year}`;
+
+    const counterName = `order-${dateCode}`;
+
+    // Increment or create today's counter
+    const counter = await Counter.findOneAndUpdate(
+        { name: counterName },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    );
+
+    const sequence = String(counter.seq).padStart(4, '0');
+    this.orderId = `ORD-${dateCode}-${sequence}`;
+    next();
+});
 
 const Order = mongoose.model('Order', orderSchema);
 export default Order;

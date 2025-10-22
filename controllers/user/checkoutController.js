@@ -8,7 +8,7 @@ const getCheckout = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
         const page = parseInt(req.query.page) || 1;
-        const itemsPerPage = 3;
+        const itemsPerPage = 2;
         const skip = (page - 1) * itemsPerPage;
 
         if (!userId) {

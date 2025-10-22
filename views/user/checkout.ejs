@@ -389,7 +389,96 @@
             </a>
           </div>
         <% } %>
+        <div class="profile-card">
+          <div class="tf-page-cart-item overflow-auto" style="max-height: 400px;">
+            <% if (cartItems.length > 0) { %>
+              <form id="cart-form">
+                <table class="tf-table-page-cart table table-bordered align-middle ">
+                  <thead class="table-light sticky-header">
+                    <tr>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Quantity</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% cartItems.forEach((item) => {
+                      const isOutOfStock = item.isOutOfStock;
+                      const isUnlisted = item.isUnlisted || item.isUnlistedProduct || item.isUnlistedCategory; 
+                    %>
+                      <tr class="tf-cart-item file-delete" 
+                          data-product-id="<%= item.productId %>" 
+                          data-in-stock="<%= !isOutOfStock %>">
+                        
+                        <!-- Product Column -->
+                        <td class="tf-cart-item_product">
+                          <a href="/product-detail/<%= item.productId %>" class="img-box">
+                            <img src="<%= item.productImage %>" alt="<%= item.productName %>">
+                          </a>
+                          <div class="cart-info">
+                            <a href="/product-detail/<%= item.productId %>" class="cart-title link"><%= item.productName %></a>
+                            <div class="cart-meta-variant">
+                              <%= item.size %>
+                              <strike>
+                                <div class="cart-meta-variant">₹<%= item.originalPrice.toLocaleString('en-IN') %></div>
+                              </strike>
+                            </div>
+
+                            <% if (isOutOfStock) { %>
+                              <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Out of Stock</span>
+                              <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                            <% } else if (isUnlisted) { %>
+                              <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Product not Available</span>
+                              <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                            <% } else { %>
+                              <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                            <% } %>
+                          </div>
+                        </td>
+
+                        <!-- Price Column -->
+                        <td class="tf-cart-item_price" cart-data-title="Price">
+                          <div class="cart-price">₹<%= item.salePrice.toLocaleString('en-IN') %></div>
+                        </td>
+
+                        <!-- Quantity Column (only show if available & listed) -->
+                        <% if (!isOutOfStock && !isUnlisted) { %>
+                          <td class="tf-cart-item_quantity justify-content-center" cart-data-title="Quantity">
+                            
+                              <div class="wg-quantity">
+                                <input type="text" name="quantity" value="<%= item.quantity %>" data-item-id="<%= item._id %>" readonly>
+                              </div>
+                            
+                          </td>
+                        <% } else { %>
+                          <td class="tf-cart-item_quantity" cart-data-title="Quantity">
+                            <div class="cart-quantity" style="color:#d32f2f;font-weight:500;">
+                              N/A
+                            </div>
+                          </td>
+                        <% } %>
+
+                        <!-- Total Column -->
+                        <td class="tf-cart-item_total" cart-data-title="Total">
+                          <div class="cart-total">₹<%= (item.salePrice * item.quantity).toLocaleString('en-IN') %></div>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+            </table>
+          </form>
+        <% } else { %>
+          <div style="text-align: center; padding: 40px;">
+            <p style="font-size: 18px; color: #666;">Your cart is empty</p>
+            <a href="/shop" class="tf-btn btn-fill animate-hover-btn radius-3" style="display: inline-block; margin-top: 20px;">
+              <span>Continue Shopping</span>
+            </a>
+          </div>
+        <% } %>
       </div>
+    </div>
+  </div>
 
       <% if (!cartEmpty) { %>
         <!-- Price Details Section -->

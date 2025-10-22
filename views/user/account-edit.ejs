@@ -113,9 +113,21 @@
         100% { opacity: 0; transform: translateY(-20px); }
     }
     </style>
-        <!-- page-title -->
-        
-        <!-- /page-title -->
+<!-- breadcrumb -->
+<div class="tf-breadcrumb">
+            <div class="container">
+                <div class="tf-breadcrumb-wrap d-flex justify-content-between flex-wrap align-items-center">
+                    <div class="tf-breadcrumb-list">
+                        <a href="/" class="text">Home</a>
+                        <i class="icon icon-arrow-right"></i>
+                        <a href="/profile" class="text">profile</a>
+                        <i class="icon icon-arrow-right"></i>
+                        <span class="text">profile</span>
+                    </div> 
+                </div>
+            </div>
+        </div>
+        <!-- /breadcrumb -->
         
         <!-- page-cart -->
         <section class="flat-spacing-11">
@@ -176,7 +188,22 @@
                             </div>
                         </div>
                    </form>     
-                </div>                
+                </div>  
+                <div class="profile-card">
+                <h4 class="mb-4">Edit Profile Image </h4>
+<div class="profile-block text-center w220 mx-auto">
+  <img id="profile-preview" src="<%= user.profileImage || '/images/default-avatar.png' %>" 
+       alt="Profile Image" class="avatar xl rounded img-thumbnail shadow-sm mb-3">
+  
+  <form id="upload-image-form" enctype="multipart/form-data">
+    <input type="file" name="profileImage" id="profileImage" accept="image/*" class="form-control mb-3">
+    <button type="submit" class="save-btn">UPLOAD IMAGE</button>
+  </form>
+
+  <div id="image-success" class="alert alert-success d-none" role="alert"></div>
+  <div id="image-error" class="alert alert-danger d-none" role="alert"></div>
+</div>
+                </div>              
               
                 
             </div>
@@ -267,6 +294,44 @@
 
             })
         })
+        </script>
+        <script>
+// image upload handler
+const imageForm = document.getElementById('upload-image-form');
+if (imageForm) {
+  imageForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const imageSuccess = document.getElementById("image-success");
+    const imageError = document.getElementById("image-error");
+    imageSuccess.classList.add("d-none");
+    imageError.classList.add("d-none");
+
+    const fileInput = document.getElementById("profileImage");
+    if (!fileInput.files.length) {
+      imageError.textContent = "Please select an image first.";
+      imageError.classList.remove("d-none");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("profileImage", fileInput.files[0]);
+
+    try {
+      const res = await axios.post("/profile/upload-image", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (res.data.status === "success") {
+        imageSuccess.textContent = res.data.message;
+        imageSuccess.classList.remove("d-none");
+        document.getElementById("profile-preview").src = res.data.imageUrl;
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Upload failed.";
+      imageError.textContent = msg;
+      imageError.classList.remove("d-none");
+    }
+  });
+}
         </script>
 
 

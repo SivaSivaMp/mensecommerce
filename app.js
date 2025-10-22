@@ -1,86 +1,41 @@
 import express from 'express';
-import MongoStore from 'connect-mongo';
-import session from 'express-session';
 import nocache from 'nocache';
-import morgan from 'morgan';
+import { attachLocals } from './middleware/locals.js';
+import { notFound } from './middleware/notFound.js';
 import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import connectB from './config/db.js';
-import AppError from './utils/appError.js';
+import { setupViews } from './config/viewEngine.js';
 import globalErrorHandler from './controllers/user/errorController.js';
 import userRouter from './routes/user/userRoutes.js';
 import adminRouter from './routes/admin/adminRoutes.js';
 import passport from './config/passport.js';
-
+import session from './middleware/session.js';
+import { logger } from './middleware/logger.js';
 const app = express();
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 connectB();
-app.use(
-    session({
-        secret: process.env.SESSION_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        store: MongoStore.create({
-            mongoUrl: process.env.DATABASE_LOCAL,
-            collectionName: 'sessions',
-            ttl: 60 * 60 * 24,
-        }),
-        cookie: {
-            maxAge: 1000 * 60 * 60 * 24,
-            httpOnly: true,
-        },
-    })
-);
+app.use('/admin', session.adminSession);
+app.use('/', session.userSession);
+
 app.use(passport.initialize());
 app.use(passport.session());
-app.use((req, res, next) => {
-    res.locals.user = req.session.user || req.user || null;
-    res.locals.admin = req.session.admin || null;
-    next();
-});
+app.use(attachLocals);
 app.use(nocache());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-    morgan('dev', {
-        skip: function (req, res) {
-            return (
-                req.url.startsWith('/css') ||
-                req.url.startsWith('/js') ||
-                req.url.startsWith('/images') ||
-                req.url.startsWith('/fonts') ||
-                req.url.startsWith('/admin') ||
-                req.url.startsWith('/assets')
-            );
-        },
-    })
-);
+app.use(logger);
 
-app.set('view engine', 'ejs');
-app.set('views', [
-    path.join(__dirname, '/views/user'),
-    path.join(__dirname, '/views/admin'),
-]);
+setupViews(app);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', userRouter);
 app.use('/admin', adminRouter);
 
-app.use((req, res, next) => {
-    let url = req.originalUrl;
-    if (url.includes('/admin')) {
-        res.status(404).render('adminpage-404', {
-            url: req.originalUrl,
-        });
-    } else {
-        res.status(404).render('page-404', {
-            url: req.originalUrl,
-        });
-    }
-});
+app.use(notFound);
 
 app.use(globalErrorHandler);
 

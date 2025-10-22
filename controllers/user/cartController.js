@@ -11,6 +11,9 @@ import Cart from '../../models/cartSchema.js';
 const viewCart = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
+        const page = parseInt(req.query.page) || 1;
+        const limit = 12;
+        const skip = (page - 1) * limit;
 
         if (!userId) {
             return next(new AppError('Please login to view your cart', 401));
@@ -19,14 +22,18 @@ const viewCart = async (req, res, next) => {
         const cart = await Cart.findOne({ userId })
             .populate({
                 path: 'items.productId',
-                select: 'name originalPrice salesPrice images',
+                select: 'name originalPrice salesPrice images isListed',
+                populate: {
+                    path: 'category',
+                    select: 'isListed categoryName',
+                },
             })
             .populate({
                 path: 'items.variantId',
                 select: 'size quantity',
             });
 
-        if (!cart) {
+        if (!cart || !cart.items.length) {
             return res.render('view-cart', {
                 cartItems: [],
                 priceDetails: {
@@ -35,48 +42,58 @@ const viewCart = async (req, res, next) => {
                     totalAmount: 0,
                     savings: 0,
                 },
+                pagination: {
+                    currentPage: 1,
+                    totalPages: 1,
+                    hasNext: false,
+                    hasPrev: false,
+                },
             });
         }
+
+        const totalItems = cart.items.length;
+        const totalPages = Math.ceil(totalItems / limit);
+
+        const paginatedItems = cart.items.slice(skip, skip + limit);
 
         let totalPrice = 0;
         let totalDiscount = 0;
 
-        const cartItems = cart.items.map((item) => {
-            const originalPrice = item.productId.originalPrice
-                ? Number(item.productId.originalPrice)
-                : 0;
+        const cartItems = paginatedItems.map((item) => {
+            const originalPrice = Number(item.productId?.originalPrice || 0);
             const salePrice =
-                item.productId.salesPrice &&
-                Number(item.productId.salesPrice) > 0
+                Number(item.productId?.salesPrice) > 0
                     ? Number(item.productId.salesPrice)
                     : originalPrice;
+            const variantQuantity = item.variantId?.quantity || 0;
+            const isUnlisted = !item.productId?.isListed;
+            const isOutOfStock =
+                item.quantity > variantQuantity || variantQuantity === 0;
+            const isUnlistedCategory = !item.productId?.category?.isListed;
 
-            const variantQuantity = item.variantId
-                ? item.variantId.quantity
-                : 0;
+            if (!isUnlisted && !isOutOfStock && !isUnlistedCategory) {
+                const itemOriginalTotal = originalPrice * item.quantity;
+                const itemSaleTotal = salePrice * item.quantity;
+                const itemDiscount = itemOriginalTotal - itemSaleTotal;
 
-            const itemOriginalTotal = originalPrice * item.quantity;
-            const itemSaleTotal = salePrice * item.quantity;
-            const itemDiscount = itemOriginalTotal - itemSaleTotal;
-
-            totalPrice += itemOriginalTotal;
-            totalDiscount += itemDiscount;
+                totalPrice += itemOriginalTotal;
+                totalDiscount += itemDiscount;
+            }
 
             return {
                 _id: item._id,
-                productId: item.productId._id,
-                productName: item.productId.name,
+                productId: item.productId?._id,
+                productName: item.productId?.name || 'Unknown',
                 productImage:
-                    item.productId.images && item.productId.images[0]
-                        ? item.productId.images[0]
-                        : '/images/placeholder.jpg',
-                originalPrice: originalPrice,
-                salePrice: salePrice,
+                    item.productId?.images?.[0] || '/images/placeholder.jpg',
+                originalPrice,
+                salePrice,
                 quantity: item.quantity,
-                variantQuantity: variantQuantity,
-                size: item.size || (item.variantId ? item.variantId.size : ''),
+                variantQuantity,
+                size: item.size || item.variantId?.size || '',
                 totalPrice: salePrice * item.quantity,
                 isOutOfStock: item.quantity > variantQuantity,
+                isUnlisted: isUnlisted || isUnlistedCategory,
             };
         });
 
@@ -84,22 +101,31 @@ const viewCart = async (req, res, next) => {
         const savings = totalDiscount;
 
         const priceDetails = {
-            totalPrice: totalPrice,
+            totalPrice,
             discount: totalDiscount,
-            totalAmount: totalAmount,
-            savings: savings,
+            totalAmount,
+            savings,
+        };
+
+        const pagination = {
+            currentPage: page,
+            totalPages,
+            hasNext: page < totalPages,
+            hasPrev: page > 1,
         };
 
         return res.render('view-cart', {
-            cartItems: cartItems,
-            priceDetails: priceDetails,
-            itemCount: cartItems.length,
+            cartItems,
+            priceDetails,
+            itemCount: totalItems,
+            pagination,
         });
     } catch (error) {
         console.error('Error in viewCart:', error);
         return next(new AppError('Internal server error', 500));
     }
 };
+
 const addToCart = async (req, res, next) => {
     try {
         const productId = req.params.productId;
@@ -159,6 +185,11 @@ const addToCart = async (req, res, next) => {
                         `Only ${variant.quantity} units available`,
                         400
                     )
+                );
+            }
+            if (newQuantity > 5) {
+                return next(
+                    new AppError(`Only 5 units can be added for a product`, 400)
                 );
             }
 
@@ -316,5 +347,57 @@ const updateCartQuantity = async (req, res, next) => {
         return next(new AppError('Internal server error', 500));
     }
 };
+const validateCart = async (req, res, next) => {
+    try {
+        const userId = getCurrentUserId(req);
+        if (!userId) return next(new AppError('Please login to proceed', 401));
 
-export default { viewCart, addToCart, removeFromCart, updateCartQuantity };
+        const cart = await Cart.findOne({ userId })
+            .populate({
+                path: 'items.productId',
+                select: 'isListed',
+                populate: {
+                    path: 'category',
+                    select: 'isListed',
+                },
+            })
+            .populate({
+                path: 'items.variantId',
+                select: 'quantity',
+            });
+
+        if (!cart || !cart.items.length) {
+            return res
+                .status(400)
+                .json({ success: false, message: 'Your cart is empty' });
+        }
+
+        for (const item of cart.items) {
+            const variantQty = item.variantId?.quantity || 0;
+            const isUnlisted = !item.productId?.isListed;
+            const isOutOfStock = item.quantity > variantQty || variantQty === 0;
+            const isUnlistedCategory = !item.productId?.category?.isListed;
+
+            if (isUnlisted || isOutOfStock || isUnlistedCategory) {
+                return res.status(400).json({
+                    success: false,
+                    message:
+                        'Some items are unavailable or out of stock. Please review your cart.',
+                });
+            }
+        }
+
+        res.status(200).json({ success: true, message: 'Cart is valid' });
+    } catch (error) {
+        console.error('Error in validateCart:', error);
+        return next(new AppError('Internal server error', 500));
+    }
+};
+
+export default {
+    viewCart,
+    addToCart,
+    removeFromCart,
+    updateCartQuantity,
+    validateCart,
+};
