@@ -147,7 +147,7 @@ const getOrders = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
         const page = parseInt(req.query.page) || 1;
-        const limit = 2;
+        const limit = 4;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.query || '';
 
@@ -189,6 +189,7 @@ const getOrders = async (req, res, next) => {
                 formattedOrders.push({
                     orderId: order.orderId,
                     orderMongoId: order._id,
+                    itemId: item._id,
                     productName: item.productName,
                     productImage:
                         item.product?.images?.[0] || '/images/placeholder.jpg',
@@ -237,7 +238,7 @@ const getOrders = async (req, res, next) => {
 const getOrderDetails = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
-        const orderId = req.params.orderId;
+        const { orderId, itemId } = req.params; // Get both orderId and itemId from URL params
 
         if (!userId) {
             return next(
@@ -245,7 +246,11 @@ const getOrderDetails = async (req, res, next) => {
             );
         }
 
-        const order = await Order.findOne({ orderId: orderId })
+        // Find the order
+        const order = await Order.findOne({
+            orderId: orderId,
+            userId: userId,
+        })
             .populate({
                 path: 'orderedItems.product',
                 select: 'name images originalPrice salesPrice',
@@ -259,39 +264,50 @@ const getOrderDetails = async (req, res, next) => {
             return next(new AppError('Order not found', 404));
         }
 
-        if (order.userId.toString() !== userId.toString()) {
-            return next(new AppError('Unauthorized access', 403));
+        // Find the specific item
+        const specificItem = order.orderedItems.find(
+            (item) => item._id.toString() === itemId
+        );
+
+        if (!specificItem) {
+            return next(new AppError('Order item not found', 404));
         }
 
-        const orderedItems = order.orderedItems.map((item) => ({
-            _id: item._id,
-            productId: item.product._id,
-            productName: item.productName,
+        // Format only this specific item
+        const orderItem = {
+            _id: specificItem._id,
+            productId: specificItem.product._id,
+            productName: specificItem.productName,
             productImage:
-                item.product?.images?.[0] || '/images/placeholder.jpg',
-            size: item.size,
-            quantity: item.quantity,
-            price: item.price,
-            totalPrice: item.price * item.quantity,
-            status: item.status,
-            cancellationReason: item.cancellationReason,
-            returnReason: item.returnReason,
-            returnStatus: item.returnStatus,
-            deliveredDate: item.deliveredDate,
-            canCancel: ['Pending', 'Processing'].includes(item.status),
-            canReturn:
-                item.status === 'Delivered' &&
-                item.deliveredDate &&
-                new Date() - new Date(item.deliveredDate) <=
-                    7 * 24 * 60 * 60 * 1000,
-        }));
+                specificItem.product?.images?.[0] || '/images/placeholder.jpg',
+            size: specificItem.size,
+            quantity: specificItem.quantity,
+            price: specificItem.price,
 
-        const orderSummary = {
-            totalPrice: order.totalPrice,
-            discount: order.discount,
-            shipping: order.shipping,
-            finalAmount: order.finalAmount,
-            savings: order.discount,
+            totalPrice: specificItem.price * specificItem.quantity,
+            status: specificItem.status,
+            cancellationReason: specificItem.cancellationReason,
+            returnReason: specificItem.returnReason,
+            returnStatus: specificItem.returnStatus,
+            deliveredDate: specificItem.deliveredDate,
+            canCancel: ['Pending', 'Processing'].includes(specificItem.status),
+            canReturn:
+                specificItem.status === 'Delivered' &&
+                specificItem.deliveredDate &&
+                new Date() - new Date(specificItem.deliveredDate) <=
+                    7 * 24 * 60 * 60 * 1000,
+        };
+
+        const itemPrice = specificItem.price * specificItem.quantity;
+        const originalItemPrice =
+            Number(specificItem.product?.originalPrice || 0) *
+            specificItem.quantity;
+        const discount = originalItemPrice - itemPrice;
+
+        const itemSummary = {
+            itemPrice: itemPrice,
+            originalItemPrice: originalItemPrice,
+            discount: discount > 0 ? discount : 0, // Only show discount if positive
         };
 
         const shippingAddress = {
@@ -307,12 +323,13 @@ const getOrderDetails = async (req, res, next) => {
             altPhone: order.shippingAddress.altPhone,
         };
 
+        // Status timeline based on item status (not order status)
         const statusTimeline = [
             {
                 status: 'Pending',
                 label: 'Order Placed',
                 completed: true,
-                current: order.status === 'Pending',
+                current: specificItem.status === 'Pending',
             },
             {
                 status: 'Processing',
@@ -322,8 +339,8 @@ const getOrderDetails = async (req, res, next) => {
                     'Shipped',
                     'Out for Delivery',
                     'Delivered',
-                ].includes(order.status),
-                current: order.status === 'Processing',
+                ].includes(specificItem.status),
+                current: specificItem.status === 'Processing',
             },
             {
                 status: 'Shipped',
@@ -332,22 +349,22 @@ const getOrderDetails = async (req, res, next) => {
                     'Shipped',
                     'Out for Delivery',
                     'Delivered',
-                ].includes(order.status),
-                current: order.status === 'Shipped',
+                ].includes(specificItem.status),
+                current: specificItem.status === 'Shipped',
             },
             {
                 status: 'Out for Delivery',
                 label: 'Out for Delivery',
                 completed: ['Out for Delivery', 'Delivered'].includes(
-                    order.status
+                    specificItem.status
                 ),
-                current: order.status === 'Out for Delivery',
+                current: specificItem.status === 'Out for Delivery',
             },
             {
                 status: 'Delivered',
                 label: 'Delivered',
-                completed: order.status === 'Delivered',
-                current: order.status === 'Delivered',
+                completed: specificItem.status === 'Delivered',
+                current: specificItem.status === 'Delivered',
             },
         ];
 
@@ -357,14 +374,12 @@ const getOrderDetails = async (req, res, next) => {
             order: {
                 orderId: order.orderId,
                 _id: order._id,
-                status: order.status,
                 paymentMethod: order.paymentMethod,
                 paymentStatus: order.paymentStatus,
                 createdAt: order.createdAt,
-                deliveredAt: order.deliveredAt,
             },
-            orderedItems: orderedItems,
-            orderSummary: orderSummary,
+            orderItem: orderItem, // Single item instead of array
+            itemSummary: itemSummary, // Item-specific summary
             shippingAddress: shippingAddress,
             statusTimeline: statusTimeline,
             trackingInfo: trackingInfo,
@@ -374,5 +389,195 @@ const getOrderDetails = async (req, res, next) => {
         return next(new AppError('Internal server error', 500));
     }
 };
+const cancelItem = async (req, res, next) => {
+    try {
+        const { itemId, reason } = req.body;
+        const userId = getCurrentUserId(req); // Your auth helper function
 
-export default { placeOrder, getOrders, getOrderDetails };
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: 'Please login to cancel items',
+            });
+        }
+
+        if (!itemId || !reason) {
+            return res.status(400).json({
+                success: false,
+                message: 'Item ID and reason are required',
+            });
+        }
+
+        // Find the order containing this item
+        const order = await Order.findOne({
+            userId: userId,
+            'orderedItems._id': itemId,
+        });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: 'Order item not found',
+            });
+        }
+
+        // Find the specific item
+        const item = order.orderedItems.id(itemId);
+
+        if (!item) {
+            return res.status(404).json({
+                success: false,
+                message: 'Item not found',
+            });
+        }
+
+        // Check if item can be cancelled
+        const cancellableStatuses = ['Pending', 'Processing'];
+        if (!cancellableStatuses.includes(item.status)) {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot cancel item with status: ${item.status}`,
+            });
+        }
+
+        // Update item status
+        item.status = 'Cancelled';
+        item.cancellationReason = reason;
+
+        // If payment was completed, you might want to initiate refund here
+        // Refund logic would go here based on your payment gateway
+
+        await order.save();
+        const productVariant = await ProductVariant.findById(item.variant);
+        console.log(item.variant);
+
+        if (productVariant) {
+            productVariant.quantity += item.quantity;
+            await productVariant.save();
+        }
+        return res.status(200).json({
+            success: true,
+            message: 'Item cancelled successfully',
+            order: order,
+        });
+    } catch (error) {
+        console.error('Error in cancelItem:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to cancel item',
+        });
+    }
+};
+const returnItem = async (req, res, next) => {
+    try {
+        const { itemId, reason } = req.body;
+        const userId = getCurrentUserId(req);
+        if (!userId) {
+            return next(new AppError('Please login to return items', 401));
+        }
+
+        if (!itemId || !reason) {
+            return next(new AppError('Item ID and reason are required', 400));
+        }
+
+        // Find the order containing this item
+        const order = await Order.findOne({
+            userId: userId,
+            'orderedItems._id': itemId,
+        });
+
+        if (!order) {
+            return next(new AppError('Order item not found', 404));
+        }
+
+        // Find the specific item
+        const item = order.orderedItems.id(itemId);
+
+        if (!item) {
+            return next(new AppError(' item not found', 404));
+        }
+
+        // Check if item is delivered
+        if (item.status !== 'Delivered') {
+            return next(
+                new AppError('Only delivered items can be returned', 400)
+            );
+        }
+
+        // Check if item is already in return process
+        if (
+            [
+                'Return Request',
+                'Return Approved',
+                'Return Rejected',
+                'Returned',
+            ].includes(item.status)
+        ) {
+            return next(
+                new AppError('Return request already exists for this item', 400)
+            );
+        }
+
+        // Check return window (7 days from delivery)
+        if (!item.deliveredDate) {
+            return next(new AppError('Delivery date not found', 400));
+        }
+
+        const daysSinceDelivery =
+            (new Date() - new Date(item.deliveredDate)) / (1000 * 60 * 60 * 24);
+
+        if (daysSinceDelivery > 7) {
+            return next(
+                new AppError(
+                    'Return window has expired. Returns are only allowed within 7 days of delivery',
+                    400
+                )
+            );
+        }
+
+        // Update item with return request
+        item.status = 'Return Request';
+        item.returnStatus = 'Requested';
+        item.returnReason = reason;
+        item.returnRequestDate = new Date();
+
+        // Check if all items are in return/cancelled status
+        const activeItems = order.orderedItems.filter(
+            (orderItem) =>
+                ![
+                    'Cancelled',
+                    'Return Request',
+                    'Return Approved',
+                    'Returned',
+                ].includes(orderItem.status)
+        );
+
+        // Update order status if needed
+        if (activeItems.length === 0) {
+            order.status = 'Return Request';
+        }
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message:
+                'Return request submitted successfully. We will review your request shortly.',
+            order: order,
+        });
+    } catch (error) {
+        console.error('Error in returnItem:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to submit return request',
+        });
+    }
+};
+
+export default {
+    placeOrder,
+    getOrders,
+    getOrderDetails,
+    cancelItem,
+    returnItem,
+};

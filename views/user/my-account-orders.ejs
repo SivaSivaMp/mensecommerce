@@ -92,7 +92,7 @@
                                                         <div class="cart-price">₹<%= order.totalPrice.toLocaleString('en-IN') %></div>
                                                     </td>
                                                     <td>
-                                                        <a href="/profile/order-details/<%= order.orderId %>" class="tf-btn btn-fill animate-hover-btn rounded-0 justify-content-center">
+                                                        <a href="/profile/order-details/<%= order.orderId %>/<%= order.itemId %>" class="tf-btn btn-fill animate-hover-btn rounded-0 justify-content-center">
                                                             <span>View</span>
                                                         </a>
                                                     </td>
@@ -162,7 +162,7 @@
                                             <span>View All Orders</span>
                                         </a>
                                     <% } else { %>
-                                        <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3">
+                                        <a href="/shop" class="tf-btn btn-fill animate-hover-btn radius-3">
                                             <span>Start Shopping</span>
                                         </a>
                                     <% } %>

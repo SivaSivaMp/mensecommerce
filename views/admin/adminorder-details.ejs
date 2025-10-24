@@ -128,9 +128,47 @@
                                                 <%= order.status === 'Cancelled' ? 'bg-danger' : '' %>
                                                 <%= order.status === 'Pending' ? 'bg-warning' : '' %>
                                                 <%= order.status === 'Processing' ? 'bg-info' : '' %>
-                                                <%= order.status === 'Shipped' ? 'bg-primary' : '' %>
+                                                <%= order.status === 'Return Request' ? 'bg-info' : '' %>
+                                                <%= order.status === 'Return Approved' ? 'bg-info' : '' %>
+                                                <%= order.status === 'Return Rejected' ? 'bg-info' : '' %>
+                                                <%= order.status === 'Returned' ? 'bg-info' : '' %>
+                                                
                                             "><strong><%= order.status %></strong></span>
                                         </div>
+                                        <div class="col-12">
+                                            
+<% orderedItems.forEach((item) => { %>
+    <% if (item.returnStatus === 'Requested') { %>
+        <div class="mt-2">
+            <label class="form-label small text-muted">Return Action:</label>
+            <select class="form-select form-select-sm return-action-select" data-item-id="<%= item._id %>">
+                <option value="">-- Select Action --</option>
+                <option value="Approve">Approve Return</option>
+                <option value="Reject">Reject Return</option>
+            </select>
+        </div>
+    <% } else if (item.returnStatus === 'Approved') { %>
+        <div class="mt-2">
+            <span class="badge bg-info">Return Approved - Awaiting Item</span>
+            <button class="btn btn-sm " data-item-id="<%= item._id %>">
+                Mark as Returned
+            </button>
+        </div>
+    <% } else if (item.returnStatus === 'Rejected') { %>
+        <div class="mt-2">
+            <span class="badge bg-secondary">Return Rejected</span>
+            <% if (item.returnRejectionReason) { %>
+                <small class="d-block text-muted">Reason: <%= item.returnRejectionReason %></small>
+            <% } %>
+        </div>
+    <% } else if (item.returnStatus === 'Returned') { %>
+        <div class="mt-2">
+            <span class="badge bg-dark">Return Completed</span>
+        </div>
+    <% } %>
+<% }); %>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -181,20 +219,43 @@
                                                                 <p class="price fw-bold">₹<%= item.totalPrice.toLocaleString('en-IN') %></p>
                                                             </td>
                                                             <td>
-                                                                <select class="form-select order-status-select" data-item-id="<%= item._id %>">
-                                                                    <option value="Pending" <%= item.status === 'Pending' ? 'selected' : '' %>>Pending</option>
-                                                                    <option value="Processing" <%= item.status === 'Processing' ? 'selected' : '' %>>Processing</option>
-                                                                    <option value="Shipped" <%= item.status === 'Shipped' ? 'selected' : '' %>>Shipped</option>
-                                                                    <option value="Out for Delivery" <%= item.status === 'Out for Delivery' ? 'selected' : '' %>>Out for Delivery</option>
-                                                                    <option value="Delivered" <%= item.status === 'Delivered' ? 'selected' : '' %>>Delivered</option>
-                                                                    <option value="Cancelled" <%= item.status === 'Cancelled' ? 'selected' : '' %>>Cancelled</option>
-                                                                </select>
+<% 
+const FINAL_STATES = ['Delivered', 'Cancelled', 'Return Request', 'Return Approved', 'Return Rejected', 'Returned'];
+const isFinalStatus = FINAL_STATES.includes(item.status);
+%>
+
+<% if (isFinalStatus) { %>
+    
+    <span >
+        <%= item.status %>
+    </span>
+    
+<% } else { %>
+    
+    <select class="form-select order-status-select" data-item-id="<%= item._id %>">
+        <option value="<%= item.status %>" selected><%= item.status %></option>
+        <% 
+        const VALID_TRANSITIONS = {
+            'Pending': ['Processing'],
+            'Processing': ['Shipped'],
+            'Shipped': ['Out for Delivery'],
+            'Out for Delivery': ['Delivered']
+        };
+        const allowedStatuses = VALID_TRANSITIONS[item.status] || [];
+        %>
+        <% allowedStatuses.forEach(status => { %>
+            <option value="<%= status %>"><%= status %></option>
+        <% }); %>
+    </select>
+<% } %>
+                                                                
                                                             </td>
                                                             <td>
                                                                 <button type="button" class="btn btn-primary btn-sm update-status-btn" data-item-id="<%= item._id %>">
                                                                     Update
                                                                 </button>
                                                             </td>
+                                                            
                                                         </tr>
                                                     <% }); %>
                                                 </tbody>
@@ -315,6 +376,118 @@
                 alert(message); 
             }
         }
+    </script>
+    <script>
+        // Handle return action dropdown
+document.querySelectorAll('.return-action-select').forEach(select => {
+    select.addEventListener('change', async function() {
+        const itemId = this.dataset.itemId;
+        const action = this.value;
+        
+        if (!action) return;
+        
+        if (action === 'Reject') {
+            // Ask for rejection reason
+            const { value: reason } = await Swal.fire({
+                title: 'Reject Return',
+                input: 'textarea',
+                inputLabel: 'Rejection Reason',
+                inputPlaceholder: 'Enter reason for rejecting this return...',
+                showCancelButton: true,
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Please provide a reason!';
+                    }
+                }
+            });
+            
+            if (reason) {
+                rejectReturn(itemId, reason);
+            }
+        } else if (action === 'Approve') {
+            approveReturn(itemId);
+        }
+        
+        this.value = ''; // Reset dropdown
+    });
+});
+
+// Handle complete return button
+document.querySelectorAll('.complete-return-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const itemId = this.dataset.itemId;
+        completeReturn(itemId);
+    });
+});
+
+// Approve return function
+async function approveReturn(itemId) {
+    try {
+        const result = await Swal.fire({
+            title: 'Approve Return?',
+            text: 'This will approve the return request',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, Approve'
+        });
+        
+        if (result.isConfirmed) {
+            const response = await axios.post('/admin/approve-return', { itemId });
+            
+            if (response.data.success) {
+                Swal.fire('Approved!', 'Return request has been approved.', 'success')
+                    .then(() => location.reload());
+            }
+        }
+    } catch (error) {
+        Swal.fire('Error', error.response?.data?.message || 'Failed to approve return', 'error');
+    }
+}
+
+// Reject return function
+async function rejectReturn(itemId, reason) {
+    try {
+        const response = await axios.post('/admin/reject-return', { 
+            itemId, 
+            rejectionReason: reason 
+        });
+        
+        if (response.data.success) {
+            Swal.fire('Rejected!', 'Return request has been rejected.', 'success')
+                .then(() => location.reload());
+        }
+    } catch (error) {
+        Swal.fire('Error', error.response?.data?.message || 'Failed to reject return', 'error');
+    }
+}
+
+// Complete return function
+async function completeReturn(itemId) {
+    try {
+        const result = await Swal.fire({
+            title: 'Complete Return?',
+            text: 'Confirm that the item has been received and return is complete',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, Complete Return'
+        });
+        
+        if (result.isConfirmed) {
+            const response = await axios.post('/admin/complete-return', { itemId });
+            
+            if (response.data.success) {
+                Swal.fire('Completed!', 'Return has been completed.', 'success')
+                    .then(() => location.reload());
+            }
+        }
+    } catch (error) {
+        Swal.fire('Error', error.response?.data?.message || 'Failed to complete return', 'error');
+    }
+}
     </script>
 </body>
 </html>

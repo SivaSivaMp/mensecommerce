@@ -65,11 +65,14 @@ const viewCart = async (req, res, next) => {
                 Number(item.productId?.salesPrice) > 0
                     ? Number(item.productId.salesPrice)
                     : originalPrice;
+             const variant = await ProductVariant.findById(items.variantId);
+        console.log(variant.quantity);
             const variantQuantity = item.variantId?.quantity || 0;
             const isUnlisted = !item.productId?.isListed;
             const isOutOfStock =
                 item.quantity > variantQuantity || variantQuantity === 0;
             const isUnlistedCategory = !item.productId?.category?.isListed;
+            console.log(variantQuantity);
 
             if (!isUnlisted && !isOutOfStock && !isUnlistedCategory) {
                 const itemOriginalTotal = originalPrice * item.quantity;

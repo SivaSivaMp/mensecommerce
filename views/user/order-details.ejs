@@ -331,7 +331,7 @@
     </div>
 
     <!-- Order Status Timeline -->
-    <% if (!['Cancelled', 'Returned', 'Return Request'].includes(order.status)) { %>
+    <% if (!['Cancelled', 'Returned', 'Return Request'].includes(orderItem.status)) { %>
         <div class="status-timeline">
             <% statusTimeline.forEach((step) => { %>
                 <div class="timeline-item">
@@ -348,7 +348,7 @@
         </div>
     <% } else { %>
         <div style="text-align: center; padding: 20px; background: #f8d7da; border-radius: 8px; color: #721c24; margin-bottom: 20px;">
-            <strong>Order Status: <%= order.status %></strong>
+            <strong>Item Status: <%= orderItem.status %></strong>
         </div>
     <% } %>
 
@@ -364,50 +364,48 @@
         </div>
     <% } %>
 
-    <!-- Layout: Products on left, Price & Address on right -->
+    <!-- Layout: Product on left, Price & Address on right -->
     <div class="layout-container">
-        <!-- Left: Product Items -->
+        <!-- Left: Single Product Item -->
         <div>
-            <% orderedItems.forEach((item) => { %>
-                <div class="product-card">
-                    <div class="product-item">
-                        <img src="<%= item.productImage %>" alt="<%= item.productName %>" class="product-image">
-                        <div class="product-details">
-                            <h4 class="product-name"><%= item.productName %></h4>
-                            <p class="product-meta">Size: <%= item.size %> | Qty: <%= item.quantity %></p>
-                            <p class="product-price">₹<%= item.totalPrice.toLocaleString('en-IN') %></p>
-                            
-                            <% if (item.status === 'Delivered' && item.deliveredDate) { %>
-                                <p class="return-window">
-                                    <span>ℹ️</span> Return window closes on <%= new Date(new Date(item.deliveredDate).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
-                                </p>
-                            <% } %>
-
-                            <% if (item.cancellationReason) { %>
-                                <p style="color: #dc3545; font-size: 13px; margin-top: 10px;">
-                                    <strong>Cancellation Reason:</strong> <%= item.cancellationReason %>
-                                </p>
-                            <% } %>
-
-                            <% if (item.returnReason) { %>
-                                <p style="color: #ffc107; font-size: 13px; margin-top: 10px;">
-                                    <strong>Return Reason:</strong> <%= item.returnReason %>
-                                </p>
-                            <% } %>
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div class="action-buttons">
-                        <% if (item.canCancel) { %>
-                            <button class="btn-cancel" onclick="cancelItem('<%= item._id %>')">Cancel Item</button>
+            <div class="product-card">
+                <div class="product-item">
+                    <img src="<%= orderItem.productImage %>" alt="<%= orderItem.productName %>" class="product-image">
+                    <div class="product-details">
+                        <h4 class="product-name"><%= orderItem.productName %></h4>
+                        <p class="product-meta">Size: <%= orderItem.size %> | Qty: <%= orderItem.quantity %></p>
+                        <p class="product-price">₹<%= orderItem.totalPrice.toLocaleString('en-IN') %></p>
+                        
+                        <% if (orderItem.status === 'Delivered' && orderItem.deliveredDate) { %>
+                            <p class="return-window">
+                                <span>ℹ️</span> Return window closes on <%= new Date(new Date(orderItem.deliveredDate).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+                            </p>
                         <% } %>
-                        <% if (item.canReturn) { %>
-                            <button class="btn-return" onclick="returnItem('<%= item._id %>')">Return Item</button>
+
+                        <% if (orderItem.cancellationReason) { %>
+                            <p style="color: #dc3545; font-size: 13px; margin-top: 10px;">
+                                <strong>Cancellation Reason:</strong> <%= orderItem.cancellationReason %>
+                            </p>
+                        <% } %>
+
+                        <% if (orderItem.returnReason) { %>
+                            <p style="color: #ffc107; font-size: 13px; margin-top: 10px;">
+                                <strong>Return Reason:</strong> <%= orderItem.returnReason %>
+                            </p>
                         <% } %>
                     </div>
                 </div>
-            <% }); %>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <% if (orderItem.canCancel) { %>
+                        <button class="btn-cancel" onclick="cancelItem('<%= orderItem._id %>')">Cancel Item</button>
+                    <% } %>
+                    <% if (orderItem.canReturn) { %>
+                        <button class="btn-return" onclick="returnItem('<%= orderItem._id %>')">Return Item</button>
+                    <% } %>
+                </div>
+            </div>
         </div>
 
         <!-- Right: Price Details & Shipping Address -->
@@ -416,31 +414,21 @@
             <div class="price-details-box">
                 <h2>Price Details</h2>
                 <div class="price-row">
-                    <span>Price (<%= orderedItems.length %> item<%= orderedItems.length !== 1 ? 's' : '' %>)</span>
-                    <span>₹<%= orderSummary.totalPrice.toLocaleString('en-IN') %></span>
+                    <span>Listing Price</span>
+                    <span>₹<%= itemSummary.originalItemPrice.toLocaleString('en-IN') %></span>
                 </div>
-                <% if (orderSummary.discount > 0) { %>
-                    <div class="price-row discount">
-                        <span>Discount</span>
-                        <span>- ₹<%= orderSummary.discount.toLocaleString('en-IN') %></span>
-                    </div>
-                <% } %>
-                <% if (orderSummary.shipping > 0) { %>
-                    <div class="price-row">
-                        <span>Shipping</span>
-                        <span>₹<%= orderSummary.shipping.toLocaleString('en-IN') %></span>
-                    </div>
-                <% } %>
+                <div class="price-row">
+                    <span>Item Price</span>
+                    <span>₹<%= itemSummary.itemPrice.toLocaleString('en-IN') %></span>
+                </div>
+                <div class="price-row">
+                    <span>Discount</span>
+                    <span>₹<%= itemSummary.discount.toLocaleString('en-IN') %></span>
+                </div>
                 <div class="price-row total">
-                    <strong>Total Amount</strong>
-                    <strong>₹<%= orderSummary.finalAmount.toLocaleString('en-IN') %></strong>
+                    <strong>Total</strong>
+                    <strong>₹<%= itemSummary.itemPrice.toLocaleString('en-IN') %></strong>
                 </div>
-                <% if (orderSummary.savings > 0) { %>
-                    <hr class="divider">
-                    <div class="save-text">
-                        You saved ₹<%= orderSummary.savings.toLocaleString('en-IN') %> on this order
-                    </div>
-                <% } %>
             </div>
 
             <!-- Payment Method -->
@@ -463,9 +451,9 @@
                     <p><%= shippingAddress.landmark %></p>
                 <% } %>
                 <p><%= shippingAddress.city %>, <%= shippingAddress.state %> - <%= shippingAddress.pincode %></p>
-                <p>📞 <%= shippingAddress.phone %></p>
+                <p>Phone: <%= shippingAddress.phone %></p>
                 <% if (shippingAddress.altPhone) { %>
-                    <p>📞 <%= shippingAddress.altPhone %> (Alt)</p>
+                    <p>Alt Phone: <%= shippingAddress.altPhone %></p>
                 <% } %>
             </div>
         </div>
@@ -486,44 +474,49 @@ async function cancelItem(itemId) {
         input: 'textarea',
         inputPlaceholder: 'Enter cancellation reason...',
         inputAttributes: {
-            'aria-label': 'Enter cancellation reason'
+            'aria-label': 'Enter cancellation reason',
+            'maxlength': 500
         },
         showCancelButton: true,
         confirmButtonText: 'Cancel Item',
         cancelButtonText: 'Go Back',
         confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
         inputValidator: (value) => {
             if (!value) {
                 return 'Please provide a reason!'
             }
-        }
+            if (value.trim().length < 10) {
+                return 'Reason must be at least 10 characters long'
+            }
+        },
+        showLoaderOnConfirm: true,
+        preConfirm: async (reason) => {
+            try {
+                const response = await axios.post('/order/cancel-item', {
+                    itemId: itemId,
+                    reason: reason.trim()
+                });
+                return response.data;
+            } catch (error) {
+                Swal.showValidationMessage(
+                    error.response?.data?.message || 'Failed to cancel item. Please try again.'
+                );
+            }
+        },
+        allowOutsideClick: () => !Swal.isLoading()
     });
 
     if (reason) {
-        try {
-            const response = await axios.post('/order/cancel-item', {
-                itemId: itemId,
-                reason: reason
-            });
-
-            if (response.data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Item Cancelled',
-                    text: 'Your item has been cancelled successfully',
-                    confirmButtonColor: '#3085d6'
-                }).then(() => {
-                    location.reload();
-                });
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response?.data?.message || 'Failed to cancel item',
-                confirmButtonColor: '#d32f2f'
-            });
-        }
+        Swal.fire({
+            icon: 'success',
+            title: 'Item Cancelled',
+            text: 'Your item has been cancelled successfully',
+            confirmButtonColor: '#088178',
+            confirmButtonText: 'OK'
+        }).then(() => {
+            location.reload();
+        });
     }
 }
 
@@ -534,44 +527,54 @@ async function returnItem(itemId) {
         input: 'textarea',
         inputPlaceholder: 'Enter return reason...',
         inputAttributes: {
-            'aria-label': 'Enter return reason'
+            'aria-label': 'Enter return reason',
+            'maxlength': 500
         },
         showCancelButton: true,
         confirmButtonText: 'Request Return',
         cancelButtonText: 'Go Back',
         confirmButtonColor: '#ffc107',
+        cancelButtonColor: '#6c757d',
         inputValidator: (value) => {
             if (!value) {
                 return 'Please provide a reason!'
             }
-        }
+            if (value.trim().length < 10) {
+                return 'Reason must be at least 10 characters long'
+            }
+        },
+        showLoaderOnConfirm: true,
+        preConfirm: async (reason) => {
+            try {
+                const response = await axios.post('/order/return-item', {
+                    itemId: itemId,
+                    reason: reason.trim()
+                });
+                return response.data;
+            } catch (error) {
+                Swal.showValidationMessage(
+                    error.response?.data?.message || 'Failed to request return. Please try again.'
+                );
+            }
+        },
+        allowOutsideClick: () => !Swal.isLoading()
     });
 
     if (reason) {
-        try {
-            const response = await axios.post('/order/return-item', {
-                itemId: itemId,
-                reason: reason
-            });
-
-            if (response.data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Return Requested',
-                    text: 'Your return request has been submitted successfully',
-                    confirmButtonColor: '#3085d6'
-                }).then(() => {
-                    location.reload();
-                });
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response?.data?.message || 'Failed to request return',
-                confirmButtonColor: '#d32f2f'
-            });
-        }
+        Swal.fire({
+            icon: 'success',
+            title: 'Return Requested',
+            text: 'Your return request has been submitted successfully',
+            confirmButtonColor: '#088178',
+            confirmButtonText: 'OK'
+        }).then(() => {
+            location.reload();
+        });
     }
 }
+
+
+document.getElementById('clear-search')?.addEventListener('click', function() {
+    window.location.href = '/profile/orders';
+});
 </script>

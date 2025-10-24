@@ -38,7 +38,7 @@ const getOrdersList = async (req, res, next) => {
             .lean();
         const formattedOrders = orders.map((order) => ({
             orderId: order.orderId,
-            orderIdshort: order.orderId.split('-')[0],
+            orderIdshort: order.orderId,
             _id: order._id,
             userName:
                 order.userId?.name || order.shippingAddress?.name || 'N/A',
@@ -107,6 +107,7 @@ const getAdminOrderDetails = async (req, res, next) => {
             salesPrice: item.product?.salesPrice || item.price,
             totalPrice: item.price * item.quantity,
             status: item.status,
+            returnStatus: item.returnStatus,
         }));
 
         const totalQuantity = orderedItems.reduce(
@@ -158,14 +159,11 @@ const getAdminOrderDetails = async (req, res, next) => {
 };
 
 const VALID_STATUS_TRANSITIONS = {
-    Pending: ['Processing', 'Cancelled'],
-    Processing: ['Shipped', 'Cancelled'],
-    Shipped: ['Out for Delivery', 'Cancelled'],
-    'Out for Delivery': ['Delivered', 'Cancelled'],
-    Delivered: ['Return Request'],
-    'Return Request': ['Return Approved', 'Return Rejected'],
-    'Return Approved': ['Returned'],
-    'Return Rejected': [],
+    Pending: ['Processing'],
+    Processing: ['Shipped'],
+    Shipped: ['Out for Delivery'],
+    'Out for Delivery': ['Delivered'],
+    Delivered: [],
     Cancelled: [],
     Returned: [],
 };

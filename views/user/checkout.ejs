@@ -726,7 +726,7 @@ async function placeOrder() {
                 confirmButtonText: 'View Order'
             }).then(() => {
                 // Redirect to order confirmation page
-                window.location.href = `/order-confirmation/${response.data.orderId}`;
+                window.location.href = `profile/orders`;
             });
         }
     } catch (error) {
@@ -759,4 +759,64 @@ document.addEventListener('DOMContentLoaded', function() {
     placeOrderBtn.addEventListener('click', placeOrder);
   }
 });
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const removeButtons = document.querySelectorAll('.remove-cart');
+
+    removeButtons.forEach((button) => {
+      button.addEventListener('click', async (e) => {
+        const itemId = e.currentTarget.getAttribute('data-item-id');
+
+        const result = await Swal.fire({
+          title: 'Remove Item?',
+          text: 'Are you sure you want to remove this item from your cart?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#3085d6',
+          confirmButtonText: 'Yes, remove it',
+          cancelButtonText: 'Cancel',
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+          const response = await axios.delete(`/cart/remove/${itemId}`);
+          console.log('Full response:', response);
+
+          if ( response.data.success) {
+          
+            await Swal.fire({
+              icon: 'success',
+              title: 'Removed!',
+              text: response.data.message || 'Item removed from cart successfully',
+              timer: 1300,
+              showConfirmButton: false,
+            });
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
+
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: response.data.message || 'Failed to remove item. Please try again.',
+            });
+          }
+
+        } catch (error) {
+          console.error('Error removing item:', error);
+          const errorMsg =
+            error.response?.data?.message || 'Something went wrong while removing the item.';
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: errorMsg,
+          });
+        }
+      });
+    });
+  });
 </script>
