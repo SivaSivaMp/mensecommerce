@@ -22,7 +22,7 @@ const categorySchema = new mongoose.Schema(
         },
         categoryOffer: {
             type: Number,
-            defualt: null,
+            default: null,
         },
     },
     { timestamps: true }

@@ -395,21 +395,20 @@ const editProduct = async (req, res, next) => {
             { new: true, runValidators: true }
         );
 
-        await ProductVariant.deleteMany({ productId });
-
-        const variantDocs = sizeVariants.map((v) => ({
-            productId: updatedProduct._id,
-            size: v.size,
-            quantity: v.quantity,
-        }));
-        await ProductVariant.create(variantDocs);
+        for (const v of sizeVariants) {
+            await ProductVariant.findOneAndUpdate(
+                { productId: updatedProduct._id, size: v.size },
+                { $set: { quantity: v.quantity } },
+                { new: true, upsert: true }
+            );
+        }
 
         return res.status(200).json({
             status: 'success',
             message: 'Product updated successfully!',
             data: {
                 product: updatedProduct,
-                variants: variantDocs,
+                variants: sizeVariants,
             },
             redirectUrl: '/admin/product',
         });

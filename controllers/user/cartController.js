@@ -19,19 +19,14 @@ const viewCart = async (req, res, next) => {
             return next(new AppError('Please login to view your cart', 401));
         }
 
-        const cart = await Cart.findOne({ userId })
-            .populate({
-                path: 'items.productId',
-                select: 'name originalPrice salesPrice images isListed',
-                populate: {
-                    path: 'category',
-                    select: 'isListed categoryName',
-                },
-            })
-            .populate({
-                path: 'items.variantId',
-                select: 'size quantity',
-            });
+        const cart = await Cart.findOne({ userId }).populate({
+            path: 'items.productId',
+            select: 'name originalPrice salesPrice images isListed category',
+            populate: {
+                path: 'category',
+                select: 'isListed categoryName',
+            },
+        });
 
         if (!cart || !cart.items.length) {
             return res.render('view-cart', {
@@ -53,26 +48,51 @@ const viewCart = async (req, res, next) => {
 
         const totalItems = cart.items.length;
         const totalPages = Math.ceil(totalItems / limit);
-
         const paginatedItems = cart.items.slice(skip, skip + limit);
 
         let totalPrice = 0;
         let totalDiscount = 0;
+        const cartItems = [];
+        for (const item of paginatedItems) {
+            let variantObjectId;
+            try {
+                variantObjectId = new mongoose.Types.ObjectId(item.variantId);
+            } catch (err) {
+                await Cart.updateOne(
+                    { _id: cart._id },
+                    { $pull: { items: { _id: item._id } } }
+                );
 
-        const cartItems = paginatedItems.map((item) => {
-            const originalPrice = Number(item.productId?.originalPrice || 0);
+                continue;
+            }
+
+            const variant = await ProductVariant.findById(variantObjectId);
+            if (!variant) {
+                await Cart.updateOne(
+                    { _id: cart._id },
+                    { $pull: { items: { _id: item._id } } }
+                );
+                continue;
+            }
+            const variantQuantity = variant.quantity;
+
+            const product = item.productId;
+            if (!product) {
+                return next(
+                    new AppError('product currently not available', 400)
+                );
+            }
+
+            const originalPrice = Number(product.originalPrice || 0);
             const salePrice =
-                Number(item.productId?.salesPrice) > 0
-                    ? Number(item.productId.salesPrice)
+                Number(product.salesPrice) > 0
+                    ? Number(product.salesPrice)
                     : originalPrice;
-             const variant = await ProductVariant.findById(items.variantId);
-        console.log(variant.quantity);
-            const variantQuantity = item.variantId?.quantity || 0;
-            const isUnlisted = !item.productId?.isListed;
+
+            const isUnlisted = !product.isListed;
+            const isUnlistedCategory = !product.category?.isListed;
             const isOutOfStock =
                 item.quantity > variantQuantity || variantQuantity === 0;
-            const isUnlistedCategory = !item.productId?.category?.isListed;
-            console.log(variantQuantity);
 
             if (!isUnlisted && !isOutOfStock && !isUnlistedCategory) {
                 const itemOriginalTotal = originalPrice * item.quantity;
@@ -83,22 +103,21 @@ const viewCart = async (req, res, next) => {
                 totalDiscount += itemDiscount;
             }
 
-            return {
+            cartItems.push({
                 _id: item._id,
-                productId: item.productId?._id,
-                productName: item.productId?.name || 'Unknown',
-                productImage:
-                    item.productId?.images?.[0] || '/images/placeholder.jpg',
+                productId: product._id,
+                productName: product.name,
+                productImage: product.images?.[0] || '/images/placeholder.jpg',
                 originalPrice,
                 salePrice,
                 quantity: item.quantity,
                 variantQuantity,
-                size: item.size || item.variantId?.size || '',
+                size: item.size || variant.size,
                 totalPrice: salePrice * item.quantity,
-                isOutOfStock: item.quantity > variantQuantity,
+                isOutOfStock,
                 isUnlisted: isUnlisted || isUnlistedCategory,
-            };
-        });
+            });
+        }
 
         const totalAmount = totalPrice - totalDiscount;
         const savings = totalDiscount;
@@ -116,7 +135,6 @@ const viewCart = async (req, res, next) => {
             hasNext: page < totalPages,
             hasPrev: page > 1,
         };
-
         return res.render('view-cart', {
             cartItems,
             priceDetails,
@@ -355,37 +373,37 @@ const validateCart = async (req, res, next) => {
         const userId = getCurrentUserId(req);
         if (!userId) return next(new AppError('Please login to proceed', 401));
 
-        const cart = await Cart.findOne({ userId })
-            .populate({
-                path: 'items.productId',
-                select: 'isListed',
-                populate: {
-                    path: 'category',
-                    select: 'isListed',
-                },
-            })
-            .populate({
-                path: 'items.variantId',
-                select: 'quantity',
-            });
-
+        const cart = await Cart.findOne({ userId });
         if (!cart || !cart.items.length) {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Your cart is empty' });
+            return res.status(400).json({
+                success: false,
+                message: 'Your cart is empty',
+            });
         }
 
         for (const item of cart.items) {
-            const variantQty = item.variantId?.quantity || 0;
-            const isUnlisted = !item.productId?.isListed;
-            const isOutOfStock = item.quantity > variantQty || variantQty === 0;
-            const isUnlistedCategory = !item.productId?.category?.isListed;
+            // Get live data from DB
+            const product = await Product.findById(item.productId).populate(
+                'category'
+            );
+            const variant = await ProductVariant.findById(item.variantId);
 
-            if (isUnlisted || isOutOfStock || isUnlistedCategory) {
+            if (!product || !variant) {
                 return res.status(400).json({
                     success: false,
-                    message:
-                        'Some items are unavailable or out of stock. Please review your cart.',
+                    message: 'Some items are no longer available.',
+                });
+            }
+
+            const isUnlisted = !product.isListed;
+            const isUnlistedCategory = !product.category?.isListed;
+            const isOutOfStock =
+                item.quantity > variant.quantity || variant.quantity === 0;
+
+            if (isUnlisted || isUnlistedCategory || isOutOfStock) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Some items are out of stock or unavailable: ${product.name}`,
                 });
             }
         }

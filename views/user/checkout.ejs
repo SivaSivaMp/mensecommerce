@@ -736,6 +736,8 @@ async function placeOrder() {
             title: 'Order Failed',
             text: message,
             confirmButtonColor: '#d32f2f'
+        }).then(() => {
+          window.location.reload();
         });
     }
 }

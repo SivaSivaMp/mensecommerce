@@ -202,11 +202,11 @@ orderSchema.pre('save', async function (next) {
     const year = String(now.getFullYear()).slice(-2);
     const dateCode = `${day}${month}${year}`;
 
-    const counterName = `order-${dateCode}`;
+    const name = `order-${dateCode}`;
 
     // Increment or create today's counter
     const counter = await Counter.findOneAndUpdate(
-        { name: counterName },
+        { name: name },
         { $inc: { seq: 1 } },
         { new: true, upsert: true }
     );

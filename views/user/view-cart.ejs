@@ -438,24 +438,22 @@
       }
 
       try {
-        // Optional: call a backend route to validate cart before proceeding
         const response = await axios.get('/cart/validate');
         if (response.data.success) {
-          // Proceed to checkout page
           window.location.href = '/checkout';
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Validation Failed',
-            text: response.data.message || 'Cart validation failed. Please review your cart.',
-          });
         }
       } catch (error) {
-        console.log('Error validating cart:', error);
+        const message = error.response?.data?.message || 
+                        'Something went wrong while checking your cart. Please try again.';
+
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Something went wrong while checking your cart. Please try again.',
+          icon: 'warning',
+          title: 'Cannot Proceed to Checkout',
+          text: message,
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#d33'
+        }).then(() => {
+          window.location.reload();
         });
       }
     });
