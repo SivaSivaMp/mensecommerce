@@ -14,6 +14,7 @@ import adminRouter from './routes/admin/adminRoutes.js';
 import passport from './config/passport.js';
 import session from './middleware/session.js';
 import { logger } from './middleware/logger.js';
+import { cartCount, wishlistCount } from './middleware/cartWishlistCounter.js';
 const app = express();
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +30,8 @@ app.use(nocache());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(logger);
-
+app.use(cartCount);
+app.use(wishlistCount);
 setupViews(app);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', userRouter);

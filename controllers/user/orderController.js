@@ -588,6 +588,50 @@ const returnItem = async (req, res, next) => {
         });
     }
 };
+const renderItemInvoice = async (req, res, next) => {
+    try {
+        const { orderId, itemId } = req.params;
+
+        // Fetch the order
+        const order = await Order.findOne({ orderId })
+            .populate('userId', 'name email')
+            .lean();
+
+        if (!order) {
+            return res
+                .status(400)
+                .render('error', { message: 'Order not found' });
+        }
+
+        // Find the specific ordered item
+        const item = order.orderedItems.find(
+            (i) => i._id.toString() === itemId
+        );
+        if (!item) {
+            return res
+                .status(404)
+                .render('error', { message: 'Item not found in this order' });
+        }
+
+        // Calculate amounts
+        const originalTotal = item.originalPrice * item.quantity;
+        const salesTotal = item.salesPrice * item.quantity;
+        const discount = originalTotal - salesTotal;
+
+        // Render invoice.ejs
+        return res.render('invoice', {
+            order,
+            item,
+            originalTotal,
+            salesTotal,
+            discount,
+            user: order.userId,
+        });
+    } catch (error) {
+        console.error('Error rendering invoice:', error);
+        next(error);
+    }
+};
 
 export default {
     placeOrder,
@@ -595,4 +639,5 @@ export default {
     getOrderDetails,
     cancelItem,
     returnItem,
+    renderItemInvoice,
 };

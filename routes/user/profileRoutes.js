@@ -36,6 +36,7 @@ router
 // order management
 router.route('/orders').get(orderController.getOrders);
 router.get('/order-details/:orderId/:itemId', orderController.getOrderDetails);
+router.get('/:orderId/item/:itemId/invoice', orderController.renderItemInvoice);
 // router.post('/order/cancel-item', cancelItemController);
 // router.post('/order/return-item', returnItemController);
 

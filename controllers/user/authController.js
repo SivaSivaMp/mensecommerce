@@ -197,12 +197,16 @@ const resendOtp = async (req, res, next) => {
     }
 };
 
-const logout = async (req, res, next) => {
+const logout = (req, res, next) => {
     req.session.destroy((err) => {
-        next(new AppError('logout unsuccsfull', 400));
+        if (err) {
+            console.error('Logout error:', err);
+            return next(new AppError('Logout unsuccessful', 400));
+        }
+
+        res.clearCookie('user_session');
+        return res.redirect('/');
     });
-    res.clearCookie('user_session');
-    return res.redirect('/');
 };
 
 export default {

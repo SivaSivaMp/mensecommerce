@@ -181,7 +181,7 @@
                                         class="nav-icon-item"
                                     >
                                         <i class="icon icon-heart"></i
-                                        ><span class="count-box">0</span>
+                                        ><span class="count-box"><%= typeof wishlistCount !== 'undefined' ? wishlistCount : 0 %></span>
                                     </a>
                                 </li>
 
@@ -191,7 +191,7 @@
                                         class="nav-icon-item"
                                     >
                                         <i class="icon icon-bag"></i
-                                        ><span class="count-box">0</span>
+                                        ><span class="count-box"><%= typeof cartCount !== 'undefined' ? cartCount : 0 %></span>
                                     </a>
                                 </li>
                             </ul>
