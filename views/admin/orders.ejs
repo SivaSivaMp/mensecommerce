@@ -23,29 +23,7 @@
             <!-- Body: Header -->
             <%- include('../partials/admin/admin-header', { user: user || null }) %>
             
-            <div class="order-0 col-lg-4 col-md-4 col-sm-12 col-12 mb-3 mb-md-0">
-                <form method="GET" action="/admin/orders">
-                    <div class="input-group flex-nowrap input-group-sm">
-                        <input 
-                            type="search" 
-                            name="search"
-                            class="form-control" 
-                            placeholder="Search by Order ID or Name..." 
-                            aria-label="search" 
-                            aria-describedby="addon-wrapping" 
-                            value="<%= searchQuery %>"
-                        >
-                        <button type="submit" class="input-group-text" id="addon-wrapping">
-                            <i class="icofont-search"></i>
-                        </button>
-                        <% if (searchQuery) { %>
-                            <button type="button" class="input-group-text bg-danger text-white" id="clear-search">
-                                <i class="icofont-close"></i>
-                            </button>
-                        <% } %>
-                    </div>
-                </form>
-            </div>
+            
 
             <!-- Body: Body -->       
             <div class="body d-flex py-lg-3 py-md-2">
@@ -55,6 +33,41 @@
                             <div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
                                 <h3 class="fw-bold mb-0">Order Management</h3>
                             </div>
+                        </div>
+                        <div class="order-0 col-lg-12 col-md-12 col-sm-12 mb-3">
+                        <form method="GET" action="/admin/orders" class="d-flex flex-wrap gap-2 align-items-center">
+
+                            <!-- 🔍 Search -->
+                            <div class="input-group input-group-sm" style="max-width: 250px;">
+                            <input type="search" name="search" class="form-control"
+                                placeholder="Search by Order ID or Name..." value="<%= searchQuery %>">
+                            <button type="submit" class="input-group-text"><i class="icofont-search"></i></button>
+                            <% if (searchQuery) { %>
+                                <a href="/admin/orders" class="input-group-text bg-danger text-white"><i class="icofont-close"></i></a>
+                            <% } %>
+                            </div>
+
+                            <!-- 🧾 Status -->
+                            <select name="status" class="form-select form-select-sm" style="max-width:180px;">
+                            <option value="">All Statuses</option>
+                            <% ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Return Request', 'Return Approved', 'Return Rejected', 'Returned'].forEach(st => { %>
+                                <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= st %></option>
+                            <% }); %>
+                            </select>
+
+                            <!-- 💳 Payment -->
+                            <select name="paymentMethod" class="form-select form-select-sm" style="max-width:150px;">
+                            <option value="">All Payments</option>
+                            <option value="cod" <%= paymentFilter === 'cod' ? 'selected' : '' %>>COD</option>
+                            <option value="online" <%= paymentFilter === 'online' ? 'selected' : '' %>>Online</option>
+                            </select>
+
+                                
+
+                            <!-- Filter Button -->
+                            <button type="submit" class="btn btn-sm btn-primary">Apply Filters</button>
+                            <a href="/admin/orders" class="btn btn-sm btn-secondary">Reset</a>
+                        </form>
                         </div>
                     </div> <!-- Row end  -->
                     <div class="row clearfix g-3">
@@ -113,7 +126,10 @@
                                                                 <%= order.status === 'Processing' ? 'bg-info' : '' %>
                                                                 <%= order.status === 'Shipped' ? 'bg-primary' : '' %>
                                                                 <%= order.status === 'Out for Delivery' ? 'bg-primary' : '' %>
-                                                                <%= order.status === 'Returned' || order.status === 'Return Request' ? 'bg-secondary' : '' %>
+                                                                <%= order.status === 'Return Request' ? 'bg-primary' : '' %>
+                                                                <%= order.status === 'Return Approved' ? 'bg-info' : '' %>
+                                                                <%= order.status === 'Return Rejected' ? 'bg-danger' : '' %>
+                                                                <%= order.status === 'Returned' ? 'bg-info' : '' %>
                                                             ">
                                                                 <%= order.status %>
                                                             </span>

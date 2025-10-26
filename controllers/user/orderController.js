@@ -5,6 +5,7 @@ import Product from '../../models/productSchema.js';
 import Address from '../../models/addressSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Order from '../../models/orderSchema.js';
+import Category from '../../models/categorySchema.js';
 const placeOrder = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
@@ -56,11 +57,25 @@ const placeOrder = async (req, res, next) => {
         for (const item of cart.items) {
             const product = await Product.findById(item.productId._id);
             const variant = await ProductVariant.findById(item.variantId._id);
+            const category = await Category.findById(product.category);
 
             if (!product || !variant) {
                 return next(new AppError('Product or variant not found', 404));
             }
-
+            if (!product.isListed) {
+                return next(
+                    new AppError(
+                        `the item ${product.name} is currently unavailable, please remove it place order`
+                    )
+                );
+            }
+            if (!category.isListed) {
+                return next(
+                    new AppError(
+                        `the item ${category.categoryName} is currently unavailable, please remove it place order`
+                    )
+                );
+            }
             if (variant.quantity < item.quantity) {
                 return next(
                     new AppError(`Insufficient stock for ${product.name}`, 400)

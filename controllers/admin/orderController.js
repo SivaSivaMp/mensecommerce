@@ -3,6 +3,8 @@ import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import Order from '../../models/orderSchema.js';
 import validator from 'validator';
 import User from '../../models/userSchema.js';
+import ProductVariant from '../../models/productVarintSchema.js';
+import Product from '../../models/productSchema.js';
 
 const getOrdersList = async (req, res, next) => {
     try {
@@ -10,10 +12,12 @@ const getOrdersList = async (req, res, next) => {
         const limit = 8;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.search || '';
-        let searchFilter = {};
+        const statusFilter = req.query.status || '';
+        const paymentFilter = req.query.paymentMethod || '';
+        let filter = {};
 
         if (searchQuery) {
-            searchFilter.$or = [
+            filter.$or = [
                 { orderId: { $regex: searchQuery, $options: 'i' } },
                 {
                     'shippingAddress.name': {
@@ -23,11 +27,17 @@ const getOrdersList = async (req, res, next) => {
                 },
             ];
         }
+        if (statusFilter) {
+            filter.status = statusFilter;
+        }
+        if (paymentFilter) {
+            filter.paymentMethod = paymentFilter;
+        }
 
-        const totalOrders = await Order.countDocuments(searchFilter);
+        const totalOrders = await Order.countDocuments(filter);
         const totalPages = Math.ceil(totalOrders / limit);
 
-        const orders = await Order.find(searchFilter)
+        const orders = await Order.find(filter)
             .populate({
                 path: 'userId',
                 select: 'name email',
@@ -61,12 +71,14 @@ const getOrdersList = async (req, res, next) => {
             hasPrevPage: page > 1,
             nextPage: page < totalPages ? page + 1 : null,
             prevPage: page > 1 ? page - 1 : null,
-            pages: [],
+            pages: Array.from({ length: totalPages }, (_, i) => i + 1),
         };
 
         return res.render('orders', {
             orders: formattedOrders,
             searchQuery: searchQuery,
+            statusFilter,
+            paymentFilter,
             pagination: pagination,
             totalOrders: totalOrders,
             user: req.user || null,
@@ -269,4 +281,199 @@ const updateOrderItemStatus = async (req, res, next) => {
         });
     }
 };
-export default { getOrdersList, getAdminOrderDetails, updateOrderItemStatus };
+const approveReturn = async (req, res, next) => {
+    try {
+        const { itemId } = req.body;
+
+        if (!itemId) {
+            return res
+                .status(400)
+                .json({ success: false, message: 'Item ID is required' });
+        }
+
+        const order = await Order.findOne({ 'orderedItems._id': itemId });
+        if (!order)
+            return res
+                .status(404)
+                .json({ success: false, message: 'Order not found' });
+
+        const item = order.orderedItems.id(itemId);
+        if (!item)
+            return res
+                .status(404)
+                .json({ success: false, message: 'Item not found' });
+
+        if (
+            ['Return Approved', 'Return Rejected', 'Returned'].includes(
+                item.returnStatus
+            )
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'Return action already processed and cannot be changed.',
+            });
+        }
+
+        item.status = 'Return Approved';
+        item.returnStatus = 'Approved';
+        item.returnApprovedDate = new Date();
+        order.status = 'Return Approved';
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Return request approved successfully.',
+        });
+    } catch (error) {
+        console.error('Error in approveReturn:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error while approving return.',
+        });
+    }
+};
+
+// Reject return
+const rejectReturn = async (req, res, next) => {
+    try {
+        const { itemId, rejectionReason } = req.body;
+
+        if (!itemId || !rejectionReason) {
+            return res.status(400).json({
+                success: false,
+                message: 'Item ID and rejection reason are required',
+            });
+        }
+
+        const order = await Order.findOne({ 'orderedItems._id': itemId });
+        if (!order)
+            return res
+                .status(404)
+                .json({ success: false, message: 'Order not found' });
+
+        const item = order.orderedItems.id(itemId);
+        if (!item)
+            return res
+                .status(404)
+                .json({ success: false, message: 'Item not found' });
+
+        if (
+            ['Return Approved', 'Return Rejected', 'Returned'].includes(
+                item.returnStatus
+            )
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'Return action already processed and cannot be changed.',
+            });
+        }
+
+        item.status = 'Return Rejected';
+        item.returnStatus = 'Rejected';
+        item.returnRejectionReason = rejectionReason;
+        item.returnRejectionDate = new Date();
+        order.status = 'Return Rejected';
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Return request rejected successfully.',
+        });
+    } catch (error) {
+        console.error('Error in rejectReturn:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error while rejecting return.',
+        });
+    }
+};
+
+// Complete return
+const completeReturn = async (req, res, next) => {
+    try {
+        const { itemId } = req.body;
+
+        if (!itemId) {
+            return res
+                .status(400)
+                .json({ success: false, message: 'Item ID is required' });
+        }
+
+        const order = await Order.findOne({ 'orderedItems._id': itemId });
+        if (!order)
+            return res
+                .status(404)
+                .json({ success: false, message: 'Order not found' });
+
+        const item = order.orderedItems.id(itemId);
+        if (!item)
+            return res
+                .status(404)
+                .json({ success: false, message: 'Item not found' });
+
+        // Allow only approved returns to be completed
+        if (item.returnStatus !== 'Approved') {
+            return res.status(400).json({
+                success: false,
+                message: 'Return can only be completed after approval.',
+            });
+        }
+
+        // ✅ Mark item as returned
+        item.status = 'Returned';
+        item.returnStatus = 'Returned';
+        item.returnCompletedDate = new Date();
+
+        // ✅ Restock variant
+        const variant = await ProductVariant.findById(item.variant);
+        if (variant) {
+            variant.quantity += item.quantity;
+            await variant.save();
+
+            // ✅ Update total stock of product (optional but recommended)
+            const product = await Product.findById(variant.productId);
+            if (product) {
+                const allVariants = await ProductVariant.find({
+                    productId: product._id,
+                });
+                const newTotalStock = allVariants.reduce(
+                    (sum, v) => sum + v.quantity,
+                    0
+                );
+                product.totalStock = newTotalStock;
+                await product.save();
+            }
+        }
+
+        // ✅ If all items in the order are returned → mark order as Returned
+        const allItemsReturned = order.orderedItems.every(
+            (i) => i.returnStatus === 'Returned'
+        );
+        if (allItemsReturned) order.status = 'Returned';
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Return completed successfully. Stock updated.',
+        });
+    } catch (error) {
+        console.error('Error in completeReturn:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error while completing return.',
+        });
+    }
+};
+export default {
+    getOrdersList,
+    getAdminOrderDetails,
+    updateOrderItemStatus,
+    approveReturn,
+    rejectReturn,
+    completeReturn,
+};

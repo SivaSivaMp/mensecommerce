@@ -3,13 +3,13 @@ import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import Product from '../../models/productSchema.js';
 import Address from '../../models/addressSchema.js';
 import Cart from '../../models/cartSchema.js';
+import ProductVariant from '../../models/productVarintSchema.js';
 
 const getCheckout = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
         const page = parseInt(req.query.page) || 1;
         const itemsPerPage = 2;
-        const skip = (page - 1) * itemsPerPage;
 
         if (!userId) {
             return next(
@@ -17,17 +17,13 @@ const getCheckout = async (req, res, next) => {
             );
         }
 
-        const cart = await Cart.findOne({ userId })
-            .populate({
-                path: 'items.productId',
-                select: 'name originalPrice salesPrice images',
-            })
-            .populate({
-                path: 'items.variantId',
-                select: 'size quantity',
-            });
+        const cart = await Cart.findOne({ userId }).populate({
+            path: 'items.productId',
+            select: 'name originalPrice salesPrice images isListed category',
+            populate: { path: 'category', select: 'isListed categoryName' },
+        });
 
-        if (!cart || cart.items.length === 0) {
+        if (!cart || !cart.items.length) {
             return res.render('checkout', {
                 cartItems: [],
                 cartEmpty: true,
@@ -51,53 +47,63 @@ const getCheckout = async (req, res, next) => {
 
         let totalPrice = 0;
         let totalDiscount = 0;
+        const cartItems = [];
 
-        const cartItems = cart.items.map((item) => {
-            const originalPrice = item.productId.originalPrice
-                ? Number(item.productId.originalPrice)
-                : 0;
+        for (const item of cart.items) {
+            const product = item.productId;
+            if (!product) continue;
+
+            const variant = await ProductVariant.findById(item.variantId);
+            const variantQuantity = variant ? variant.quantity : 0;
+
+            const originalPrice = Number(product.originalPrice || 0);
             const salePrice =
-                item.productId.salesPrice &&
-                Number(item.productId.salesPrice) > 0
-                    ? Number(item.productId.salesPrice)
+                product.salesPrice && Number(product.salesPrice) > 0
+                    ? Number(product.salesPrice)
                     : originalPrice;
 
-            const itemOriginalTotal = originalPrice * item.quantity;
-            const itemSaleTotal = salePrice * item.quantity;
-            const itemDiscount = itemOriginalTotal - itemSaleTotal;
+            const isUnlistedProduct = !product.isListed;
+            const isUnlistedCategory = !product.category?.isListed;
+            const isOutOfStock =
+                item.quantity > variantQuantity || variantQuantity === 0;
 
-            totalPrice += itemOriginalTotal;
-            totalDiscount += itemDiscount;
-
-            return {
+            cartItems.push({
                 _id: item._id,
-                productId: item.productId._id,
-                productName: item.productId.name,
-                productImage:
-                    item.productId.images && item.productId.images[0]
-                        ? item.productId.images[0]
-                        : '/images/placeholder.jpg',
-                originalPrice: originalPrice,
-                salePrice: salePrice,
+                productId: product._id,
+                productName: product.name,
+                productImage: product.images?.[0] || '/images/placeholder.jpg',
+                originalPrice,
+                salePrice,
                 quantity: item.quantity,
-                size: item.size,
+                size: variant?.size || item.size,
+                variantQuantity,
                 totalPrice: salePrice * item.quantity,
-            };
-        });
+                isOutOfStock,
+                isUnlisted: isUnlistedProduct || isUnlistedCategory,
+            });
+
+            if (!isOutOfStock && !isUnlistedProduct && !isUnlistedCategory) {
+                const itemOriginalTotal = originalPrice * item.quantity;
+                const itemSaleTotal = salePrice * item.quantity;
+                const itemDiscount = itemOriginalTotal - itemSaleTotal;
+
+                totalPrice += itemOriginalTotal;
+                totalDiscount += itemDiscount;
+            }
+        }
 
         const totalAmount = totalPrice - totalDiscount;
         const savings = totalDiscount;
 
         const priceDetails = {
-            totalPrice: totalPrice,
+            totalPrice,
             discount: totalDiscount,
-            totalAmount: totalAmount,
-            savings: savings,
+            totalAmount,
+            savings,
         };
 
         const totalAddresses = await Address.countDocuments({ userId });
         const totalPages = Math.ceil(totalAddresses / itemsPerPage);
-
         const validPage = Math.min(Math.max(page, 1), totalPages || 1);
 
         const addresses = await Address.find({ userId })
@@ -130,14 +136,14 @@ const getCheckout = async (req, res, next) => {
         };
 
         return res.render('checkout', {
-            cartItems: cartItems,
+            cartItems,
             cartEmpty: false,
-            priceDetails: priceDetails,
+            priceDetails,
             itemCount: cartItems.length,
             addresses: formattedAddresses,
             currentPage: validPage,
-            totalPages: totalPages,
-            pagination: pagination,
+            totalPages,
+            pagination,
         });
     } catch (error) {
         console.error('Error in getCheckout:', error);

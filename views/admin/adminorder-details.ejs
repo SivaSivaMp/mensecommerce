@@ -135,39 +135,7 @@
                                                 
                                             "><strong><%= order.status %></strong></span>
                                         </div>
-                                        <div class="col-12">
-                                            
-<% orderedItems.forEach((item) => { %>
-    <% if (item.returnStatus === 'Requested') { %>
-        <div class="mt-2">
-            <label class="form-label small text-muted">Return Action:</label>
-            <select class="form-select form-select-sm return-action-select" data-item-id="<%= item._id %>">
-                <option value="">-- Select Action --</option>
-                <option value="Approve">Approve Return</option>
-                <option value="Reject">Reject Return</option>
-            </select>
-        </div>
-    <% } else if (item.returnStatus === 'Approved') { %>
-        <div class="mt-2">
-            <span class="badge bg-info">Return Approved - Awaiting Item</span>
-            <button class="btn btn-sm " data-item-id="<%= item._id %>">
-                Mark as Returned
-            </button>
-        </div>
-    <% } else if (item.returnStatus === 'Rejected') { %>
-        <div class="mt-2">
-            <span class="badge bg-secondary">Return Rejected</span>
-            <% if (item.returnRejectionReason) { %>
-                <small class="d-block text-muted">Reason: <%= item.returnRejectionReason %></small>
-            <% } %>
-        </div>
-    <% } else if (item.returnStatus === 'Returned') { %>
-        <div class="mt-2">
-            <span class="badge bg-dark">Return Completed</span>
-        </div>
-    <% } %>
-<% }); %>
-                                        </div>
+                                        
 
                                     </div>
                                 </div>
@@ -185,16 +153,17 @@
                                 <div class="card-body">
                                     <div class="product-cart">
                                         <div class="checkout-table table-responsive">
-                                            <table id="myCartTable" class="table display dataTable table-hover align-middle" style="width: 100%">
+                                            <table id="" class="table display dataTable table-hover align-middle" style="width: 100%">
                                                 <thead>
                                                     <tr>
                                                         <th>Product Image</th>
                                                         <th>Product Name</th>
-                                                        
                                                         <th>Original Price</th>
                                                         <th>Sales Price</th>
                                                         <th>Total</th>
                                                         <th>Order Status</th>
+                                                        <th>Action</th>
+                                                        <th>Return Status</th>
                                                         <th>Action</th>
                                                     </tr>
                                                 </thead>
@@ -219,35 +188,35 @@
                                                                 <p class="price fw-bold">₹<%= item.totalPrice.toLocaleString('en-IN') %></p>
                                                             </td>
                                                             <td>
-<% 
-const FINAL_STATES = ['Delivered', 'Cancelled', 'Return Request', 'Return Approved', 'Return Rejected', 'Returned'];
-const isFinalStatus = FINAL_STATES.includes(item.status);
-%>
+                                                                <% 
+                                                                const FINAL_STATES = ['Delivered', 'Cancelled', 'Return Request', 'Return Approved', 'Return Rejected', 'Returned'];
+                                                                const isFinalStatus = FINAL_STATES.includes(item.status);
+                                                                %>
 
-<% if (isFinalStatus) { %>
-    
-    <span >
-        <%= item.status %>
-    </span>
-    
-<% } else { %>
-    
-    <select class="form-select order-status-select" data-item-id="<%= item._id %>">
-        <option value="<%= item.status %>" selected><%= item.status %></option>
-        <% 
-        const VALID_TRANSITIONS = {
-            'Pending': ['Processing'],
-            'Processing': ['Shipped'],
-            'Shipped': ['Out for Delivery'],
-            'Out for Delivery': ['Delivered']
-        };
-        const allowedStatuses = VALID_TRANSITIONS[item.status] || [];
-        %>
-        <% allowedStatuses.forEach(status => { %>
-            <option value="<%= status %>"><%= status %></option>
-        <% }); %>
-    </select>
-<% } %>
+                                                                <% if (isFinalStatus) { %>
+                                                                    
+                                                                    <span >
+                                                                        <%= item.status %>
+                                                                    </span>
+                                                                    
+                                                                <% } else { %>
+                                                                    
+                                                                    <select class="form-select order-status-select" data-item-id="<%= item._id %>">
+                                                                        <option value="<%= item.status %>" selected><%= item.status %></option>
+                                                                        <% 
+                                                                        const VALID_TRANSITIONS = {
+                                                                            'Pending': ['Processing'],
+                                                                            'Processing': ['Shipped'],
+                                                                            'Shipped': ['Out for Delivery'],
+                                                                            'Out for Delivery': ['Delivered']
+                                                                        };
+                                                                        const allowedStatuses = VALID_TRANSITIONS[item.status] || [];
+                                                                        %>
+                                                                        <% allowedStatuses.forEach(status => { %>
+                                                                            <option value="<%= status %>"><%= status %></option>
+                                                                        <% }); %>
+                                                                    </select>
+                                                                <% } %>
                                                                 
                                                             </td>
                                                             <td>
@@ -255,7 +224,32 @@ const isFinalStatus = FINAL_STATES.includes(item.status);
                                                                     Update
                                                                 </button>
                                                             </td>
-                                                            
+                                                            <td><% if (item.returnStatus === 'Requested') { %>
+                                                                <span class="badge bg-warning text-dark">Requested</span>
+                                                            <% } else if (item.returnStatus === 'Approved') { %>
+                                                                <span class="badge bg-info">Approved</span>
+                                                            <% } else if (item.returnStatus === 'Rejected') { %>
+                                                                <span class="badge bg-secondary">Rejected</span>
+                                                                <% if (item.returnRejectionReason) { %>
+                                                                <small class="d-block text-muted">Reason: <%= item.returnRejectionReason %></small>
+                                                                <% } %>
+                                                            <% } else if (item.returnStatus === 'Returned') { %>
+                                                                <span class="badge bg-dark">Returned</span>
+                                                            <% } else { %>
+                                                                <span class="text-muted">-</span>
+                                                            <% } %></td>
+                                                                                                                <td><% if (item.returnStatus === 'Requested') { %>
+                                                                <div class="d-flex gap-2">
+                                                                <button id="approve-return" class="btn btn-sm btn-success approve-return" data-item-id="<%= item._id %>">Approve</button>
+                                                                <button id="reject-return" class="btn btn-sm btn-danger reject-return" data-item-id="<%= item._id %>">Reject</button>
+                                                                </div>
+                                                            <% } else if (item.returnStatus === 'Approved') { %>
+                                                                <button id="mark-returned" class="btn btn-sm btn-outline-success mark-returned" data-item-id="<%= item._id %>">
+                                                                Mark as Returned
+                                                                </button>
+                                                            <% } else { %>
+                                                                <span class="text-muted">N/A</span>
+                                                            <% } %></td>
                                                         </tr>
                                                     <% }); %>
                                                 </tbody>
@@ -304,19 +298,10 @@ const isFinalStatus = FINAL_STATES.includes(item.status);
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>   
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+   
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-        $(document).ready(function() {
-            $('#myCartTable').addClass('nowrap').dataTable({
-                responsive: true,
-                paging: false,
-                searching: false,
-                columnDefs: [
-                    { targets: [-1, -2], className: 'dt-body-right' }
-                ]
-            });
-        });
-    </script>
+    
 
     <script>
         // Update order item status
@@ -326,6 +311,7 @@ const isFinalStatus = FINAL_STATES.includes(item.status);
                 const selectElement = document.querySelector(`.order-status-select[data-item-id="${itemId}"]`);
                 const newStatus = selectElement.value;
                 const orderId = '<%= order.orderId %>';
+                console.log('Approve button clicked', { itemId });
 
                 try {
                     const response = await axios.post('/admin/orders/update-status', {
@@ -377,117 +363,110 @@ const isFinalStatus = FINAL_STATES.includes(item.status);
             }
         }
     </script>
-    <script>
-        // Handle return action dropdown
-document.querySelectorAll('.return-action-select').forEach(select => {
-    select.addEventListener('change', async function() {
-        const itemId = this.dataset.itemId;
-        const action = this.value;
-        
-        if (!action) return;
-        
-        if (action === 'Reject') {
-            // Ask for rejection reason
-            const { value: reason } = await Swal.fire({
-                title: 'Reject Return',
-                input: 'textarea',
-                inputLabel: 'Rejection Reason',
-                inputPlaceholder: 'Enter reason for rejecting this return...',
-                showCancelButton: true,
-                inputValidator: (value) => {
-                    if (!value) {
-                        return 'Please provide a reason!';
-                    }
-                }
-            });
-            
-            if (reason) {
-                rejectReturn(itemId, reason);
-            }
-        } else if (action === 'Approve') {
-            approveReturn(itemId);
-        }
-        
-        this.value = ''; // Reset dropdown
+<!-- Make sure these libraries are loaded once -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("✅ Admin return script loaded");
+  
+  const orderId = '<%= order.orderId %>'; // Define orderId here
+
+  // Approve Return
+  document.querySelectorAll('.approve-return').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const itemId = btn.dataset.itemId;
+      console.log('Approve clicked for item:', itemId);
+
+      const confirm = await Swal.fire({
+        title: 'Approve Return?',
+        text: 'Are you sure you want to approve this return request?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Approve',
+        confirmButtonColor: '#28a745'
+      });
+      if (!confirm.isConfirmed) return;
+
+      try {
+        const res = await axios.post('/admin/orders/approve-return', 
+          { orderId, itemId },  // ✅ Added orderId
+          { withCredentials: true }
+        );
+        Swal.fire('Approved!', res.data.message, 'success')
+          .then(() => location.reload());
+      } catch (err) {
+        console.error('Approve error:', err);
+        Swal.fire('Error', err.response?.data?.message || 'Failed to approve return', 'error');
+      }
     });
-});
+  });
 
-// Handle complete return button
-document.querySelectorAll('.complete-return-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const itemId = this.dataset.itemId;
-        completeReturn(itemId);
+  // Reject Return
+  document.querySelectorAll('.reject-return').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const itemId = btn.dataset.itemId;
+      console.log('Reject clicked for item:', itemId);
+
+      const { value: reason } = await Swal.fire({
+        title: 'Reject Return',
+        input: 'textarea',
+        inputLabel: 'Reason for Rejection',
+        inputPlaceholder: 'Enter reason here...',
+        showCancelButton: true,
+        confirmButtonText: 'Reject',
+        confirmButtonColor: '#d33',
+        inputValidator: (value) => !value && 'Please provide a reason'
+      });
+      if (!reason) return;
+
+      try {
+        const res = await axios.post('/admin/orders/reject-return', 
+          { orderId, itemId, rejectionReason: reason },  // ✅ Added orderId
+          { withCredentials: true }
+        );
+        Swal.fire('Rejected!', res.data.message, 'success')
+          .then(() => location.reload());
+      } catch (err) {
+        console.error('Reject error:', err);
+        Swal.fire('Error', err.response?.data?.message || 'Failed to reject return', 'error');
+      }
     });
+  });
+
+  // Mark as Returned
+  document.querySelectorAll('.mark-returned').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const itemId = btn.dataset.itemId;
+      console.log('Mark Returned clicked for item:', itemId);
+
+      const confirm = await Swal.fire({
+        title: 'Mark as Returned?',
+        text: 'Confirm the item has been received back from the customer.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Complete Return',
+        confirmButtonColor: '#198754'
+      });
+      if (!confirm.isConfirmed) return;
+
+      try {
+        const res = await axios.post('/admin/orders/complete-return', 
+          { orderId, itemId },  // ✅ Added orderId
+          { withCredentials: true }
+        );
+        Swal.fire('Done!', res.data.message, 'success')
+          .then(() => location.reload());
+      } catch (err) {
+        console.error('Complete return error:', err);
+        Swal.fire('Error', err.response?.data?.message || 'Failed to complete return', 'error');
+      }
+    });
+  });
+
 });
+</script>
 
-// Approve return function
-async function approveReturn(itemId) {
-    try {
-        const result = await Swal.fire({
-            title: 'Approve Return?',
-            text: 'This will approve the return request',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, Approve'
-        });
-        
-        if (result.isConfirmed) {
-            const response = await axios.post('/admin/approve-return', { itemId });
-            
-            if (response.data.success) {
-                Swal.fire('Approved!', 'Return request has been approved.', 'success')
-                    .then(() => location.reload());
-            }
-        }
-    } catch (error) {
-        Swal.fire('Error', error.response?.data?.message || 'Failed to approve return', 'error');
-    }
-}
-
-// Reject return function
-async function rejectReturn(itemId, reason) {
-    try {
-        const response = await axios.post('/admin/reject-return', { 
-            itemId, 
-            rejectionReason: reason 
-        });
-        
-        if (response.data.success) {
-            Swal.fire('Rejected!', 'Return request has been rejected.', 'success')
-                .then(() => location.reload());
-        }
-    } catch (error) {
-        Swal.fire('Error', error.response?.data?.message || 'Failed to reject return', 'error');
-    }
-}
-
-// Complete return function
-async function completeReturn(itemId) {
-    try {
-        const result = await Swal.fire({
-            title: 'Complete Return?',
-            text: 'Confirm that the item has been received and return is complete',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, Complete Return'
-        });
-        
-        if (result.isConfirmed) {
-            const response = await axios.post('/admin/complete-return', { itemId });
-            
-            if (response.data.success) {
-                Swal.fire('Completed!', 'Return has been completed.', 'success')
-                    .then(() => location.reload());
-            }
-        }
-    } catch (error) {
-        Swal.fire('Error', error.response?.data?.message || 'Failed to complete return', 'error');
-    }
-}
-    </script>
 </body>
 </html>
