@@ -1,5 +1,7 @@
 import User from '../models/userSchema.js';
 import { getCurrentUserId } from '../helpers/getCurrentUserId.js';
+import AppError from '../utils/appError.js';
+import { HTTP_STATUS } from '../utils/httpStatus.js';
 const userAuth = async (req, res, next) => {
     try {
         if (!getCurrentUserId(req)) {
@@ -33,28 +35,38 @@ const userAuth = async (req, res, next) => {
         return res.status(500).send('Internal Server error');
     }
 };
-
 const blockCheck = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
-        if (!userId) {
-            return next();
-        }
+        if (!userId) return next();
 
         const userData = await User.findById(userId);
+
+        if (!userData) return next();
 
         if (userData.isBlocked) {
             req.session.destroy((err) => {
                 if (err) {
-                    console.log('Error destroying session:', err);
+                    console.error('Logout error:', err);
+                    return next(
+                        new AppError(
+                            'Logout unsuccessful',
+                            HTTP_STATUS.BAD_REQUEST
+                        )
+                    );
                 }
+
+                res.clearCookie('user_session');
+                return res.redirect('/login');
             });
+
+            return;
         }
 
         next();
     } catch (error) {
-        console.log('Error in block check middleware:', error);
-        next();
+        console.error('Error in block check middleware:', error);
+        next(error);
     }
 };
 

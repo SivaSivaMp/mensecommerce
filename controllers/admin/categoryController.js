@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Category from '../../models/categorySchema.js';
 import AppError from '../../utils/appError.js';
 import validator from 'validator';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 // get category info for listing
 const categoryInfo = async (req, res, next) => {
     try {
@@ -56,11 +57,19 @@ const addCategory = async (req, res, next) => {
     try {
         const { name, description } = req.body;
         if (!name.trim() || !description.trim()) {
-            return next(new AppError('please fill the necessary field', 400));
+            return next(
+                new AppError(
+                    'please fill the necessary field',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         if (!validator.isLength(name, { min: 2, max: 50 })) {
             return next(
-                new AppError('Name must be between 2 and 50 characters', 400)
+                new AppError(
+                    'Name must be between 2 and 50 characters',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
 
@@ -71,7 +80,7 @@ const addCategory = async (req, res, next) => {
             return next(
                 new AppError(
                     'category name already exists, please change the name',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
@@ -80,7 +89,7 @@ const addCategory = async (req, res, next) => {
             description: description,
         });
         await newCategory.save();
-        res.status(200).json({
+        res.status(HTTP_STATUS.OK).json({
             status: 'success',
             message: 'Category added successfully',
             redirectUrl: '/admin/category/category-add',
@@ -115,19 +124,25 @@ const editCategory = async (req, res, next) => {
         const { id, name, description } = req.body;
         if (!name.trim() || !description.trim()) {
             return next(
-                new AppError('name or description cannot be empty', 400)
+                new AppError(
+                    'name or description cannot be empty',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         if (!validator.isLength(name, { min: 2, max: 50 })) {
             return next(
-                new AppError('Name must be between 2 and 50 characters', 400)
+                new AppError(
+                    'Name must be between 2 and 50 characters',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         if (!validator.isLength(description, { min: 2, max: 1000 })) {
             return next(
                 new AppError(
                     'Description must be between 2 and 50 characters',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
@@ -138,7 +153,7 @@ const editCategory = async (req, res, next) => {
             return next(
                 new AppError(
                     'category with this name already exist, please change the name',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
@@ -148,7 +163,7 @@ const editCategory = async (req, res, next) => {
         };
 
         await Category.updateOne({ _id: id }, { $set: data });
-        res.status(200).json({
+        res.status(HTTP_STATUS.OK).json({
             status: 'success',
             message: 'Category edited successfully',
             redirectUrl: '/admin/category',

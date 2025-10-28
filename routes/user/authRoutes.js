@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import viewController from '../../controllers/user/viewController.js';
 import authController from '../../controllers/user/authController.js';
 import passport from 'passport';
 import profileController from '../../controllers/user/profileController.js';

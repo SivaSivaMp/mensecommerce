@@ -52,7 +52,7 @@
                     <div class="tf-control-sorting d-flex justify-content-end">
                         <div class="tf-dropdown-sort" data-bs-toggle="dropdown">
                             <div class="btn-select">
-                                <span class="text-sort-value">Featured</span>
+                                <span class="text-sort-value"><%=currentSort%></span>
                                 <span class="icon icon-arrow-down"></span>
                             </div>
                             <div class="dropdown-menu" >
@@ -410,7 +410,7 @@ function setPriceRange(min, max) {
                             Swal.fire({
                                 icon: 'warning',
                                 title: 'Something went wrong!',
-                                text: response.data.message || 'Try again later.',
+                                text: response.message || 'Try again later.',
                             });
                         }
 

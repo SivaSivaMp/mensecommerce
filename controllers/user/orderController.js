@@ -165,7 +165,7 @@ const getOrders = async (req, res, next) => {
         const limit = 4;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.query || '';
-
+        const statusFilter = req.query.status || '';
         if (!userId) {
             return next(new AppError('Please login to view your orders', 401));
         }
@@ -182,6 +182,9 @@ const getOrders = async (req, res, next) => {
                     },
                 },
             ];
+        }
+        if (statusFilter) {
+            searchFilter.status = statusFilter;
         }
 
         const totalOrders = await Order.countDocuments(searchFilter);
@@ -243,6 +246,7 @@ const getOrders = async (req, res, next) => {
             searchQuery: searchQuery,
             pagination: pagination,
             totalOrders: totalOrders,
+            statusFilter,
         });
     } catch (error) {
         console.error('Error in getOrders:', error);
@@ -631,6 +635,11 @@ const renderItemInvoice = async (req, res, next) => {
         console.error('Error rendering invoice:', error);
         next(error);
     }
+};
+
+const getOrderSuccesspage = async (req, res, next) => {
+    try {
+    } catch (error) {}
 };
 
 export default {

@@ -5,6 +5,7 @@ import validator from 'validator';
 import User from '../../models/userSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Product from '../../models/productSchema.js';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 
 const getOrdersList = async (req, res, next) => {
     try {
@@ -195,28 +196,26 @@ const updateOrderItemStatus = async (req, res, next) => {
         const { orderId, itemId, status } = req.body;
 
         if (!orderId || !itemId || !status) {
-            return res.status(400).json({
-                status: 'error',
-                message: 'Order ID, Item ID and Status are required',
-            });
+            return next(
+                new AppError(
+                    'Order ID, Item ID and Status are required',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         const order = await Order.findOne({ orderId: orderId });
 
         if (!order) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Order not found',
-            });
+            return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
         }
 
         const item = order.orderedItems.id(itemId);
 
         if (!item) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Item not found in order',
-            });
+            return next(
+                new AppError('Item not found in order', HTTP_STATUS.NOT_FOUND)
+            );
         }
 
         const currentStatus = item.status;
@@ -269,13 +268,13 @@ const updateOrderItemStatus = async (req, res, next) => {
 
         await order.save();
 
-        return res.status(200).json({
+        return res.status(HTTP_STATUS.OK).json({
             status: 'success',
             message: 'Order item status updated successfully',
         });
     } catch (error) {
         console.error('Error in updateOrderItemStatus:', error);
-        return res.status(500).json({
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             status: 'error',
             message: 'Internal server error',
         });
@@ -286,16 +285,14 @@ const approveReturn = async (req, res, next) => {
         const { itemId } = req.body;
 
         if (!itemId) {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Item ID is required' });
+            return next(
+                new AppError('Item ID is required', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
         const order = await Order.findOne({ 'orderedItems._id': itemId });
         if (!order)
-            return res
-                .status(404)
-                .json({ success: false, message: 'Order not found' });
+            return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
 
         const item = order.orderedItems.id(itemId);
         if (!item)
@@ -415,7 +412,6 @@ const completeReturn = async (req, res, next) => {
                 .status(404)
                 .json({ success: false, message: 'Item not found' });
 
-        // Allow only approved returns to be completed
         if (item.returnStatus !== 'Approved') {
             return res.status(400).json({
                 success: false,
@@ -423,18 +419,15 @@ const completeReturn = async (req, res, next) => {
             });
         }
 
-        // ✅ Mark item as returned
         item.status = 'Returned';
         item.returnStatus = 'Returned';
         item.returnCompletedDate = new Date();
 
-        // ✅ Restock variant
         const variant = await ProductVariant.findById(item.variant);
         if (variant) {
             variant.quantity += item.quantity;
             await variant.save();
 
-            // ✅ Update total stock of product (optional but recommended)
             const product = await Product.findById(variant.productId);
             if (product) {
                 const allVariants = await ProductVariant.find({
@@ -449,7 +442,6 @@ const completeReturn = async (req, res, next) => {
             }
         }
 
-        // ✅ If all items in the order are returned → mark order as Returned
         const allItemsReturned = order.orderedItems.every(
             (i) => i.returnStatus === 'Returned'
         );

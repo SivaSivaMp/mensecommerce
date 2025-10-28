@@ -84,9 +84,7 @@ const getResetPassword = async (req, res) => {
 const resetPassword = async (req, res, next) => {
     try {
         const { newPassword, resetPassword } = req.body;
-        if (validator.isStrongPassword(newPassword)) {
-            return next(new AppError('consider giving strong password', 400));
-        }
+
         const email = req.session.email;
         if (!newPassword || !resetPassword) {
             return next(new AppError('Enter new Password', 500));
@@ -207,7 +205,8 @@ const editPersonalInformation = async (req, res, next) => {
         const { newName, newPhone } = req.body;
         const name = newName.trim();
         const phone = newPhone.trim();
-        if (!name || !phone) {
+        console.log(phone);
+        if (!name) {
             return next(new AppError('please fill the required field', 400));
         }
         const namepattern = /^[A-Za-z\s]+$/;
@@ -222,7 +221,7 @@ const editPersonalInformation = async (req, res, next) => {
         const userId = getCurrentUserId(req);
         const userData = await User.findById(userId);
         userData.name = name;
-        userData.phone == phone;
+        userData.phone = phone;
         await userData.save();
         return res.status(200).json({
             status: 'success',

@@ -58,12 +58,11 @@ const getWishlist = async (req, res, next) => {
         });
 
         const products = await Promise.all(productsPromises);
-        const listedProducts = products.filter((p) => p.isListed);
 
         return res.render('wishlist', {
-            products: listedProducts,
+            products: products,
             message:
-                listedProducts.length === 0
+                products.length === 0
                     ? 'No available items in your wishlist'
                     : null,
         });
@@ -77,13 +76,18 @@ const addToWishlist = async (req, res, next) => {
     try {
         const productId = req.params.productId;
         const userId = getCurrentUserId(req);
-
+        const product = await Product.findById(productId);
         if (!userId) {
             return next(
                 new AppError('please login before adding to wishlist', 401)
             );
         }
-
+        if (!product) {
+            return next(new AppError('product not found', 404));
+        }
+        if (!product.isListed) {
+            return next(new AppError('product currently unavailable', 404));
+        }
         let wishList = await Wishlist.findOne({ userId });
         if (!wishList) {
             wishList = new Wishlist({ userId, items: [] });

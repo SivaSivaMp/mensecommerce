@@ -28,21 +28,32 @@
                     <div class="col-lg-9">
                         <div class="my-account-content account-order">
                             <!-- Search Bar -->
-                            <div class="order-0 col-lg-4 col-md-6 col-sm-12 col-12 mb-3 mb-md-4">
-                                <form method="GET" action="/profile/orders">
-                                    <div class="input-group flex-nowrap input-group-sm">
-                                        <input type="search" name="query" class="form-control" placeholder="Search by Order ID or Product..." aria-label="search" aria-describedby="addon-wrapping" value="<%= searchQuery %>">
-                                        <button type="submit" class="input-group-text" id="addon-wrapping">
-                                            <i class="icofont-search"></i>
-                                        </button>
-                                        <% if (searchQuery) { %>
-                                            <button type="button" class="input-group-text bg-danger text-white" id="clear-search">
-                                                <i class="icofont-close"></i>
-                                            </button>
-                                        <% } %>
-                                    </div>
+                            <div class="order-0 col-lg-4 col-md-6 col-sm-12 col-12 mb-3 mb-md-4 ">
+                                <form method="GET" action="/profile/orders"  class="d-flex flex-wrap gap-2 align-items-center">
+                                    
+                                <div class="input-group input-group-sm" style="max-width: 250px;">
+                                <input type="search" name="search" class="form-control"
+                                    placeholder="Search by Order ID or Name..." value="<%= searchQuery %>">
+                                <button type="submit" class="input-group-text"><i class="icofont-search"></i></button>
+                                <% if (searchQuery) { %>
+                                    <a href="/admin/orders" class="input-group-text bg-danger text-white"><i class="icofont-close"></i></a>
+                                <% } %>
+                                </div>
+                                <div>
+                                <select name="status" class="form-select form-select-sm" style="max-width:180px;">
+                                <option value="">All Statuses</option>
+                                <% ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Return Request', 'Return Approved', 'Return Rejected', 'Returned'].forEach(st => { %>
+                                    <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= st %></option>
+                                <% }); %>
+                                </select>
+                                </div>
+                                <div>
+                                <button type="submit" class="btn btn-sm btn-primary">Apply Filters</button>
+                                <a href="/admin/orders" class="btn btn-sm btn-secondary">Reset</a>
+                                </div>
                                 </form>
                             </div>
+                            
 
                             <% if (orders.length > 0) { %>
                                 <div class="wrap-account-order">
@@ -65,7 +76,7 @@
                                                             <img src="<%= order.productImage %>" alt="<%= order.productName %>">
                                                         </a>
                                                         <div class="cart-info">
-                                                            <a href="/order-details/<%= order.orderId %>" class="cart-title link"><%= order.productName %></a>
+                                                            <a href="/profile/order-details/<%= order.orderId %>/<%= order.itemId %>" class="cart-title link"><%= order.productName %></a>
                                                             <div class="cart-meta-variant"><%= order.size %> / Qty: <%= order.quantity %></div>
                                                             <div class="cart-meta-variant text-muted" style="font-size: 12px;">Order ID: <%= order.orderId %></div>
                                                         </div>

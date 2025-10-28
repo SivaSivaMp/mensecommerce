@@ -168,6 +168,9 @@ const addToCart = async (req, res, next) => {
         if (!product) {
             return next(new AppError('Product not found', 404));
         }
+        if (!product.isListed) {
+            return next(new AppError('Product is currenly unavailable'));
+        }
 
         const variant = await ProductVariant.findOne({ productId, size });
         if (!variant) {

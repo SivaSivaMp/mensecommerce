@@ -6,6 +6,7 @@ import { generateOtp } from '../../utils/generateOtp.js';
 import validator from 'validator';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import { get } from 'mongoose';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 // load login
 
 const loadLogin = async (req, res) => {
@@ -35,26 +36,45 @@ const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
         if (!validator.isEmail(email)) {
-            return next(new AppError('Invalid email', 400));
+            return next(new AppError('Invalid email'));
         }
         if (getCurrentUserId(req)) {
-            return next(new AppError('user already logged in', 400));
+            return next(
+                new AppError('user already logged in', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         if (!email || !password) {
-            return next(new AppError('email or password is missing', 400));
+            return next(
+                new AppError(
+                    'email or password is missing',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         const user = await User.findOne({ email }).select('+password');
 
         if (!user) {
-            return next(new AppError('Invalid user credentials', 400));
+            return next(
+                new AppError(
+                    'Invalid user credentials',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         if (user.isBlocked) {
-            return next(new AppError('user is blocked', 400));
+            return next(
+                new AppError('user is blocked', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
         if (!isPasswordCorrect) {
-            return next(new AppError('Invalid user credentials', 400));
+            return next(
+                new AppError(
+                    'Invalid user credentials',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         req.session.user = {
             id: user._id,
@@ -80,18 +100,30 @@ const signup = async (req, res, next) => {
         const { name, email, password, cpassword } = req.body;
 
         if (!name || !email || !password || !cpassword) {
-            return next(new AppError('please add all necessary fields', 400));
+            return next(
+                new AppError(
+                    'please add all necessary fields',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         if (!validator.isEmail(email)) {
-            return next(new AppError('Invalid email', 400));
+            return next(new AppError('Invalid email', HTTP_STATUS.BAD_REQUEST));
         }
 
         if (password !== cpassword) {
-            return next(new AppError('password do not match', 400));
+            return next(
+                new AppError('password do not match', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return next(new AppError('this user already exists', 400));
+            return next(
+                new AppError(
+                    'this user already exists',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         const otp = generateOtp();
         const emailSent = await sendVerificationEmail(email, otp);
@@ -99,7 +131,10 @@ const signup = async (req, res, next) => {
 
         if (!emailSent) {
             return next(
-                new AppError('Failed to send verification emil. Try again', 500)
+                new AppError(
+                    'Failed to send verification emil. Try again',
+                    HTTP_STATUS.INTERNAL_SERVER_ERROR
+                )
             );
         }
 
@@ -134,12 +169,12 @@ const verifyOtp = async (req, res, next) => {
             return next(
                 new AppError(
                     'session expired or invalid, please try again',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
         if (otp !== req.session.userOtp) {
-            return next(new AppError('Invalid otp', 400));
+            return next(new AppError('Invalid otp', HTTP_STATUS.BAD_REQUEST));
         }
 
         const { name, email, password } = req.session.userData;
@@ -161,12 +196,12 @@ const verifyOtp = async (req, res, next) => {
     } catch (error) {
         console.log('Error during verifying otp', error);
         if (error.name === 'ValidationError') {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 status: 'error',
                 message: Object.values(error.errors).map((e) => e.message),
             });
         }
-        return res.status(500).json({
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             status: 'error',
             message: 'Something went wrong while adding product',
         });
@@ -177,14 +212,24 @@ const resendOtp = async (req, res, next) => {
     try {
         const { email } = req.session.userData;
         if (!email) {
-            return next(new AppError('Email not Found in the session', 400));
+            return next(
+                new AppError(
+                    'Email not Found in the session',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         const otp = generateOtp();
         console.log(`Resend OTP:`, otp);
 
         const emailSent = await sendVerificationEmail(email, otp);
         if (!emailSent) {
-            return next(new AppError('Failed to resend the OTP', 400));
+            return next(
+                new AppError(
+                    'Failed to resend the OTP',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         req.session.userOtp = otp;
         res.status(200).json({
@@ -201,7 +246,9 @@ const logout = (req, res, next) => {
     req.session.destroy((err) => {
         if (err) {
             console.error('Logout error:', err);
-            return next(new AppError('Logout unsuccessful', 400));
+            return next(
+                new AppError('Logout unsuccessful', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
         res.clearCookie('user_session');

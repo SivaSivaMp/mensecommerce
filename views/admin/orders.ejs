@@ -37,7 +37,7 @@
                         <div class="order-0 col-lg-12 col-md-12 col-sm-12 mb-3">
                         <form method="GET" action="/admin/orders" class="d-flex flex-wrap gap-2 align-items-center">
 
-                            <!-- 🔍 Search -->
+                            
                             <div class="input-group input-group-sm" style="max-width: 250px;">
                             <input type="search" name="search" class="form-control"
                                 placeholder="Search by Order ID or Name..." value="<%= searchQuery %>">
@@ -47,7 +47,7 @@
                             <% } %>
                             </div>
 
-                            <!-- 🧾 Status -->
+                           
                             <select name="status" class="form-select form-select-sm" style="max-width:180px;">
                             <option value="">All Statuses</option>
                             <% ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Return Request', 'Return Approved', 'Return Rejected', 'Returned'].forEach(st => { %>
@@ -55,7 +55,7 @@
                             <% }); %>
                             </select>
 
-                            <!-- 💳 Payment -->
+                           
                             <select name="paymentMethod" class="form-select form-select-sm" style="max-width:150px;">
                             <option value="">All Payments</option>
                             <option value="cod" <%= paymentFilter === 'cod' ? 'selected' : '' %>>COD</option>

@@ -4,6 +4,7 @@ import Category from '../../models/categorySchema.js';
 import cloudinary from '../../config/cloudinaryConfig.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import validator from 'validator';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 const getProductInfo = async (req, res, next) => {
     try {
         let search = req.query.search || '';
@@ -97,37 +98,48 @@ const addProduct = async (req, res, next) => {
             return next(
                 new AppError(
                     'Please provide name, category, original price and color name',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
         if (!validator.isLength(name, { min: 2, max: 50 })) {
             return next(
-                new AppError('Name must be between 2 and 50 characters', 400)
+                new AppError(
+                    'Name must be between 2 and 50 characters',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         if (!validator.isLength(description, { min: 2, max: 1000 })) {
             return next(
                 new AppError(
                     'Description must be between 2 and 50 characters',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
-        if (originalPrice < 0 || salesPrice < 0) {
-            return next(new AppError('price should not be less than 0', 400));
+        if (parseFloat(originalPrice) < 0 || parseFloat(salesPrice) < 0) {
+            return next(
+                new AppError(
+                    'price should not be less than 0',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
-        if (originalPrice > salesPrice) {
+        if (parseFloat(originalPrice) < parseFloat(salesPrice)) {
             return next(
                 new AppError(
                     'sale price should be less than original price',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
         if (!req.files || req.files.length < 1) {
             return next(
-                new AppError('Please upload at least one product image', 400)
+                new AppError(
+                    'Please upload at least one product image',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
 
@@ -136,7 +148,10 @@ const addProduct = async (req, res, next) => {
         });
         if (existing) {
             return next(
-                new AppError('A product with this name already exists', 400)
+                new AppError(
+                    'A product with this name already exists',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
 
@@ -177,7 +192,10 @@ const addProduct = async (req, res, next) => {
         });
         if (totalStock <= 0) {
             return next(
-                new AppError('Total quantity must be greater than 0', 400)
+                new AppError(
+                    'Total quantity must be greater than 0',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
 
@@ -213,7 +231,7 @@ const addProduct = async (req, res, next) => {
         console.error('Error adding product:', err);
 
         if (err.name === 'ValidationError') {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 status: 'error',
                 message: Object.values(err.errors)
                     .map((e) => e.message)
@@ -221,13 +239,13 @@ const addProduct = async (req, res, next) => {
             });
         }
         if (err.http_code) {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 status: 'error',
                 message: 'Image upload failed, please try again',
             });
         }
 
-        return res.status(500).json({
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             status: 'error',
             message: 'Something went wrong while adding product',
         });
@@ -276,14 +294,16 @@ const editProduct = async (req, res, next) => {
             return next(
                 new AppError(
                     'Please provide name, category, original price and color name',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
 
         const existingProduct = await Product.findById(productId);
         if (!existingProduct) {
-            return next(new AppError('Product not found', 400));
+            return next(
+                new AppError('Product not found', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
         const duplicate = await Product.findOne({
@@ -292,27 +312,33 @@ const editProduct = async (req, res, next) => {
         });
         if (duplicate) {
             return next(
-                new AppError('A product with this name already exists', 400)
+                new AppError(
+                    'A product with this name already exists',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         if (parseFloat(originalPrice) < parseFloat(salesPrice)) {
             return next(
                 new AppError(
                     'sale price should be less than original price',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
         if (!validator.isLength(name, { min: 2, max: 50 })) {
             return next(
-                new AppError('Name must be between 2 and 50 characters', 400)
+                new AppError(
+                    'Name must be between 2 and 50 characters',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         if (!validator.isLength(description, { min: 2, max: 1000 })) {
             return next(
                 new AppError(
                     'Description must be between 2 and 50 characters',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
@@ -366,7 +392,12 @@ const editProduct = async (req, res, next) => {
         }
 
         if (currentImages.length < 3) {
-            return next(new AppError('Product must have at 3 images', 400));
+            return next(
+                new AppError(
+                    'Product must have at 3 images',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         let totalStock = 0;
@@ -403,7 +434,7 @@ const editProduct = async (req, res, next) => {
             );
         }
 
-        return res.status(200).json({
+        return res.status(HTTP_STATUS.OK).json({
             status: 'success',
             message: 'Product updated successfully!',
             data: {
@@ -416,7 +447,7 @@ const editProduct = async (req, res, next) => {
         console.error('Error editing product:', err);
 
         if (err.name === 'ValidationError') {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 status: 'error',
                 message: Object.values(err.errors)
                     .map((e) => e.message)
@@ -424,19 +455,19 @@ const editProduct = async (req, res, next) => {
             });
         }
         if (err.name === 'CastError') {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 status: 'error',
                 message: 'Invalid product ID',
             });
         }
         if (err.http_code) {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 status: 'error',
                 message: 'Image upload failed, please try again',
             });
         }
 
-        return res.status(500).json({
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             status: 'error',
             message: 'Something went wrong while updating product',
         });
@@ -449,7 +480,9 @@ const getEditProduct = async (req, res) => {
 
         const product = await Product.findById(productId).populate('category');
         if (!product) {
-            return next(new AppError('Product not found', 400));
+            return next(
+                new AppError('Product not found', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
         const category = await Category.find({ isListed: true });

@@ -40,8 +40,10 @@ const customerInfo = async (req, res, next) => {
 const customerBlocked = async (req, res, next) => {
     try {
         const id = req.query.id;
+
         await User.updateOne({ _id: id }, { $set: { isBlocked: true } });
-        res.json({ status: 'success', message: 'User blocked' });
+
+        res.redirect('/admin/users');
     } catch (error) {
         console.log('error while blocking the user', error);
         next(error);
@@ -50,8 +52,9 @@ const customerBlocked = async (req, res, next) => {
 const customerUnBlocked = async (req, res, next) => {
     try {
         const id = req.query.id;
+
         await User.updateOne({ _id: id }, { $set: { isBlocked: false } });
-        res.json({ status: 'success', message: 'User unblocked' });
+        res.redirect('/admin/users');
     } catch (error) {
         console.log('error while blocking the user', error);
         next(error);

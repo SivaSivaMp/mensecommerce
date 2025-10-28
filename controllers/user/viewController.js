@@ -5,6 +5,7 @@ import Category from '../../models/categorySchema.js';
 import User from '../../models/userSchema.js';
 import mongoose from 'mongoose';
 import { ObjectId } from 'mongodb';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 
 // load home page
 const loadHomepage = async (req, res, next) => {
