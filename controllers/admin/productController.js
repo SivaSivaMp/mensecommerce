@@ -399,6 +399,14 @@ const editProduct = async (req, res, next) => {
                 )
             );
         }
+        if (currentImages.length > 5) {
+            return next(
+                new AppError(
+                    'Product should only maximum 5 images',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
+        }
 
         let totalStock = 0;
         const sizeVariants = [];

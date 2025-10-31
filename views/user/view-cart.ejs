@@ -130,12 +130,12 @@
 
                         <% if (isOutOfStock) { %>
                           <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Out of Stock</span>
-                          <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                          <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
                         <% } else if (isUnlisted) { %>
                           <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Product not Available</span>
-                          <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                          <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
                         <% } else { %>
-                          <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                          <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
                         <% } %>
                       </div>
                     </td>

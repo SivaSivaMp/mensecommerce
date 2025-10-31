@@ -90,7 +90,7 @@
             name:document.getElementById('name').value,
             description:document.getElementById('description').value
         }
-        console.log(formData);
+        
         
         const res=await axios.post('/admin/category/category-add',formData)
         if(res.data.status==='success'){

@@ -427,12 +427,12 @@
 
                             <% if (isOutOfStock) { %>
                               <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Out of Stock</span>
-                              <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                              <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
                             <% } else if (isUnlisted) { %>
                               <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Product not Available</span>
-                              <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                              <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
                             <% } else { %>
-                              <a href="javascript:void(0);" class="remove-cart link remove" data-item-id="<%= item._id %>">Remove</a>
+                              <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
                             <% } %>
                           </div>
                         </td>
@@ -718,16 +718,17 @@ async function placeOrder() {
         });
 
         if (response.data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Order Placed Successfully',
-                html: `Your order <strong>${response.data.orderId}</strong> has been placed`,
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'View Order'
-            }).then(() => {
-                // Redirect to order confirmation page
-                window.location.href = `profile/orders`;
-            });
+            // Swal.fire({
+            //     icon: 'success',
+            //     title: 'Order Placed Successfully',
+            //     html: `Your order <strong>${response.data.orderId}</strong> has been placed`,
+            //     confirmButtonColor: '#3085d6',
+            //     confirmButtonText: 'View Order'
+            // }).then(() => {
+            //     // Redirect to order confirmation page
+            //     window.location.href = `profile/orders`;
+            // });
+            window.location.href = `/order/success/${response.data.orderId}`;
         }
     } catch (error) {
         const message = error.response?.data?.message || 'Failed to place order';

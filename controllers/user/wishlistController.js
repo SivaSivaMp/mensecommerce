@@ -2,7 +2,7 @@ import Wishlist from '../../models/whishListSchema.js';
 import Product from '../../models/productSchema.js';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import AppError from '../../utils/appError.js';
-import validator from 'validator';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 
 const getWishlist = async (req, res, next) => {
@@ -10,7 +10,10 @@ const getWishlist = async (req, res, next) => {
         const userId = getCurrentUserId(req);
         if (!userId) {
             return next(
-                new AppError('Please login to view your wishlist', 401)
+                new AppError(
+                    'Please login to view your wishlist',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
             );
         }
         const wishlist = await Wishlist.findOne({ userId })
@@ -79,14 +82,24 @@ const addToWishlist = async (req, res, next) => {
         const product = await Product.findById(productId);
         if (!userId) {
             return next(
-                new AppError('please login before adding to wishlist', 401)
+                new AppError(
+                    'please login before adding to wishlist',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
             );
         }
         if (!product) {
-            return next(new AppError('product not found', 404));
+            return next(
+                new AppError('product not found', HTTP_STATUS.NOT_FOUND)
+            );
         }
         if (!product.isListed) {
-            return next(new AppError('product currently unavailable', 404));
+            return next(
+                new AppError(
+                    'product currently unavailable',
+                    HTTP_STATUS.NOT_FOUND
+                )
+            );
         }
         let wishList = await Wishlist.findOne({ userId });
         if (!wishList) {
@@ -125,18 +138,28 @@ const removeFromWishlist = async (req, res, next) => {
         const userId = getCurrentUserId(req);
         if (!userId) {
             return next(
-                new AppError('Please login to remove from Wishlist', 401)
+                new AppError(
+                    'Please login to remove from Wishlist',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
             );
         }
         const wishList = await Wishlist.findOne({ userId });
         if (!wishList) {
-            return next(new AppError('Wishlist not found', 404));
+            return next(
+                new AppError('Wishlist not found', HTTP_STATUS.NOT_FOUND)
+            );
         }
         const itemIndex = wishList.items.findIndex(
             (item) => item.productId.toString() === productId.toString()
         );
         if (itemIndex === -1) {
-            return next(new AppError('Product not found in wishlist', 404));
+            return next(
+                new AppError(
+                    'Product not found in wishlist',
+                    HTTP_STATUS.NOT_FOUND
+                )
+            );
         }
         wishList.items.splice(itemIndex, 1);
         await wishList.save();

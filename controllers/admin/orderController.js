@@ -1,8 +1,7 @@
 import AppError from '../../utils/appError.js';
-import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
+
 import Order from '../../models/orderSchema.js';
-import validator from 'validator';
-import User from '../../models/userSchema.js';
+
 import ProductVariant from '../../models/productVarintSchema.js';
 import Product from '../../models/productSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
@@ -111,8 +110,7 @@ const getAdminOrderDetails = async (req, res, next) => {
             _id: item._id,
             productId: item.product?._id,
             productName: item.productName,
-            productImage:
-                item.product?.images?.[0] || '/images/placeholder.jpg',
+            productImage: item.product?.images?.[0],
             size: item.size,
             quantity: item.quantity,
             price: item.price,
@@ -296,20 +294,19 @@ const approveReturn = async (req, res, next) => {
 
         const item = order.orderedItems.id(itemId);
         if (!item)
-            return res
-                .status(404)
-                .json({ success: false, message: 'Item not found' });
+            return next(new AppError('Item not found', HTTP_STATUS.NOT_FOUND));
 
         if (
             ['Return Approved', 'Return Rejected', 'Returned'].includes(
                 item.returnStatus
             )
         ) {
-            return res.status(400).json({
-                success: false,
-                message:
+            return next(
+                new AppError(
                     'Return action already processed and cannot be changed.',
-            });
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         item.status = 'Return Approved';
@@ -346,26 +343,23 @@ const rejectReturn = async (req, res, next) => {
 
         const order = await Order.findOne({ 'orderedItems._id': itemId });
         if (!order)
-            return res
-                .status(404)
-                .json({ success: false, message: 'Order not found' });
+            return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
 
         const item = order.orderedItems.id(itemId);
         if (!item)
-            return res
-                .status(404)
-                .json({ success: false, message: 'Item not found' });
+            return next(new AppError('Item not found', HTTP_STATUS.NOT_FOUND));
 
         if (
             ['Return Approved', 'Return Rejected', 'Returned'].includes(
                 item.returnStatus
             )
         ) {
-            return res.status(400).json({
-                success: false,
-                message:
+            return next(
+                new AppError(
                     'Return action already processed and cannot be changed.',
-            });
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         item.status = 'Return Rejected';
@@ -395,28 +389,26 @@ const completeReturn = async (req, res, next) => {
         const { itemId } = req.body;
 
         if (!itemId) {
-            return res
-                .status(400)
-                .json({ success: false, message: 'Item ID is required' });
+            return next(
+                new AppError('Item ID is required', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
         const order = await Order.findOne({ 'orderedItems._id': itemId });
         if (!order)
-            return res
-                .status(404)
-                .json({ success: false, message: 'Order not found' });
+            return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
 
         const item = order.orderedItems.id(itemId);
         if (!item)
-            return res
-                .status(404)
-                .json({ success: false, message: 'Item not found' });
+            return next(new AppError('Item not found', HTTP_STATUS.NOT_FOUND));
 
         if (item.returnStatus !== 'Approved') {
-            return res.status(400).json({
-                success: false,
-                message: 'Return can only be completed after approval.',
-            });
+            return next(
+                new AppError(
+                    'Return can only be completed after approval.',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         item.status = 'Returned';

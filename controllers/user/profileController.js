@@ -6,7 +6,7 @@ import validator from 'validator';
 import bcrypt from 'bcryptjs';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import cloudinary from '../../config/cloudinaryConfig.js';
-import upload from '../../middleware/uploadMiddleware.js';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 const getForgotPassword = async (req, res) => {
     if (getCurrentUserId(req)) {
         return res.redirect('/');
@@ -20,15 +20,20 @@ const emailVerification = async (req, res, next) => {
     try {
         const { email } = req.body;
         if (!email) {
-            return next(new AppError('email field is missing', 400));
+            return next(
+                new AppError('email field is missing', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         if (!validator.isEmail(email)) {
-            return next(new AppError('invalid email', 400));
+            return next(new AppError('invalid email', HTTP_STATUS.BAD_REQUEST));
         }
         const validEmail = await User.findOne({ email });
         if (!validEmail) {
             return next(
-                new AppError('this user is not signed up, please signu', 400)
+                new AppError(
+                    'this user is not signed up, please signu',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         req.session.userEmail = email;
@@ -36,7 +41,10 @@ const emailVerification = async (req, res, next) => {
         const emailSent = await sendVerificationEmail(email, otp);
         if (!emailSent) {
             return next(
-                new AppError('verification email not sent, try again', 400)
+                new AppError(
+                    'verification email not sent, try again',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         req.session.userOtp = otp;
@@ -61,10 +69,17 @@ const verifyForgetPasswordOtp = async (req, res, next) => {
         }
         const { otp } = req.body;
         if (!otp) {
-            return next(new AppError('please enter the otp', 400));
+            return next(
+                new AppError('please enter the otp', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         if (otp !== req.session.userOtp) {
-            return next(new AppError('Invalid otp,please check the otp', 400));
+            return next(
+                new AppError(
+                    'Invalid otp,please check the otp',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         req.session.userOtp = null;
         req.session.userEmail = null;
@@ -87,10 +102,17 @@ const resetPassword = async (req, res, next) => {
 
         const email = req.session.email;
         if (!newPassword || !resetPassword) {
-            return next(new AppError('Enter new Password', 500));
+            return next(
+                new AppError('Enter new Password', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         if (newPassword !== resetPassword) {
-            return next(new AppError('Your Password is not matching', 400));
+            return next(
+                new AppError(
+                    'Your Password is not matching',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         await User.updateOne(
             { email: email },
@@ -103,7 +125,10 @@ const resetPassword = async (req, res, next) => {
             redirectUrl: '/login',
         });
     } catch (error) {
-        console.log('error while reseting with new password', 400);
+        console.log(
+            'error while reseting with new password',
+            HTTP_STATUS.BAD_REQUEST
+        );
         next(error);
     }
 };
@@ -131,7 +156,12 @@ const profileChangePassword = async (req, res, next) => {
             !newPassword.trim() ||
             !confirmNewPassword.trim()
         ) {
-            return next(new AppError('please provide required fields', 400));
+            return next(
+                new AppError(
+                    'please provide required fields',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         const userId = getCurrentUserId(req);
         const userData = await User.findById(userId).select('+password');
@@ -141,7 +171,12 @@ const profileChangePassword = async (req, res, next) => {
         );
 
         if (!isPasswordCorrect) {
-            return next(new AppError('Invalid user credentials', 400));
+            return next(
+                new AppError(
+                    'Invalid user credentials',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         const isStrong = validator.isStrongPassword(newPassword, {
@@ -156,12 +191,14 @@ const profileChangePassword = async (req, res, next) => {
             return next(
                 new AppError(
                     'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
         if (newPassword !== confirmNewPassword) {
-            return next(new AppError('password mismatch', 400));
+            return next(
+                new AppError('password mismatch', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         userData.password = newPassword;
         await userData.save();
@@ -172,7 +209,7 @@ const profileChangePassword = async (req, res, next) => {
     } catch (error) {
         console.log('Error while changing password', error);
         if (error.name === 'ValidationError') {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 status: 'error',
                 message: Object.values(error.errors).map((e) => e.message),
             });
@@ -207,16 +244,26 @@ const editPersonalInformation = async (req, res, next) => {
         const phone = newPhone.trim();
         console.log(phone);
         if (!name) {
-            return next(new AppError('please fill the required field', 400));
+            return next(
+                new AppError(
+                    'please fill the required field',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         const namepattern = /^[A-Za-z\s]+$/;
         if (!namepattern.test(name)) {
             return next(
-                new AppError('name must contain only letter and spaces', 400)
+                new AppError(
+                    'name must contain only letter and spaces',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         if (!validator.isMobilePhone(phone, 'en-IN')) {
-            return next(new AppError('Invalid phone number', 400));
+            return next(
+                new AppError('Invalid phone number', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         const userId = getCurrentUserId(req);
         const userData = await User.findById(userId);
@@ -275,7 +322,10 @@ const editEmail = async (req, res, next) => {
 const getEmailChangeotp = async (req, res, next) => {
     try {
         res.render('emailchange-otp');
-    } catch (error) {}
+    } catch (error) {
+        console.log('error while change email otp page genaration', error);
+        next(error);
+    }
 };
 // reset email otp verification
 
@@ -315,16 +365,12 @@ const resetEmailOtpVerification = async (req, res, next) => {
         next(error);
     }
 };
-const uploadProfileImage = async (req, res) => {
+const uploadProfileImage = async (req, res, next) => {
     try {
         if (!req.file) {
-            return res.status(400).json({
-                status: 'fail',
-                message: 'No image file provided.',
-            });
+            return next(new AppError('No image file provided.', 400));
         }
 
-        // Upload to Cloudinary (use buffer since using memoryStorage)
         const uploadResult = await new Promise((resolve, reject) => {
             cloudinary.uploader
                 .upload_stream(

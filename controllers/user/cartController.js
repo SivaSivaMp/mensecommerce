@@ -6,6 +6,7 @@ import ProductVariant from '../../models/productVarintSchema.js';
 import Wishlist from '../../models/whishListSchema.js';
 
 import Cart from '../../models/cartSchema.js';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 // get cart page
 
 const viewCart = async (req, res, next) => {
@@ -327,10 +328,12 @@ const updateCartQuantity = async (req, res, next) => {
         }
 
         if (newQuantity > 5) {
-            return res.status(400).json({
-                success: false,
-                message: 'Maximum quantity limit is 5 items per product',
-            });
+            return next(
+                new AppError(
+                    'Maximum quantity limit is 5 items per product',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         const variant = await ProductVariant.findById(cartItem.variantId);
@@ -339,10 +342,12 @@ const updateCartQuantity = async (req, res, next) => {
         }
 
         if (newQuantity > variant.quantity) {
-            return res.status(400).json({
-                success: false,
-                message: `Only ${variant.quantity} units available for this product`,
-            });
+            return next(
+                new AppError(
+                    `Only ${variant.quantity} units available for this product`,
+                    400
+                )
+            );
         }
 
         const product = await Product.findById(cartItem.productId);
@@ -378,24 +383,24 @@ const validateCart = async (req, res, next) => {
 
         const cart = await Cart.findOne({ userId });
         if (!cart || !cart.items.length) {
-            return res.status(400).json({
-                success: false,
-                message: 'Your cart is empty',
-            });
+            return next(
+                new AppError('Your cart is empty', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
         for (const item of cart.items) {
-            // Get live data from DB
             const product = await Product.findById(item.productId).populate(
                 'category'
             );
             const variant = await ProductVariant.findById(item.variantId);
 
             if (!product || !variant) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Some items are no longer available.',
-                });
+                return next(
+                    new AppError(
+                        'Some items are no longer available.',
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
             }
 
             const isUnlisted = !product.isListed;
@@ -404,10 +409,12 @@ const validateCart = async (req, res, next) => {
                 item.quantity > variant.quantity || variant.quantity === 0;
 
             if (isUnlisted || isUnlistedCategory || isOutOfStock) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Some items are out of stock or unavailable: ${product.name}`,
-                });
+                return next(
+                    new AppError(
+                        `Some items are out of stock or unavailable: ${product.name}`,
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
             }
         }
 

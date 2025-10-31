@@ -6,6 +6,7 @@ import Address from '../../models/addressSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Order from '../../models/orderSchema.js';
 import Category from '../../models/categorySchema.js';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 const placeOrder = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
@@ -162,7 +163,7 @@ const getOrders = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
         const page = parseInt(req.query.page) || 1;
-        const limit = 4;
+        const limit = 12;
         const skip = (page - 1) * limit;
         const searchQuery = req.query.query || '';
         const statusFilter = req.query.status || '';
@@ -183,9 +184,6 @@ const getOrders = async (req, res, next) => {
                 },
             ];
         }
-        if (statusFilter) {
-            searchFilter.status = statusFilter;
-        }
 
         const totalOrders = await Order.countDocuments(searchFilter);
         const totalPages = Math.ceil(totalOrders / limit);
@@ -204,23 +202,26 @@ const getOrders = async (req, res, next) => {
 
         orders.forEach((order) => {
             order.orderedItems.forEach((item) => {
-                formattedOrders.push({
-                    orderId: order.orderId,
-                    orderMongoId: order._id,
-                    itemId: item._id,
-                    productName: item.productName,
-                    productImage:
-                        item.product?.images?.[0] || '/images/placeholder.jpg',
-                    size: item.size,
-                    quantity: item.quantity,
-                    price: item.price,
-                    totalPrice: item.price * item.quantity,
-                    status: item.status,
-                    orderDate: order.createdAt,
-                    deliveredDate: item.deliveredDate,
-                    canReview:
-                        item.status === 'Delivered' && item.deliveredDate,
-                });
+                if (!statusFilter || item.status === statusFilter) {
+                    formattedOrders.push({
+                        orderId: order.orderId,
+                        orderMongoId: order._id,
+                        itemId: item._id,
+                        productName: item.productName,
+                        productImage:
+                            item.product?.images?.[0] ||
+                            '/images/placeholder.jpg',
+                        size: item.size,
+                        quantity: item.quantity,
+                        price: item.price,
+                        totalPrice: item.price * item.quantity,
+                        status: item.status,
+                        orderDate: order.createdAt,
+                        deliveredDate: item.deliveredDate,
+                        canReview:
+                            item.status === 'Delivered' && item.deliveredDate,
+                    });
+                }
             });
         });
 
@@ -257,7 +258,7 @@ const getOrders = async (req, res, next) => {
 const getOrderDetails = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
-        const { orderId, itemId } = req.params; // Get both orderId and itemId from URL params
+        const { orderId, itemId } = req.params;
 
         if (!userId) {
             return next(
@@ -265,7 +266,6 @@ const getOrderDetails = async (req, res, next) => {
             );
         }
 
-        // Find the order
         const order = await Order.findOne({
             orderId: orderId,
             userId: userId,
@@ -283,7 +283,6 @@ const getOrderDetails = async (req, res, next) => {
             return next(new AppError('Order not found', 404));
         }
 
-        // Find the specific item
         const specificItem = order.orderedItems.find(
             (item) => item._id.toString() === itemId
         );
@@ -292,7 +291,6 @@ const getOrderDetails = async (req, res, next) => {
             return next(new AppError('Order item not found', 404));
         }
 
-        // Format only this specific item
         const orderItem = {
             _id: specificItem._id,
             productId: specificItem.product._id,
@@ -326,7 +324,7 @@ const getOrderDetails = async (req, res, next) => {
         const itemSummary = {
             itemPrice: itemPrice,
             originalItemPrice: originalItemPrice,
-            discount: discount > 0 ? discount : 0, // Only show discount if positive
+            discount: discount > 0 ? discount : 0,
         };
 
         const shippingAddress = {
@@ -342,7 +340,6 @@ const getOrderDetails = async (req, res, next) => {
             altPhone: order.shippingAddress.altPhone,
         };
 
-        // Status timeline based on item status (not order status)
         const statusTimeline = [
             {
                 status: 'Pending',
@@ -397,8 +394,8 @@ const getOrderDetails = async (req, res, next) => {
                 paymentStatus: order.paymentStatus,
                 createdAt: order.createdAt,
             },
-            orderItem: orderItem, // Single item instead of array
-            itemSummary: itemSummary, // Item-specific summary
+            orderItem: orderItem,
+            itemSummary: itemSummary,
             shippingAddress: shippingAddress,
             statusTimeline: statusTimeline,
             trackingInfo: trackingInfo,
@@ -411,60 +408,57 @@ const getOrderDetails = async (req, res, next) => {
 const cancelItem = async (req, res, next) => {
     try {
         const { itemId, reason } = req.body;
-        const userId = getCurrentUserId(req); // Your auth helper function
+        const userId = getCurrentUserId(req);
 
         if (!userId) {
-            return res.status(401).json({
-                success: false,
-                message: 'Please login to cancel items',
-            });
+            return next(
+                new AppError(
+                    'Please login to cancel items',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
+            );
         }
 
         if (!itemId || !reason) {
-            return res.status(400).json({
-                success: false,
-                message: 'Item ID and reason are required',
-            });
+            return next(
+                new AppError(
+                    'Item ID and reason are required',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
-        // Find the order containing this item
         const order = await Order.findOne({
             userId: userId,
             'orderedItems._id': itemId,
         });
 
         if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: 'Order item not found',
-            });
+            return next(
+                new AppError('Order item not found', HTTP_STATUS.NOT_FOUND)
+            );
         }
 
-        // Find the specific item
         const item = order.orderedItems.id(itemId);
 
         if (!item) {
-            return res.status(404).json({
-                success: false,
-                message: 'Item not found',
-            });
+            return next(
+                new AppError('Item not found', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
-        // Check if item can be cancelled
         const cancellableStatuses = ['Pending', 'Processing'];
         if (!cancellableStatuses.includes(item.status)) {
-            return res.status(400).json({
-                success: false,
-                message: `Cannot cancel item with status: ${item.status}`,
-            });
+            return next(
+                new AppError(
+                    `Cannot cancel item with status: ${item.status}`,
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
-        // Update item status
         item.status = 'Cancelled';
         item.cancellationReason = reason;
-
-        // If payment was completed, you might want to initiate refund here
-        // Refund logic would go here based on your payment gateway
 
         await order.save();
         const productVariant = await ProductVariant.findById(item.variant);
@@ -499,7 +493,6 @@ const returnItem = async (req, res, next) => {
             return next(new AppError('Item ID and reason are required', 400));
         }
 
-        // Find the order containing this item
         const order = await Order.findOne({
             userId: userId,
             'orderedItems._id': itemId,
@@ -509,21 +502,18 @@ const returnItem = async (req, res, next) => {
             return next(new AppError('Order item not found', 404));
         }
 
-        // Find the specific item
         const item = order.orderedItems.id(itemId);
 
         if (!item) {
             return next(new AppError(' item not found', 404));
         }
 
-        // Check if item is delivered
         if (item.status !== 'Delivered') {
             return next(
                 new AppError('Only delivered items can be returned', 400)
             );
         }
 
-        // Check if item is already in return process
         if (
             [
                 'Return Request',
@@ -537,7 +527,6 @@ const returnItem = async (req, res, next) => {
             );
         }
 
-        // Check return window (7 days from delivery)
         if (!item.deliveredDate) {
             return next(new AppError('Delivery date not found', 400));
         }
@@ -554,13 +543,11 @@ const returnItem = async (req, res, next) => {
             );
         }
 
-        // Update item with return request
         item.status = 'Return Request';
         item.returnStatus = 'Requested';
         item.returnReason = reason;
         item.returnRequestDate = new Date();
 
-        // Check if all items are in return/cancelled status
         const activeItems = order.orderedItems.filter(
             (orderItem) =>
                 ![
@@ -571,7 +558,6 @@ const returnItem = async (req, res, next) => {
                 ].includes(orderItem.status)
         );
 
-        // Update order status if needed
         if (activeItems.length === 0) {
             order.status = 'Return Request';
         }
@@ -596,33 +582,32 @@ const renderItemInvoice = async (req, res, next) => {
     try {
         const { orderId, itemId } = req.params;
 
-        // Fetch the order
         const order = await Order.findOne({ orderId })
             .populate('userId', 'name email')
             .lean();
 
         if (!order) {
-            return res
-                .status(400)
-                .render('error', { message: 'Order not found' });
+            return next(
+                new AppError('Order not found', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
-        // Find the specific ordered item
         const item = order.orderedItems.find(
             (i) => i._id.toString() === itemId
         );
         if (!item) {
-            return res
-                .status(404)
-                .render('error', { message: 'Item not found in this order' });
+            return next(
+                new AppError(
+                    'Item not found in this order',
+                    HTTP_STATUS.NOT_FOUND
+                )
+            );
         }
 
-        // Calculate amounts
         const originalTotal = item.originalPrice * item.quantity;
         const salesTotal = item.salesPrice * item.quantity;
         const discount = originalTotal - salesTotal;
 
-        // Render invoice.ejs
         return res.render('invoice', {
             order,
             item,
@@ -637,9 +622,30 @@ const renderItemInvoice = async (req, res, next) => {
     }
 };
 
-const getOrderSuccesspage = async (req, res, next) => {
+const getOrderSuccessPage = async (req, res, next) => {
     try {
-    } catch (error) {}
+        const { orderId } = req.params;
+        const order = await Order.findOne({ orderId })
+            .populate('userId')
+            .populate('address')
+            .populate('orderedItems.product')
+            .populate('orderedItems.variant')
+            .lean();
+
+        if (!order) {
+            return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
+        }
+
+        res.render('order-success-page', {
+            order,
+            user: order.userId,
+            address: order.address,
+            items: order.orderedItems,
+        });
+    } catch (error) {
+        console.error('Error loading order success page:', error);
+        next(error);
+    }
 };
 
 export default {
@@ -649,4 +655,5 @@ export default {
     cancelItem,
     returnItem,
     renderItemInvoice,
+    getOrderSuccessPage,
 };

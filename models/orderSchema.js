@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import { Schema } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 import Counter from './counterSchema.js';
 const orderedItemSchema = new mongoose.Schema(
     {

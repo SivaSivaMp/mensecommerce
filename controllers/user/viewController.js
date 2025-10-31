@@ -2,16 +2,11 @@ import Product from '../../models/productSchema.js';
 import AppError from '../../utils/appError.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Category from '../../models/categorySchema.js';
-import User from '../../models/userSchema.js';
 import mongoose from 'mongoose';
-import { ObjectId } from 'mongodb';
-import { HTTP_STATUS } from '../../utils/httpStatus.js';
 
 // load home page
 const loadHomepage = async (req, res, next) => {
     try {
-        const userId = req.session.user;
-
         let productData = await Product.aggregate([
             {
                 $lookup: {

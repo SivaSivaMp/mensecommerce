@@ -1,6 +1,5 @@
-import AppError from '../../utils/appError.js';
 import User from '../../models/userSchema.js';
-
+// ccustomer list
 const customerInfo = async (req, res, next) => {
     try {
         let search = req.query.search || '';
@@ -36,7 +35,7 @@ const customerInfo = async (req, res, next) => {
         next(error);
     }
 };
-
+// block customer
 const customerBlocked = async (req, res, next) => {
     try {
         const id = req.query.id;
@@ -49,6 +48,7 @@ const customerBlocked = async (req, res, next) => {
         next(error);
     }
 };
+// unblock customer
 const customerUnBlocked = async (req, res, next) => {
     try {
         const id = req.query.id;

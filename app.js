@@ -36,9 +36,7 @@ setupViews(app);
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', userRouter);
 app.use('/admin', adminRouter);
-
 app.use(notFound);
-
 app.use(globalErrorHandler);
 
 app.listen(process.env.PORT || 3000, () => {

@@ -141,7 +141,7 @@
                 form.reset();
 
                 setTimeout(() => {
-                    window.location.href = res.data.redirectUrl;
+                    window.location.replace (res.data.redirectUrl);
                 }, 1000);
             }
         } catch (error) {

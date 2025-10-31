@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+  <title>::eBazar:: Coupons Add</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="/assets/css/ebazar.style.min.css" />
+
+  <!-- Toastify CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+</head>
+<body>
+  <div id="ebazar-layout" class="theme-blue">
+    <%- include('../partials/admin/admin-sidebar', { currentPage: 'orders' }) %>
+    <div class="main px-lg-4 px-md-4">
+      <%- include('../partials/admin/admin-header', { user: user || null }) %>
+
+      <div class="body d-flex py-lg-3 py-md-2">
+        <div class="container-xxl">
+          <div class="row align-items-center">
+            <div class="border-0 mb-4">
+              <div class="card-header py-3 no-bg bg-transparent d-flex align-items-center px-0 justify-content-between border-bottom flex-wrap">
+                <h3 class="fw-bold mb-0">Coupons Add</h3>
+              </div>
+            </div>
+          </div>
+
+          <div class="row clearfix g-3">
+            <div class="col-lg-4">
+              <div class="card mb-3">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
+                  <h6 class="m-0 fw-bold">Date Schedule</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row g-3 align-items-center">
+                    <div class="col-md-12">
+                      <label class="form-label">Start Date</label>
+                      <input id="startsAt" name="startsAt" type="datetime-local" class="form-control w-100" />
+                    </div>
+                    <div class="col-md-12">
+                      <label class="form-label">End Date</label>
+                      <input id="expiresAt" name="expiresAt" type="datetime-local" class="form-control w-100" required />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
+                  <h6 class="m-0 fw-bold">Coupon Usage Limits</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row g-3 align-items-center">
+                    <div class="col-md-12">
+                      <label class="form-label">Global Usage Limit</label>
+                      <input id="usageLimit" name="usageLimit" type="number" min="0" class="form-control" value="100" />
+                    </div>
+                    <div class="col-md-12">
+                      <label class="form-label">Usage Limit per User</label>
+                      <input id="usageLimitPerUser" name="usageLimitPerUser" type="number" min="0" class="form-control" value="1" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-8">
+              <div class="card mb-3">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
+                  <h6 class="m-0 fw-bold">Coupon Information</h6>
+                </div>
+                <div class="card-body">
+                  <!-- Ajax form: submit via axios -->
+                  <form id="couponForm" method="POST" action="/admin/coupons/create">
+                    <div class="row g-3 align-items-center">
+
+                      <div class="col-md-6">
+                        <label class="form-label">Coupon Code</label>
+                        <input id="code" name="code" type="text" class="form-control" required minlength="3" maxlength="32" />
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label">Discount Type</label>
+                        <select id="discountType" name="discountType" class="form-select" required>
+                          <option value="flat">Flat</option>
+                          <option value="percentage">Percentage</option>
+                        </select>
+                      </div>
+
+                      <div class="col-md-12">
+                        <label class="form-label">Coupon Description</label>
+                        <textarea id="description" name="description" class="form-control" rows="2"></textarea>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label">Discount Value</label>
+                        <input id="discountValue" name="discountValue" type="number" class="form-control" required min="0" step="0.01" />
+                        <small id="discountHelp" class="form-text text-muted">
+                          If Percentage type selected, enter the percent value (e.g. 10 for 10%).
+                        </small>
+                      </div>
+
+                      <!-- maxDiscountAmount: hidden unless 'percentage' is selected -->
+                      <div class="col-md-6" id="maxDiscountWrapper" style="display:none;">
+                        <label class="form-label">Maximum Discount Amount</label>
+                        <input id="maxDiscountAmount" name="maxDiscountAmount" type="number" class="form-control" min="0" step="0.01" />
+                        <small class="form-text text-muted">Cap the discount amount for percentage coupons (e.g. 1000).</small>
+                      </div>
+
+                      <div class="col-md-6">
+                        <label class="form-label">Minimum Purchase Amount</label>
+                        <input id="minPurchaseAmount" name="minPurchaseAmount" type="number" class="form-control" required min="0" step="0.01" value="0" />
+                      </div>
+
+                    </div>
+
+                    <button id="submitBtn" type="submit" class="btn btn-primary mt-4 text-uppercase px-5">Submit</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Row End -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- lib scripts -->
+  <script src="/assets/bundles/libscripts.bundle.js"></script>
+  <script src="/js/template.js"></script>
+
+  <!-- Axios -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <!-- Toastify -->
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+  <script>
+    (function () {
+      const discountTypeEl = document.getElementById('discountType');
+      const maxWrapper = document.getElementById('maxDiscountWrapper');
+      const maxInput = document.getElementById('maxDiscountAmount');
+      const codeInput = document.getElementById('code');
+      const form = document.getElementById('couponForm');
+      const startsAtEl = document.getElementById('startsAt');
+      const expiresAtEl = document.getElementById('expiresAt');
+      const submitBtn = document.getElementById('submitBtn');
+
+      // show/hide max discount field based on discount type
+      function toggleMaxField() {
+        const val = discountTypeEl.value;
+        if (val === 'percentage') {
+          maxWrapper.style.display = 'block';
+          maxInput.required = true;
+        } else {
+          maxWrapper.style.display = 'none';
+          maxInput.required = false;
+          maxInput.value = '';
+        }
+      }
+
+      // uppercase coupon code on blur
+      codeInput.addEventListener('blur', () => {
+        codeInput.value = (codeInput.value || '').toUpperCase().trim();
+      });
+
+      // initial toggle
+      toggleMaxField();
+      discountTypeEl.addEventListener('change', toggleMaxField);
+
+      // show toast helper
+      function showToast(message, type = 'info', duration = 4000) {
+        let bg = 'linear-gradient(to right, #00b09b, #96c93d)'; // success
+        if (type === 'error') bg = 'linear-gradient(to right, #e74c3c, #c0392b)';
+        if (type === 'warn') bg = 'linear-gradient(to right, #f39c12, #d35400)';
+        if (type === 'info') bg = 'linear-gradient(to right, #3498db, #2980b9)';
+
+        Toastify({
+          text: message,
+          duration,
+          close: true,
+          gravity: 'top',
+          position: 'right',
+          style: {
+            background: bg,
+            color: '#fff',
+            fontWeight: '600'
+          }
+        }).showToast();
+      }
+
+      // disable button helper
+      function setSubmitting(isSubmitting) {
+        submitBtn.disabled = isSubmitting;
+        submitBtn.textContent = isSubmitting ? 'Please wait...' : 'Submit';
+      }
+
+      // main submit handler - using axios
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        // quick client-side checks
+        const starts = startsAtEl.value ? new Date(startsAtEl.value) : null;
+        const expires = expiresAtEl.value ? new Date(expiresAtEl.value) : null;
+        if (starts && expires && expires <= starts) {
+          showToast('Expiry date/time must be after the start date/time.', 'error');
+          expiresAtEl.focus();
+          return;
+        }
+
+        // percentage bounds & maxDiscount presence
+        const discountType = discountTypeEl.value;
+        const discountValue = parseFloat(document.getElementById('discountValue').value || 0);
+
+        if (discountType === 'percentage') {
+          if (isNaN(discountValue) || discountValue <= 0 || discountValue > 100) {
+            showToast('Enter a valid percentage (greater than 0 and up to 100).', 'error');
+            document.getElementById('discountValue').focus();
+            return;
+          }
+          if (!maxInput.value || parseFloat(maxInput.value) < 0) {
+            showToast('Please enter a valid Maximum Discount Amount for percentage coupons.', 'error');
+            maxInput.focus();
+            return;
+          }
+        } else {
+          // for flat ensure discountValue > 0
+          if (isNaN(discountValue) || discountValue <= 0) {
+            showToast('Enter a valid discount amount.', 'error');
+            document.getElementById('discountValue').focus();
+            return;
+          }
+        }
+
+        // prepare payload
+        const payload = {
+          code: codeInput.value.trim().toUpperCase(),
+          description: document.getElementById('description').value.trim(),
+          discountType,
+          discountValue,
+          maxDiscountAmount: maxInput.value ? parseFloat(maxInput.value) : null,
+          minPurchaseAmount: parseFloat(document.getElementById('minPurchaseAmount').value) || 0,
+          startsAt: startsAtEl.value || null,
+          expiresAt: expiresAtEl.value,
+          usageLimit: parseInt(document.getElementById('usageLimit').value, 10) || null,
+          usageLimitPerUser: parseInt(document.getElementById('usageLimitPerUser').value, 10) || null
+        };
+
+        try {
+          setSubmitting(true);
+
+          // Axios POST - adjust URL if your route differs
+          const resp = await axios.post(form.getAttribute('action'), payload, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          // Expecting backend to respond with { success: true, message: '', data: {...} } or { success: false, message: '', errors: {...} }
+          const data = resp.data;
+          if (data && data.success) {
+            showToast(data.message || 'Coupon created successfully', 'success');
+
+            // Optionally redirect to coupon list after 1.2s
+            setTimeout(() => {
+              window.location.href = '/admin/coupons'; // adjust to your list route
+            }, 1200);
+          } else {
+            // backend reported validation/other error
+            const msg =
+              (data && (data.message || (data.errors && Object.values(data.errors).join(', ')))) ||
+              'Failed to create coupon';
+            showToast(msg, 'error');
+          }
+        } catch (err) {
+          // Network / server error
+          // Try to extract meaningful message from axios error
+          let message = 'Server error. Please try again.';
+          if (err.response && err.response.data) {
+            const d = err.response.data;
+            if (d.message) message = d.message;
+            else if (d.errors) message = Object.values(d.errors).join(', ');
+          } else if (err.message) {
+            message = err.message;
+          }
+          showToast(message, 'error');
+          console.error('Coupon create error:', err);
+        } finally {
+          setSubmitting(false);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

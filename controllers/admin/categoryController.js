@@ -118,7 +118,7 @@ const getEditCategory = async (req, res, next) => {
         next(error);
     }
 };
-
+// edit category
 const editCategory = async (req, res, next) => {
     try {
         const { id, name, description } = req.body;
@@ -173,7 +173,7 @@ const editCategory = async (req, res, next) => {
         next(error);
     }
 };
-
+// list category
 const listCategory = async (req, res, next) => {
     try {
         const id = req.query.id;
@@ -184,6 +184,7 @@ const listCategory = async (req, res, next) => {
         next(error);
     }
 };
+// unlist category
 const unlistCategory = async (req, res, next) => {
     try {
         const id = req.query.id;
