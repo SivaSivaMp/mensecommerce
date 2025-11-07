@@ -32,12 +32,25 @@ const loadHomepage = async (req, res, next) => {
                     totalQuantity: { $sum: '$variants.quantity' },
                     productImage1: { $arrayElemAt: ['$images', 0] },
                     productImage2: { $arrayElemAt: ['$images', 1] },
+
+                    discountPercentage: {
+                        $cond: {
+                            if: {
+                                $gte: [
+                                    '$productOffer',
+                                    '$category.categoryOffer',
+                                ],
+                            },
+                            then: '$productOffer',
+                            else: '$category.categoryOffer',
+                        },
+                    },
                 },
             },
             { $match: { totalQuantity: { $gt: 0 } } },
             { $limit: 12 },
         ]);
-
+        console.log(productData.discountPercentage);
         return res.render('home-men', { data: productData });
     } catch (error) {
         console.log('error loading while home page :', error);
@@ -94,6 +107,17 @@ const loadShoppingPage = async (req, res, next) => {
         };
         const productsAgg = await Product.aggregate([
             { $match: match },
+
+            {
+                $lookup: {
+                    from: Category.collection.name,
+                    localField: 'category',
+                    foreignField: '_id',
+                    as: 'category',
+                },
+            },
+            { $unwind: '$category' },
+
             {
                 $lookup: {
                     from: ProductVariant.collection.name,
@@ -102,6 +126,7 @@ const loadShoppingPage = async (req, res, next) => {
                     as: 'variants',
                 },
             },
+
             {
                 $addFields: {
                     totalQuantity: { $sum: '$variants.quantity' },
@@ -123,8 +148,24 @@ const loadShoppingPage = async (req, res, next) => {
                             },
                         ],
                     },
+
+                    discountPercentage: {
+                        $cond: {
+                            if: {
+                                $gte: [
+                                    '$productOffer',
+                                    '$category.categoryOffer',
+                                ],
+                            },
+                            then: '$productOffer',
+                            else: '$category.categoryOffer',
+                        },
+                    },
                 },
             },
+
+            { $match: { totalQuantity: { $gt: 0 } } },
+
             {
                 $facet: {
                     results: [
@@ -237,6 +278,18 @@ const getProductDetails = async (req, res, next) => {
                                     },
                                 },
                             },
+                        },
+                    },
+                    discountPercentage: {
+                        $cond: {
+                            if: {
+                                $gte: [
+                                    '$productOffer',
+                                    '$category.categoryOffer',
+                                ],
+                            },
+                            then: '$productOffer',
+                            else: '$category.categoryOffer',
                         },
                     },
                 },

@@ -73,6 +73,8 @@
                                                         <th>Category Name</th>                                                 
                                                         <th>Description</th>
                                                         <th>Date</th>
+                                                        <th>Offer</th>
+                                                        <th>Update Offer</th>
                                                         <th>status</th>
                                                         <th>Actions</th>
                                                         <th>Edit</th>  
@@ -89,22 +91,33 @@
                                                             month: 'long', 
                                                             day: 'numeric' 
                                                                 }) %></td>
+                                                            <td><%=category.categoryOffer%>%</td> 
+                                                            <td>
+                                                            <% if (!category.isListed) { %>
+                                                                <button class="btn btn-secondary btn-sm" style="width: 80px;"  disabled>N/A</button>
+                                                            <% }  
+                                                            else if (category.categoryOffer===0) { %>
+                                                                <button class="btn btn-success btn-sm toggle-btn text-white" data-id="<%= category._id %>" data-action="add-offer" style="width: 80px;">Add</button>
+                                                            <% } else if (category.categoryOffer>0) { %>
+                                                                <button class="btn btn-danger btn-sm toggle-btn text-white" data-id="<%= category._id %>" data-action="remove-offer" style="width: 80px;" >Remove</button>
+                                                            <% }%> 
+                                                            </td>   
                                                             <td>
                                                                 <% if(category.isListed){%>
-                                                                <span class="badge bg-success">listed</span>
+                                                                <span class="badge bg-success" style="width: 60px;">listed</span>
                                                                 <%}else{%>
-                                                                <span class="badge bg-danger">unlisted</span>
+                                                                <span class="badge bg-danger" style="width: 60px;">unlisted</span>
                                                                 <%}%>
                                                             </td>                                                               
 
                                                             <td>
                                                                 
                                                                 <% if(category.isListed === true) { %>
-                                                                    <button type="button" class="btn btn-danger" style="width: 80px;">
+                                                                    <button type="button" class="btn btn-danger btn-sm" style="width: 80px;">
                                                                         <a href="/admin/category/unlistCategory?id=<%= category._id %>" class="text-white" style="text-decoration: none;">Unlist</a>
                                                                     </button>
                                                                 <% } else { %>
-                                                                    <button type="button" class="btn btn-success" style="width: 80px;">
+                                                                    <button type="button" class="btn btn-success btn-sm" style="width: 80px;">
                                                                         <a href="/admin/category/listCategory?id=<%= category._id %>" class="text-white" style="text-decoration: none;">List</a>
                                                                     </button>
                                                                 <% } %>
@@ -177,7 +190,7 @@
         // project data table
         $(document).ready(function() {
             $('#myProjectTable')
-            .addClass( 'nowrap' )
+            .addClass( 'compact' )
             .dataTable( {
                 responsive: true,
                  paging: false,
@@ -190,5 +203,103 @@
             
         });
     </script>
+    <!-- Include SweetAlert and Axios -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Select all add/remove offer buttons
+    document.querySelectorAll('.toggle-btn').forEach(button => {
+        button.addEventListener('click', async function() {
+            const categoryId = this.getAttribute('data-id');
+            const action = this.getAttribute('data-action');
+
+            if (action === 'add-offer') {
+                const { value: offerValue } = await Swal.fire({
+                    title: 'Add Offer ',
+                    input: 'number',
+                    inputLabel: 'Offer (%)',
+                    inputPlaceholder: 'Enter a value between 1 and 100',
+                    inputAttributes: { min: 1, max: 100 },
+                    showCancelButton: true,
+                    confirmButtonText: 'Add Offer',
+                });
+
+                if (offerValue) {
+                    try {
+                        const response = await axios.post(`/admin/category/add-offer/${categoryId}`, {
+                            offer: offerValue
+                        });
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Offer Added',
+                            text: `Offer of ${offerValue}% successfully added.`,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        // change button to remove offer
+                        this.textContent = 'Remove Offer';
+                        this.classList.remove('btn-success');
+                        this.classList.add('btn-danger');
+                        this.setAttribute('data-action', 'remove-offer');
+
+                        // optionally refresh page
+                        setTimeout(() => window.location.reload(), 1000);
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.response?.data?.message || 'Something went wrong.'
+                        });
+                    }
+                }
+            }
+
+            if (action === 'remove-offer') {
+                const confirmRemove = await Swal.fire({
+                    title: 'Are you sure?',
+                    text: "Remove this offer?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, remove it',
+                    cancelButtonText: 'Cancel',
+                });
+
+                if (confirmRemove.isConfirmed) {
+                    try {
+                        await axios.post(`/admin/category/remove-offer/${categoryId}`);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Offer Removed',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+
+                        // change button to add offer
+                        this.textContent = 'Add Offer';
+                        this.classList.remove('btn-danger');
+                        this.classList.add('btn-success');
+                        this.setAttribute('data-action', 'add-offer');
+
+                        // optionally refresh page
+                        setTimeout(() => window.location.reload(), 1000);
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.response?.data?.message || 'Something went wrong.'
+                        });
+                    }
+                }
+            }
+        });
+    });
+});
+</script>
+
 </body>
 </html>

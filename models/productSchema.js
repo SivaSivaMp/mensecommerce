@@ -45,12 +45,40 @@ const ProductSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        productOffer: {
+            type: Number,
+            min: 0,
+            max: 100,
+            default: 0,
+        },
+        appliedCategoryOffer: {
+            type: Number,
+            min: 0,
+            max: 100,
+            default: 0,
+        },
         totalStock: {
             type: Number,
         },
     },
     { timestamps: true }
 );
+
+// ProductSchema.pre('save', function (next) {
+//     if (this.productOffer > 0) {
+//         this.salesPrice = Math.round(
+//             this.originalPrice - (this.originalPrice * this.productOffer) / 100
+//         );
+//     } else if (this.salesPrice && this.salesPrice < this.originalPrice) {
+//         this.productOffer = Math.round(
+//             ((this.originalPrice - this.salesPrice) / this.originalPrice) * 100
+//         );
+//     } else {
+//         this.salesPrice = Math.round(this.originalPrice);
+//         this.productOffer = 0;
+//     }
+//     next();
+// });
 ProductSchema.index({ name: 'text', description: 'text' });
 ProductSchema.index({ originalPrice: 1, salePrice: 1 });
 ProductSchema.virtual('discountPercentage').get(function () {

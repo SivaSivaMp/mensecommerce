@@ -263,282 +263,6 @@
         pointer-events: none;
     }
 </style>
-        <!-- page-title -->
-        <div class="tf-page-title style-2">
-            <div class="container-full">
-                <div class="heading text-center ">Checkout</div>
-            </div>
-        </div>
-        <!-- /page-title -->
-
-<!-- page-cart -->
-<section class="flat-spacing-11">
-  <div class="container">
-    <div class="tf-page-cart-wrap">
-      <div class="tf-page-cart-item">
-        <% if (!cartEmpty) { %>
-          
-          
-
-          <!-- Shipping Address Section -->
-          <div class="profile-card">
-            <div class="d-flex justify-content-between align-items-center mb-4 ">
-              <h3 class="section-title mx-4">Select Shipping Address</h3>
-              <button class=" tf-btn  btn-fill animate-hover-btn radius-3 justify-content-center " onclick="window.location.href='/checkout/add-address'">
-                Add Address <i class="icofont-plus"></i>
-              </button>
-            </div>
-
-            <% if (addresses.length > 0) { %>
-              <div class="address-list">
-                <form id="address-form">
-                  <% addresses.forEach((address, index) => { %>
-                    <label class="saved-address address-selector" onclick="selectAddress(this)">
-                      <input type="radio" name="shippingAddress" value="<%= address._id %>" class="address-radio" <%= index === 0 ? 'checked' : '' %>>
-                      <div style="flex: 1;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                          <span class="address-type <%= address.addressType.toLowerCase() %>">
-                            <%= address.addressType %>
-                          </span>
-                          <div class="address-actions" onclick="event.stopPropagation();">
-                            <a href="/checkout/edit-address/<%= address._id %>" title="Edit">
-                              <i class="icofont-edit text-success fs-5"></i>
-                            </a>
-                            
-                          </div>
-                        </div>
-                        <p class="mb-1 fw-semibold"><%= address.name %></p>
-                        <p class="mb-1"><%= address.building %>, <%= address.street %></p>
-                        <% if (address.landmark) { %>
-                          <p class="mb-1"><%= address.landmark %></p>
-                        <% } %>
-                        <p class="mb-1"><%= address.city %>, <%= address.state %> - <%= address.pincode %></p>
-                        <p class="mb-0">📞 <%= address.phone %></p>
-                      </div>
-                    </label>
-                  <% }); %>
-                </form>
-              </div>
-
-              <!-- Pagination Controls -->
-              <% if (totalPages > 1) { %>
-                <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
-                  <!-- Prev Button -->
-                  <% if (pagination.hasPrevPage) { %>
-                    <a href="/checkout?page=<%= pagination.prevPage %>" class="pagination-link">
-                      <span>← Previous</span>
-                    </a>
-                  <% } else { %>
-                    <span class="pagination-link disabled">
-                      <span>← Previous</span>
-                    </span>
-                  <% } %>
-
-                  <!-- Page Info -->
-                  <span style="padding: 8px 12px; color: #666;">
-                    Page <%= currentPage %> of <%= totalPages %>
-                  </span>
-
-                  <!-- Next Button -->
-                  <% if (pagination.hasNextPage) { %>
-                    <a href="/checkout?page=<%= pagination.nextPage %>" class="pagination-link">
-                      <span>Next →</span>
-                    </a>
-                  <% } else { %>
-                    <span class="pagination-link disabled">
-                      <span>Next →</span>
-                    </span>
-                  <% } %>
-                </div>
-              <% } %>
-            <% } else { %>
-              <p class="text-muted">No addresses saved yet.</p>
-            <% } %>
-          </div>
-
-          <!-- Payment Method Section -->
-          <div class="profile-card">
-            <h3 class="section-title">Payment Method</h3>
-            <div class="payment-options">
-              <!-- Cash on Delivery Option -->
-              <label class="payment-option">
-                <input type="radio" name="paymentMethod" value="cod" checked onchange="selectPaymentMethod(this)">
-                <div class="payment-option-content">
-                  <div class="payment-option-title">Cash on Delivery</div>
-                  <div class="payment-option-desc">Pay when your order arrives</div>
-                </div>
-                <div class="payment-option-icon">💵</div>
-              </label>
-
-              <!-- Online Payment Option -->
-              <label class="payment-option">
-                <input type="radio" name="paymentMethod" value="online" onchange="selectPaymentMethod(this)">
-                <div class="payment-option-content">
-                  <div class="payment-option-title">Online Payment</div>
-                  <div class="payment-option-desc">Credit/Debit Card, UPI, Wallet</div>
-                </div>
-                <div class="payment-option-icon">💳</div>
-              </label>
-            </div>
-          </div>
-        <% } else { %>
-          <div style="text-align: center; padding: 40px;">
-            <p style="font-size: 18px; color: #666;">Your cart is empty</p>
-            <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3" style="display: inline-block; margin-top: 20px;">
-              <span>Continue Shopping</span>
-            </a>
-          </div>
-        <% } %>
-        <div class="profile-card">
-          <div class="tf-page-cart-item overflow-auto" style="max-height: 400px;">
-            <% if (cartItems.length > 0) { %>
-              <form id="cart-form">
-                <table class="tf-table-page-cart table table-bordered align-middle ">
-                  <thead class="table-light sticky-header">
-                    <tr>
-                      <th>Product</th>
-                      <th>Price</th>
-                      <th>Quantity</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <% cartItems.forEach((item) => {
-                      const isOutOfStock = item.isOutOfStock;
-                      const isUnlisted = item.isUnlisted || item.isUnlistedProduct || item.isUnlistedCategory; 
-                    %>
-                      <tr class="tf-cart-item file-delete" 
-                          data-product-id="<%= item.productId %>" 
-                          data-in-stock="<%= !isOutOfStock %>">
-                        
-                        <!-- Product Column -->
-                        <td class="tf-cart-item_product">
-                          <a href="/product-detail/<%= item.productId %>" class="img-box">
-                            <img src="<%= item.productImage %>" alt="<%= item.productName %>">
-                          </a>
-                          <div class="cart-info">
-                            <a href="/product-detail/<%= item.productId %>" class="cart-title link"><%= item.productName %></a>
-                            <div class="cart-meta-variant">
-                              <%= item.size %>
-                              <strike>
-                                <div class="cart-meta-variant">₹<%= item.originalPrice.toLocaleString('en-IN') %></div>
-                              </strike>
-                            </div>
-
-                            <% if (isOutOfStock) { %>
-                              <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Out of Stock</span>
-                              <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
-                            <% } else if (isUnlisted) { %>
-                              <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">Product not Available</span>
-                              <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
-                            <% } else { %>
-                              <a href="javascript:void(0);" class="remove-cart " data-item-id="<%= item._id %>">Remove</a>
-                            <% } %>
-                          </div>
-                        </td>
-
-                        <!-- Price Column -->
-                        <td class="tf-cart-item_price" cart-data-title="Price">
-                          <div class="cart-price">₹<%= item.salePrice.toLocaleString('en-IN') %></div>
-                        </td>
-
-                        <!-- Quantity Column (only show if available & listed) -->
-                        <% if (!isOutOfStock && !isUnlisted) { %>
-                          <td class="tf-cart-item_quantity justify-content-center" cart-data-title="Quantity">
-                            
-                              <div class="wg-quantity">
-                                <input type="text" name="quantity" value="<%= item.quantity %>" data-item-id="<%= item._id %>" readonly>
-                              </div>
-                            
-                          </td>
-                        <% } else { %>
-                          <td class="tf-cart-item_quantity" cart-data-title="Quantity">
-                            <div class="cart-quantity" style="color:#d32f2f;font-weight:500;">
-                              N/A
-                            </div>
-                          </td>
-                        <% } %>
-
-                        <!-- Total Column -->
-                        <td class="tf-cart-item_total" cart-data-title="Total">
-                          <div class="cart-total">₹<%= (item.salePrice * item.quantity).toLocaleString('en-IN') %></div>
-                        </td>
-                      </tr>
-                    <% }); %>
-                  </tbody>
-            </table>
-          </form>
-        <% } else { %>
-          <div style="text-align: center; padding: 40px;">
-            <p style="font-size: 18px; color: #666;">Your cart is empty</p>
-            <a href="/shop" class="tf-btn btn-fill animate-hover-btn radius-3" style="display: inline-block; margin-top: 20px;">
-              <span>Continue Shopping</span>
-            </a>
-          </div>
-        <% } %>
-      </div>
-    </div>
-  </div>
-
-      <% if (!cartEmpty) { %>
-        <!-- Price Details Section -->
-        <div class="tf-page-cart-footer">
-          <div class="tf-cart-footer-inner">
-            <div class="tf-page-cart-checkout">
-              <div class="price-details-box">
-                <h2>PRICE DETAILS</h2>
-
-                <div class="price-row">
-                  <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %>)</span>
-                  <span>₹<%= priceDetails.totalPrice.toLocaleString('en-IN') %></span>
-                </div>
-
-                <% if (priceDetails.discount > 0) { %>
-                  <div class="price-row discount">
-                    <span>Discount</span>
-                    <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
-                  </div>
-                <% } %>
-
-                
-
-                <hr class="divider">
-
-                <div class="price-row total">
-                  <strong>Total Amount</strong>
-                  <strong>₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
-                </div>
-
-                <hr class="divider">
-
-                <% if (priceDetails.savings > 0) { %>
-                  <div class="save-text">
-                    You will save <span class="green">₹<%= priceDetails.savings.toLocaleString('en-IN') %></span> on this order
-                  </div>
-                <% } %>
-              </div>
-
-              <div class="cart-checkout-btn">
-                <button type="button" class="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center place-order-btn">
-                  <span>Place Order</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      <% } %>
-    </div>
-  </div>
-</section>
-<!-- page-cart -->
-
-<%-include("../partials/user/footer")%>
-
-<!-- Sweet Alert CDN -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- Axios CDN -->
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
 <style>
 .price-details-box {
   background: #fff;
@@ -664,27 +388,358 @@
   color: #666;
 }
 </style>
+<!-- page-title -->
+<div class="tf-page-title style-2">
+    <div class="container-full">
+        <div class="heading text-center">Checkout</div>
+    </div>
+</div>
+<!-- /page-title -->
+
+<!-- page-cart -->
+<section class="flat-spacing-11">
+  <div class="container">
+    <div class="tf-page-cart-wrap">
+      <div class="tf-page-cart-item">
+        <% if (!cartEmpty) { %>
+          
+          <!-- Shipping Address Section -->
+          <div class="profile-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h3 class="section-title mx-4">Select Shipping Address</h3>
+              <button class="tf-btn btn-fill animate-hover-btn radius-3 justify-content-center" 
+                      onclick="window.location.href='/checkout/add-address'">
+                Add Address <i class="icofont-plus"></i>
+              </button>
+            </div>
+
+            <% if (addresses.length > 0) { %>
+              <div class="address-list">
+                <form id="address-form">
+                  <% addresses.forEach((address, index) => { %>
+                    <label class="saved-address address-selector" onclick="selectAddress(this)">
+                      <input type="radio" name="shippingAddress" value="<%= address._id %>" 
+                             class="address-radio" <%= index === 0 ? 'checked' : '' %>>
+                      <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                          <span class="address-type <%= address.addressType.toLowerCase() %>">
+                            <%= address.addressType %>
+                          </span>
+                          <div class="address-actions" onclick="event.stopPropagation();">
+                            <a href="/checkout/edit-address/<%= address._id %>" title="Edit">
+                              <i class="icofont-edit text-success fs-5"></i>
+                            </a>
+                          </div>
+                        </div>
+                        <p class="mb-1 fw-semibold"><%= address.name %></p>
+                        <p class="mb-1"><%= address.building %>, <%= address.street %></p>
+                        <% if (address.landmark) { %>
+                          <p class="mb-1"><%= address.landmark %></p>
+                        <% } %>
+                        <p class="mb-1"><%= address.city %>, <%= address.state %> - <%= address.pincode %></p>
+                        <p class="mb-0">📞 <%= address.phone %></p>
+                      </div>
+                    </label>
+                  <% }); %>
+                </form>
+              </div>
+
+              <!-- Pagination Controls -->
+              <% if (totalPages > 1) { %>
+                <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+                  <% if (pagination.hasPrevPage) { %>
+                    <a href="/checkout?page=<%= pagination.prevPage %>" class="pagination-link">
+                      <span>← Previous</span>
+                    </a>
+                  <% } else { %>
+                    <span class="pagination-link disabled">
+                      <span>← Previous</span>
+                    </span>
+                  <% } %>
+
+                  <span style="padding: 8px 12px; color: #666;">
+                    Page <%= currentPage %> of <%= totalPages %>
+                  </span>
+
+                  <% if (pagination.hasNextPage) { %>
+                    <a href="/checkout?page=<%= pagination.nextPage %>" class="pagination-link">
+                      <span>Next →</span>
+                    </a>
+                  <% } else { %>
+                    <span class="pagination-link disabled">
+                      <span>Next →</span>
+                    </span>
+                  <% } %>
+                </div>
+              <% } %>
+            <% } else { %>
+              <p class="text-muted">No addresses saved yet.</p>
+            <% } %>
+          </div>
+
+          <!-- Payment Method Section -->
+          <div class="profile-card">
+            <h3 class="section-title">Payment Method</h3>
+            <div class="payment-options">
+              <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="cod" checked 
+                       onchange="selectPaymentMethod(this)">
+                <div class="payment-option-content">
+                  <div class="payment-option-title">Cash on Delivery</div>
+                  <div class="payment-option-desc">Pay when your order arrives</div>
+                </div>
+                <div class="payment-option-icon">💵</div>
+              </label>
+
+              <label class="payment-option">
+                <input type="radio" name="paymentMethod" value="online" 
+                       onchange="selectPaymentMethod(this)">
+                <div class="payment-option-content">
+                  <div class="payment-option-title">Online Payment</div>
+                  <div class="payment-option-desc">Credit/Debit Card, UPI, Wallet</div>
+                </div>
+                <div class="payment-option-icon">💳</div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Cart Items Section -->
+          <div class="profile-card">
+            <div class="tf-page-cart-item overflow-auto" style="max-height: 400px;">
+              <% if (cartItems.length > 0) { %>
+                <form id="cart-form">
+                  <table class="tf-table-page-cart table table-bordered align-middle">
+                    <thead class="table-light sticky-header">
+                      <tr>
+                        <th>Product</th>
+                        <th>Price</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% cartItems.forEach((item) => {
+                        const isOutOfStock = item.isOutOfStock;
+                        const isUnlisted = item.isUnlisted || item.isUnlistedProduct || item.isUnlistedCategory; 
+                      %>
+                        <tr class="tf-cart-item file-delete" 
+                            data-product-id="<%= item.productId %>" 
+                            data-in-stock="<%= !isOutOfStock %>">
+                          
+                          <td class="tf-cart-item_product">
+                            <a href="/product-detail/<%= item.productId %>" class="img-box">
+                              <img src="<%= item.productImage %>" alt="<%= item.productName %>">
+                            </a>
+                            <div class="cart-info">
+                              <a href="/product-detail/<%= item.productId %>" class="cart-title link">
+                                <%= item.productName %>
+                              </a>
+                              <div class="cart-meta-variant">
+                                <%= item.size %>
+                                <strike>
+                                  <div class="cart-meta-variant">
+                                    ₹<%= item.originalPrice.toLocaleString('en-IN') %>
+                                  </div>
+                                </strike>
+                              </div>
+
+                              <% if (isOutOfStock) { %>
+                                <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">
+                                  Out of Stock
+                                </span>
+                                <a href="javascript:void(0);" class="remove-cart" 
+                                   data-item-id="<%= item._id %>">Remove</a>
+                              <% } else if (isUnlisted) { %>
+                                <span class="out-of-stock-badge" style="color: #d32f2f; font-weight: 500;">
+                                  Product not Available
+                                </span>
+                                <a href="javascript:void(0);" class="remove-cart" 
+                                   data-item-id="<%= item._id %>">Remove</a>
+                              <% } else { %>
+                                <a href="javascript:void(0);" class="remove-cart" 
+                                   data-item-id="<%= item._id %>">Remove</a>
+                              <% } %>
+                            </div>
+                          </td>
+
+                          <td class="tf-cart-item_price" cart-data-title="Price">
+                            <div class="cart-price">₹<%= item.salePrice.toLocaleString('en-IN') %></div>
+                          </td>
+
+                          <% if (!isOutOfStock && !isUnlisted) { %>
+                            <td class="tf-cart-item_quantity justify-content-center" cart-data-title="Quantity">
+                              <div class="wg-quantity">
+                                <input type="text" name="quantity" value="<%= item.quantity %>" 
+                                       data-item-id="<%= item._id %>" readonly>
+                              </div>
+                            </td>
+                          <% } else { %>
+                            <td class="tf-cart-item_quantity" cart-data-title="Quantity">
+                              <div class="cart-quantity" style="color:#d32f2f;font-weight:500;">N/A</div>
+                            </td>
+                          <% } %>
+
+                          <td class="tf-cart-item_total" cart-data-title="Total">
+                            <div class="cart-total">
+                              ₹<%= (item.salePrice * item.quantity).toLocaleString('en-IN') %>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }); %>
+                    </tbody>
+                  </table>
+                </form>
+              <% } else { %>
+                <div style="text-align: center; padding: 40px;">
+                  <p style="font-size: 18px; color: #666;">Your cart is empty</p>
+                  <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3" 
+                     style="display: inline-block; margin-top: 20px;">
+                    <span>Continue Shopping</span>
+                  </a>
+                </div>
+              <% } %>
+            </div>
+          </div>
+
+        <% } else { %>
+          <div style="text-align: center; padding: 40px;">
+            <p style="font-size: 18px; color: #666;">Your cart is empty</p>
+            <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3" 
+               style="display: inline-block; margin-top: 20px;">
+              <span>Continue Shopping</span>
+            </a>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (!cartEmpty) { %>
+        <!-- Price Details Section -->
+        <div class="tf-page-cart-footer">
+          <div class="tf-cart-footer-inner">
+            <div class="tf-page-cart-checkout">
+              
+              <!-- ✅ FIXED: Coupon Section -->
+              <div class="price-details-box mb-3">
+                <h2>Apply Coupon</h2>
+                <div class="price-row" style="gap: 10px;">
+                  <input type="text" 
+                         id="couponCode" 
+                         placeholder="Enter coupon code" 
+                         class="form-control" 
+                         style="flex:1;" 
+                         value="<%= couponCode || '' %>" 
+                         <%= couponCode ? 'readonly' : '' %>>
+                  
+                  <% if (couponCode) { %>
+                    <button type="button" id="removeCouponBtn" 
+                            class="tf-btn btn-outline radius-3" 
+                            style="white-space: nowrap;">
+                      Remove
+                    </button>
+                  <% } else { %>
+                    <button type="button" id="applyCouponBtn" 
+                            class="tf-btn btn-fill radius-3" 
+                            style="white-space: nowrap;">
+                      Apply
+                    </button>
+                  <% } %>
+                </div>
+                
+                <!-- ✅ Coupon Success Message -->
+                <p id="couponMessage" style="margin-top:10px; font-size:14px; color:#2ca02c;">
+                  <% if (couponCode && discount > 0) { %>
+                    ✓ Coupon <%= couponCode %> applied. You saved ₹<%= discount.toLocaleString('en-IN') %>
+                  <% } %>
+                </p>
+                
+                <small>
+                  <a href="javascript:void(0)" id="viewCouponsLink"
+                     style="font-size:13px; color:#088178; text-decoration:underline; cursor: pointer;">
+                    View available coupons
+                  </a>
+                </small>
+              </div>
+
+              <!-- ✅ FIXED: Price Details with Coupon Display -->
+              <div class="price-details-box">
+                <h2>PRICE DETAILS</h2>
+
+                <div class="price-row">
+                  <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %>)</span>
+                  <span>₹<%= priceDetails.totalPrice.toLocaleString('en-IN') %></span>
+                </div>
+
+                <% if (priceDetails.discount > 0) { %>
+                  <div class="price-row discount">
+                    <span>Product Discount</span>
+                    <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
+                  </div>
+                <% } %>
+
+                <!-- ✅ Show Coupon Discount Separately -->
+                <% if (couponCode && discount > 0) { %>
+                  <div class="price-row discount">
+                    <span>Coupon Discount (<%= couponCode %>)</span>
+                    <span>- ₹<%= discount.toLocaleString('en-IN') %></span>
+                  </div>
+                <% } %>
+
+                <hr class="divider">
+
+                <div class="price-row total">
+                  <strong>Total Amount</strong>
+                  <strong id="finalAmount">₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
+                </div>
+
+                <hr class="divider">
+
+                <% if (priceDetails.savings > 0) { %>
+                  <div class="save-text">
+                    You will save <span class="green">₹<%= priceDetails.savings.toLocaleString('en-IN') %></span> on this order
+                  </div>
+                <% } %>
+              </div>
+
+              <div class="cart-checkout-btn">
+                <button type="button" 
+                        class="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center place-order-btn">
+                  <span>Place Order</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</section>
+<!-- /page-cart -->
+
+<%-include("../partials/user/footer")%>
+
+<!-- Sweet Alert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Axios CDN -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
 <script>
+// Payment Method Selection
 function selectPaymentMethod(element) {
   const allOptions = document.querySelectorAll('.payment-option');
-  allOptions.forEach(option => {
-    option.classList.remove('selected');
-  });
+  allOptions.forEach(option => option.classList.remove('selected'));
   element.closest('.payment-option').classList.add('selected');
 }
 
+// Address Selection
 function selectAddress(element) {
   const allAddresses = document.querySelectorAll('.saved-address');
-  allAddresses.forEach(addr => {
-    addr.classList.remove('selected');
-  });
+  allAddresses.forEach(addr => addr.classList.remove('selected'));
   element.classList.add('selected');
 }
 
+// Place Order Function
 async function placeOrder() {
     try {
-        // Get selected address and payment method
         const selectedAddressRadio = document.querySelector('input[name="shippingAddress"]:checked');
         const selectedPaymentRadio = document.querySelector('input[name="paymentMethod"]:checked');
 
@@ -701,7 +756,6 @@ async function placeOrder() {
         const addressId = selectedAddressRadio.value;
         const paymentMethod = selectedPaymentRadio.value;
 
-        // Show loading state
         Swal.fire({
             title: 'Processing Order',
             html: 'Please wait while we process your order...',
@@ -711,23 +765,12 @@ async function placeOrder() {
             }
         });
 
-        // Make API request
         const response = await axios.post('/order/place', {
             shippingAddressId: addressId,
             paymentMethod: paymentMethod
         });
 
         if (response.data.success) {
-            // Swal.fire({
-            //     icon: 'success',
-            //     title: 'Order Placed Successfully',
-            //     html: `Your order <strong>${response.data.orderId}</strong> has been placed`,
-            //     confirmButtonColor: '#3085d6',
-            //     confirmButtonText: 'View Order'
-            // }).then(() => {
-            //     // Redirect to order confirmation page
-            //     window.location.href = `profile/orders`;
-            // });
             window.location.href = `/order/success/${response.data.orderId}`;
         }
     } catch (error) {
@@ -743,83 +786,271 @@ async function placeOrder() {
     }
 }
 
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-  // Set initial selected state for payment method
   const firstPaymentOption = document.querySelector('input[name="paymentMethod"]:checked');
   if (firstPaymentOption) {
     firstPaymentOption.closest('.payment-option').classList.add('selected');
   }
 
-  // Set initial selected state for address
   const firstAddress = document.querySelector('input[name="shippingAddress"]:checked');
   if (firstAddress) {
     firstAddress.closest('.saved-address').classList.add('selected');
   }
 
-  // Attach click event to place order button
   const placeOrderBtn = document.querySelector('.place-order-btn');
   if (placeOrderBtn) {
     placeOrderBtn.addEventListener('click', placeOrder);
   }
 });
-</script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const removeButtons = document.querySelectorAll('.remove-cart');
 
-    removeButtons.forEach((button) => {
-      button.addEventListener('click', async (e) => {
-        const itemId = e.currentTarget.getAttribute('data-item-id');
+// ✅ FIXED: Remove Cart Item
+document.addEventListener('DOMContentLoaded', () => {
+  const removeButtons = document.querySelectorAll('.remove-cart');
 
-        const result = await Swal.fire({
-          title: 'Remove Item?',
-          text: 'Are you sure you want to remove this item from your cart?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#d33',
-          cancelButtonColor: '#3085d6',
-          confirmButtonText: 'Yes, remove it',
-          cancelButtonText: 'Cancel',
-        });
+  removeButtons.forEach((button) => {
+    button.addEventListener('click', async (e) => {
+      const itemId = e.currentTarget.getAttribute('data-item-id');
 
-        if (!result.isConfirmed) return;
+      const result = await Swal.fire({
+        title: 'Remove Item?',
+        text: 'Are you sure you want to remove this item from your cart?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, remove it',
+        cancelButtonText: 'Cancel',
+      });
 
-        try {
-          const response = await axios.delete(`/cart/remove/${itemId}`);
-          console.log('Full response:', response);
+      if (!result.isConfirmed) return;
 
-          if ( response.data.success) {
-          
-            await Swal.fire({
-              icon: 'success',
-              title: 'Removed!',
-              text: response.data.message || 'Item removed from cart successfully',
-              timer: 1300,
-              showConfirmButton: false,
-            });
-            setTimeout(() => {
-              window.location.reload();
-            }, 100);
+      try {
+        const response = await axios.delete(`/cart/remove/${itemId}`);
 
-          } else {
-            Swal.fire({
-              icon: 'error',
-              title: 'Error',
-              text: response.data.message || 'Failed to remove item. Please try again.',
-            });
-          }
-
-        } catch (error) {
-          console.error('Error removing item:', error);
-          const errorMsg =
-            error.response?.data?.message || 'Something went wrong while removing the item.';
+        if (response.data.success) {
+          await Swal.fire({
+            icon: 'success',
+            title: 'Removed!',
+            text: response.data.message || 'Item removed from cart successfully',
+            timer: response.data.couponRemoved ? 2500 : 1500,
+            showConfirmButton: false,
+          });
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        } else {
           Swal.fire({
             icon: 'error',
-            title: 'Oops...',
-            text: errorMsg,
+            title: 'Error',
+            text: response.data.message || 'Failed to remove item. Please try again.',
           });
         }
-      });
+      } catch (error) {
+        console.error('Error removing item:', error);
+        const errorMsg = error.response?.data?.message || 'Something went wrong while removing the item.';
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: errorMsg,
+        });
+      }
     });
   });
+});
+
+// ✅ FIXED: Apply Coupon
+document.addEventListener('DOMContentLoaded', () => {
+  const applyBtn = document.getElementById('applyCouponBtn');
+  const removeBtn = document.getElementById('removeCouponBtn');
+  const message = document.getElementById('couponMessage');
+  const finalAmountEl = document.getElementById('finalAmount');
+
+  async function applyCoupon() {
+    const code = document.getElementById('couponCode').value.trim();
+    
+    // Get current total from the page
+    const totalText = finalAmountEl.textContent.replace(/[₹,\s]/g, '');
+    const totalAmount = parseFloat(totalText);
+
+    if (!code) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Enter Coupon Code',
+        text: 'Please enter a valid coupon code',
+        confirmButtonColor: '#088178'
+      });
+      return;
+    }
+
+    try {
+      const res = await axios.post('/checkout/apply-coupon', { 
+        couponcode: code, 
+        totalAmount: totalAmount 
+      });
+      
+      const data = res.data;
+
+      if (data.success) {
+        // Show success message
+        await Swal.fire({
+          icon: 'success',
+          title: 'Coupon Applied!',
+          text: data.message,
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        // Reload page to show updated prices
+        window.location.reload();
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Coupon',
+          text: data.message,
+          confirmButtonColor: '#d32f2f'
+        });
+      }
+    } catch (err) {
+      console.error('Apply coupon error:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.response?.data?.message || 'Failed to apply coupon',
+        confirmButtonColor: '#d32f2f'
+      });
+    }
+  }
+
+  async function removeCoupon() {
+    const code = document.getElementById('couponCode').value.trim();
+    
+    try {
+      const res = await axios.get(`/checkout/remove-coupon?couponCode=${code}`);
+      const data = res.data;
+
+      if (data.success) {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Coupon Removed',
+          text: data.message,
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        // Reload page to show updated prices
+        window.location.reload();
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: data.message,
+          confirmButtonColor: '#d32f2f'
+        });
+      }
+    } catch (err) {
+      console.error('Remove coupon error:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to remove coupon',
+        confirmButtonColor: '#d32f2f'
+      });
+    }
+  }
+
+  if (applyBtn) applyBtn.addEventListener('click', applyCoupon);
+  if (removeBtn) removeBtn.addEventListener('click', removeCoupon);
+});
+
+// ✅ FIXED: View Available Coupons
+document.addEventListener('DOMContentLoaded', () => {
+  const viewLink = document.getElementById('viewCouponsLink');
+
+  if (viewLink) {
+    viewLink.addEventListener('click', async () => {
+      try {
+        const res = await axios.get('/checkout/available-coupons');
+        const data = res.data;
+
+        if (data.success && data.coupons.length > 0) {
+          let htmlContent = `<div style="text-align:left; max-height: 400px; overflow-y: auto;">`;
+
+          data.coupons.forEach(coupon => {
+            const discountText = coupon.discountType === 'flat'
+              ? `Flat ₹${coupon.discountValue} off`
+              : `${coupon.discountValue}% off` + 
+                (coupon.maxDiscountAmount ? ` (max ₹${coupon.maxDiscountAmount})` : '');
+
+            const expiryDate = new Date(coupon.expiresAt).toLocaleDateString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+            });
+
+            htmlContent += `
+              <div style="border:1px solid #eee;padding:15px;border-radius:8px;margin-bottom:12px;background:#f9f9f9;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <p style="margin:0;font-weight:700;color:#088178;font-size:16px;">${coupon.code}</p>
+                  <button class="apply-coupon-btn" 
+                          data-code="${coupon.code}"
+                          style="background:#088178;color:white;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;">
+                    Apply
+                  </button>
+                </div>
+                <p style="margin:0 0 6px 0;font-size:14px;color:#333;font-weight:500;">${discountText}</p>
+                <p style="margin:0 0 4px 0;font-size:13px;color:#666;">Min purchase: ₹${coupon.minPurchaseAmount}</p>
+                <p style="margin:0;font-size:12px;color:#999;">Valid till: ${expiryDate}</p>
+              </div>`;
+          });
+
+          htmlContent += `</div>`;
+
+          Swal.fire({
+            title: '🎁 Available Coupons',
+            html: htmlContent,
+            showCloseButton: true,
+            showConfirmButton: false,
+            width: '500px',
+            background: '#fff',
+            didOpen: () => {
+              // Add click handlers to all apply buttons
+              document.querySelectorAll('.apply-coupon-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                  const code = this.getAttribute('data-code');
+                  Swal.close(); // Close the modal first
+                  
+                  // Set the coupon code in input
+                  document.getElementById('couponCode').value = code;
+                  
+                  // Trigger apply
+                  const applyBtn = document.getElementById('applyCouponBtn');
+                  if (applyBtn) {
+                    applyBtn.click();
+                  }
+                });
+              });
+            }
+          });
+        } else {
+          Swal.fire({
+            icon: 'info',
+            title: 'No Coupons Available',
+            text: data.message || 'No available coupons for your current cart total.',
+            confirmButtonColor: '#088178'
+          });
+        }
+      } catch (error) {
+        console.error('Fetch coupons error:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to fetch available coupons',
+          confirmButtonColor: '#d32f2f'
+        });
+      }
+    });
+  }
+});
 </script>
+

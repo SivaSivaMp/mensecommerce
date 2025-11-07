@@ -1,0 +1,131 @@
+<%- include("../partials/user/header") %>
+
+<div class="tf-breadcrumb">
+  <div class="container">
+    <div class="tf-breadcrumb-wrap d-flex justify-content-between flex-wrap align-items-center">
+      <div class="tf-breadcrumb-list">
+        <a href="/" class="text">Home</a>
+        <i class="icon icon-arrow-right"></i>
+        <span class="text">My Wallet</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="flat-spacing-11">
+  <div class="container">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-lg-3">
+        <ul class="my-account-nav">
+          <li><a href="/profile/address" class="my-account-nav-item">My Profile</a></li>
+          <li><a href="/profile/orders" class="my-account-nav-item">Orders</a></li>
+          <li><a href="/profile/address" class="my-account-nav-item">Addresses</a></li>
+          <li><a href="/profile/wallet" class="my-account-nav-item active">My Wallet</a></li>
+          <li><a href="/wishlist" class="my-account-nav-item">Wishlist</a></li>
+          <li><a href="/logout" class="my-account-nav-item">Logout</a></li>
+        </ul>
+      </div>
+
+      <!-- Wallet Section -->
+      <div class="col-lg-9">
+        <div class="my-account-content account-order">
+
+          <!-- Search + Filter + Add Money -->
+          <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <!-- Left Side: Search + Filter -->
+            <form method="GET" action="/profile/wallet" class="d-flex flex-wrap align-items-center gap-2">
+              <!-- Search -->
+              <div class="input-group input-group-sm" style="max-width: 250px;">
+                <input type="search" name="query" class="form-control" placeholder="Search by Transaction ID or Order ID" value="<%= query || '' %>">
+                <button type="submit" class="input-group-text">
+                  <i class="icofont-search"></i>
+                </button>
+                <% if (query) { %>
+                  <a href="/profile/wallet" class="input-group-text bg-danger text-white">
+                    <i class="icofont-close"></i>
+                  </a>
+                <% } %>
+              </div>
+
+              <!-- Transaction Type Filter -->
+              <select name="type" class="form-select form-select-sm" style="max-width:160px;">
+                <option value="">All Types</option>
+                <option value="credit" <%= type === 'credit' ? 'selected' : '' %>>Credit</option>
+                <option value="debit" <%= type === 'debit' ? 'selected' : '' %>>Debit</option>
+              </select>
+
+              <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+              <a href="/profile/wallet" class="btn btn-sm btn-secondary">Reset</a>
+            </form>
+
+            <!-- Right Side: Add Money Button -->
+            <a href="/profile/wallet/add-money" class="tf-btn btn-fill animate-hover-btn radius-3">
+              <span>Add Money</span>
+            </a>
+          </div>
+
+          <!-- Wallet Table -->
+          <div class="wrap-account-order">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th class="fw-6">Transaction Id</th>
+                  <th class="fw-6">Date</th>
+                  <th class="fw-6">Description</th>
+                  <th class="fw-6">Order Id</th>
+                  <th class="fw-6">Transaction Type</th>
+                  <th class="fw-6">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (transactions && transactions.length > 0) { %>
+                  <% transactions.forEach(txn => { %>
+                    <tr>
+                      <td><%= txn.transactionId %></td>
+                      <td><%= new Date(txn.createdAt).toLocaleDateString() %></td>
+                      <td><%= txn.description || '-' %></td>
+                      <td><%= txn.orderId ? txn.orderId : '-' %></td>
+                      <td>
+                        <span class="badge <%= txn.type === 'credit' ? 'bg-success' : 'bg-danger' %> text-capitalize">
+                          <%= txn.type %>
+                        </span>
+                      </td>
+                      <td>₹<%= txn.amount.toFixed(2) %></td>
+                    </tr>
+                  <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="text-center text-muted py-4">
+                      No transactions found.
+                    </td>
+                  </tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination (Optional) -->
+          <% if (pagination && pagination.totalPages > 1) { %>
+            <ul class="tf-pagination-wrap tf-pagination-list mt-4">
+              <% if (pagination.hasPrev) { %>
+                <li><a href="?page=<%= pagination.prevPage %>" class="pagination-link animate-hover-btn"><span class="icon icon-arrow-left"></span></a></li>
+              <% } %>
+              <% for (let i = 1; i <= pagination.totalPages; i++) { %>
+                <li class="<%= i === pagination.currentPage ? 'active' : '' %>">
+                  <a href="?page=<%= i %>" class="pagination-link"><%= i %></a>
+                </li>
+              <% } %>
+              <% if (pagination.hasNext) { %>
+                <li><a href="?page=<%= pagination.nextPage %>" class="pagination-link animate-hover-btn"><span class="icon icon-arrow-right"></span></a></li>
+              <% } %>
+            </ul>
+          <% } %>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include("../partials/user/footer") %>

@@ -1,7 +1,7 @@
 import AppError from '../../utils/appError.js';
-
+import Coupon from '../../models/couponSchema.js';
 import Order from '../../models/orderSchema.js';
-
+import Wallet from '../../models/walletSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Product from '../../models/productSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
@@ -394,7 +394,12 @@ const completeReturn = async (req, res, next) => {
             );
         }
 
-        const order = await Order.findOne({ 'orderedItems._id': itemId });
+        const order = await Order.findOne({
+            'orderedItems._id': itemId,
+        }).populate({
+            path: 'couponId',
+            select: 'code minPurchaseAmount discountType discountValue maxDiscountAmount',
+        });
         if (!order)
             return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
 

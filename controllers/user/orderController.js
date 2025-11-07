@@ -4,10 +4,16 @@ import Cart from '../../models/cartSchema.js';
 import Product from '../../models/productSchema.js';
 import Address from '../../models/addressSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
+import Wallet from '../../models/walletSchema.js';
 import Order from '../../models/orderSchema.js';
 import Category from '../../models/categorySchema.js';
+import Coupon from '../../models/couponSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
 const placeOrder = async (req, res, next) => {
+    // ✅ FIXED: Declare variables at function scope
+    let appliedCouponCode = null;
+    let couponId = null;
+
     try {
         const userId = getCurrentUserId(req);
         const { shippingAddressId, paymentMethod } = req.body;
@@ -32,11 +38,15 @@ const placeOrder = async (req, res, next) => {
         const cart = await Cart.findOne({ userId })
             .populate({
                 path: 'items.productId',
-                select: 'name originalPrice salesPrice',
+                select: 'name originalPrice salesPrice category', // ✅ Add category
             })
             .populate({
                 path: 'items.variantId',
                 select: 'quantity size',
+            })
+            .populate({
+                path: 'appliedCoupon.couponId',
+                select: 'code discountType discountValue maxDiscountAmount minPurchaseAmount usageLimit isActive startsAt expiresAt usedUsers', // ✅ Add all needed fields
             });
 
         if (!cart || cart.items.length === 0) {
@@ -52,31 +62,42 @@ const placeOrder = async (req, res, next) => {
         }
 
         let totalPrice = 0;
+        let totalSalePrice = 0;
         let totalDiscount = 0;
         const orderedItems = [];
 
+        // Validate and process cart items
         for (const item of cart.items) {
-            const product = await Product.findById(item.productId._id);
+            const product = await Product.findById(item.productId._id).populate(
+                'category',
+                'isListed categoryName'
+            );
             const variant = await ProductVariant.findById(item.variantId._id);
-            const category = await Category.findById(product.category);
 
             if (!product || !variant) {
                 return next(new AppError('Product or variant not found', 404));
             }
+
             if (!product.isListed) {
                 return next(
                     new AppError(
-                        `the item ${product.name} is currently unavailable, please remove it place order`
+                        `The item ${product.name} is currently unavailable, please remove it to place order`,
+                        400
                     )
                 );
             }
-            if (!category.isListed) {
+
+            if (!product.category || !product.category.isListed) {
                 return next(
                     new AppError(
-                        `the item ${category.categoryName} is currently unavailable, please remove it place order`
+                        `The category ${
+                            product.category?.categoryName || 'for this product'
+                        } is currently unavailable, please remove it to place order`,
+                        400
                     )
                 );
             }
+
             if (variant.quantity < item.quantity) {
                 return next(
                     new AppError(`Insufficient stock for ${product.name}`, 400)
@@ -94,6 +115,7 @@ const placeOrder = async (req, res, next) => {
             const itemDiscount = itemOriginalTotal - itemSaleTotal;
 
             totalPrice += itemOriginalTotal;
+            totalSalePrice += itemSaleTotal;
             totalDiscount += itemDiscount;
 
             orderedItems.push({
@@ -106,18 +128,150 @@ const placeOrder = async (req, res, next) => {
                 status: 'Pending',
             });
 
+            // Deduct stock
             variant.quantity -= item.quantity;
             await variant.save();
         }
 
         const shipping = 0;
-        const finalAmount = totalPrice - totalDiscount + shipping;
+        const subtotal = totalPrice - totalDiscount;
+        let finalAmount = subtotal + shipping;
+        let couponDiscount = 0;
 
+        // ✅ FIXED: Handle coupon validation and application
+        if (cart.appliedCoupon && cart.appliedCoupon.couponId) {
+            const coupon = cart.appliedCoupon.couponId;
+
+            // Validate coupon exists and is active
+            if (!coupon || !coupon.isActive) {
+                cart.appliedCoupon = {
+                    couponId: null,
+                    code: null,
+                    discount: 0,
+                    appliedAt: null,
+                };
+                await cart.save();
+                return next(
+                    new AppError('Applied coupon is no longer valid', 400)
+                );
+            }
+
+            // Validate coupon timing
+            const now = new Date();
+            if (now > new Date(coupon.expiresAt)) {
+                cart.appliedCoupon = {
+                    couponId: null,
+                    code: null,
+                    discount: 0,
+                    appliedAt: null,
+                };
+                await cart.save();
+                return next(new AppError('Coupon has expired', 400));
+            }
+
+            if (now < new Date(coupon.startsAt)) {
+                cart.appliedCoupon = {
+                    couponId: null,
+                    code: null,
+                    discount: 0,
+                    appliedAt: null,
+                };
+                await cart.save();
+                return next(new AppError('Coupon has not started yet', 400));
+            }
+
+            // Validate minimum purchase
+            if (subtotal < coupon.minPurchaseAmount) {
+                cart.appliedCoupon = {
+                    couponId: null,
+                    code: null,
+                    discount: 0,
+                    appliedAt: null,
+                };
+                await cart.save();
+                return next(
+                    new AppError(
+                        `Minimum purchase of ₹${coupon.minPurchaseAmount} required`,
+                        400
+                    )
+                );
+            }
+
+            // Validate global usage limit
+            if (
+                coupon.usedUsers &&
+                coupon.usedUsers.length >= coupon.usageLimit
+            ) {
+                cart.appliedCoupon = {
+                    couponId: null,
+                    code: null,
+                    discount: 0,
+                    appliedAt: null,
+                };
+                await cart.save();
+                return next(new AppError('Coupon usage limit reached', 400));
+            }
+
+            // Validate user eligibility
+            const userIdString = userId.toString();
+
+            const hasUsedCoupon =
+                coupon.usedUsers &&
+                coupon.usedUsers.some((id) => id.toString() === userIdString);
+
+            if (hasUsedCoupon) {
+                cart.appliedCoupon = {
+                    couponId: null,
+                    code: null,
+                    discount: 0,
+                    appliedAt: null,
+                };
+                await cart.save();
+                return next(
+                    new AppError('You have already used this coupon', 400)
+                );
+            }
+
+            // Recalculate discount (don't trust stored value)
+            let calculatedDiscount = 0;
+            if (coupon.discountType === 'flat') {
+                calculatedDiscount = coupon.discountValue;
+            } else if (coupon.discountType === 'percentage') {
+                calculatedDiscount = (subtotal * coupon.discountValue) / 100;
+                if (coupon.maxDiscountAmount) {
+                    calculatedDiscount = Math.min(
+                        calculatedDiscount,
+                        coupon.maxDiscountAmount
+                    );
+                }
+            }
+
+            couponDiscount = Math.round(calculatedDiscount);
+            finalAmount = Math.max(subtotal - couponDiscount + shipping, 0);
+            appliedCouponCode = coupon.code;
+            couponId = coupon._id;
+
+            // ✅ CRITICAL: Mark coupon as used BEFORE creating order
+            await Coupon.updateOne(
+                { _id: couponId },
+                { $addToSet: { usedUsers: userId } }
+            );
+
+            console.log(
+                `✅ Coupon ${appliedCouponCode} marked as used for user ${userId}`
+            );
+        }
+
+        // ✅ Create order with coupon details
         const order = new Order({
             userId,
             orderedItems,
             totalPrice,
+            totalSalePrice,
             discount: totalDiscount,
+            couponDiscount: couponDiscount, // ✅ Store coupon discount
+            couponCode: appliedCouponCode, // ✅ Store coupon code
+            couponId: couponId, // ✅ Store coupon reference
             shipping,
             finalAmount,
             address: shippingAddressId,
@@ -140,6 +294,14 @@ const placeOrder = async (req, res, next) => {
 
         await order.save();
 
+        console.log('✅ Order saved:', {
+            orderId: order.orderId,
+            couponCode: order.couponCode,
+            couponDiscount: order.couponDiscount,
+            finalAmount: order.finalAmount,
+        });
+
+        // Delete cart (this also removes the coupon)
         await Cart.deleteOne({ userId });
 
         return res.status(201).json({
@@ -151,10 +313,26 @@ const placeOrder = async (req, res, next) => {
                 orderId: order.orderId,
                 finalAmount: order.finalAmount,
                 paymentMethod: order.paymentMethod,
+                couponApplied: !!appliedCouponCode,
+                couponDiscount: couponDiscount,
             },
         });
     } catch (error) {
         console.error('Error in placeOrder:', error);
+
+        // ✅ FIXED: Rollback coupon if order creation failed
+        if (couponId && userId) {
+            try {
+                await Coupon.updateOne(
+                    { _id: couponId },
+                    { $pull: { usedUsers: userId } }
+                );
+                console.log(`🔄 Rolled back coupon usage for user ${userId}`);
+            } catch (rollbackError) {
+                console.error('Error rolling back coupon:', rollbackError);
+            }
+        }
+
         return next(new AppError('Internal server error', 500));
     }
 };
@@ -392,6 +570,7 @@ const getOrderDetails = async (req, res, next) => {
                 _id: order._id,
                 paymentMethod: order.paymentMethod,
                 paymentStatus: order.paymentStatus,
+                couponCode: order.couponCode,
                 createdAt: order.createdAt,
             },
             orderItem: orderItem,
@@ -411,40 +590,29 @@ const cancelItem = async (req, res, next) => {
         const userId = getCurrentUserId(req);
 
         if (!userId) {
-            return next(
-                new AppError(
-                    'Please login to cancel items',
-                    HTTP_STATUS.UNAUTHORIZED
-                )
-            );
+            return next(new AppError('Please login to cancel items', 401));
         }
 
         if (!itemId || !reason) {
-            return next(
-                new AppError(
-                    'Item ID and reason are required',
-                    HTTP_STATUS.BAD_REQUEST
-                )
-            );
+            return next(new AppError('Item ID and reason are required', 400));
         }
 
         const order = await Order.findOne({
             userId: userId,
             'orderedItems._id': itemId,
+        }).populate({
+            path: 'couponId',
+            select: 'code minPurchaseAmount discountType discountValue maxDiscountAmount',
         });
 
         if (!order) {
-            return next(
-                new AppError('Order item not found', HTTP_STATUS.NOT_FOUND)
-            );
+            return next(new AppError('Order item not found', 404));
         }
 
         const item = order.orderedItems.id(itemId);
 
         if (!item) {
-            return next(
-                new AppError('Item not found', HTTP_STATUS.BAD_REQUEST)
-            );
+            return next(new AppError('Item not found', 404));
         }
 
         const cancellableStatuses = ['Pending', 'Processing'];
@@ -452,32 +620,156 @@ const cancelItem = async (req, res, next) => {
             return next(
                 new AppError(
                     `Cannot cancel item with status: ${item.status}`,
-                    HTTP_STATUS.BAD_REQUEST
+                    400
                 )
             );
         }
 
+        // ✅ STEP 1: Calculate BEFORE marking as cancelled
+        const itemPrice = Number(item.price) * Number(item.quantity);
+
+        console.log('📦 Item to cancel:', {
+            name: item.productName,
+            price: item.price,
+            quantity: item.quantity,
+            itemPrice: itemPrice,
+        });
+
+        // Get currently active items (including this one)
+        const activeItems = order.orderedItems.filter(
+            (orderItem) => !['Cancelled', 'Returned'].includes(orderItem.status)
+        );
+
+        // Calculate totals
+        const originalTotal = activeItems.reduce((sum, orderItem) => {
+            return sum + Number(orderItem.price) * Number(orderItem.quantity);
+        }, 0);
+
+        const newTotal = originalTotal - itemPrice;
+
+        console.log('💰 Totals:', {
+            originalTotal,
+            itemPrice,
+            newTotal,
+            activeItemsCount: activeItems.length,
+        });
+
+        // ✅ STEP 2: Now mark as cancelled
         item.status = 'Cancelled';
         item.cancellationReason = reason;
 
-        await order.save();
+        // ✅ STEP 3: Restore stock
         const productVariant = await ProductVariant.findById(item.variant);
-        console.log(item.variant);
-
         if (productVariant) {
             productVariant.quantity += item.quantity;
             await productVariant.save();
         }
+
+        // ✅ STEP 4: Calculate refund
+        let refundAmount = 0;
+
+        if (
+            order.paymentMethod === 'online' ||
+            order.paymentMethod === 'wallet'
+        ) {
+            const coupon = order.couponId;
+            const originalCouponDiscount = Number(order.couponDiscount) || 0;
+
+            console.log('🎟️ Coupon info:', {
+                hasCoupon: !!coupon,
+                couponCode: order.couponCode,
+                originalCouponDiscount,
+            });
+
+            if (coupon && originalCouponDiscount > 0) {
+                const minPurchase = Number(coupon.minPurchaseAmount) || 0;
+
+                if (newTotal >= minPurchase) {
+                    // Coupon still valid - full refund
+                    refundAmount = itemPrice;
+                    console.log('✅ Full refund (coupon still valid)');
+                } else if (newTotal > 0) {
+                    // Coupon invalid - proportional refund
+                    const itemProportion = itemPrice / originalTotal;
+                    const itemCouponShare =
+                        originalCouponDiscount * itemProportion;
+                    refundAmount = itemPrice - itemCouponShare;
+                    console.log('⚠️ Proportional refund:', {
+                        itemProportion,
+                        itemCouponShare,
+                        refundAmount,
+                    });
+                } else {
+                    // Last item - deduct proportional coupon
+                    const itemCouponShare = originalCouponDiscount;
+                    refundAmount = Math.max(itemPrice - itemCouponShare, 0);
+                    console.log('🔚 Last item refund:', refundAmount);
+                }
+            } else {
+                // No coupon - full refund
+                refundAmount = itemPrice;
+                console.log('✅ Full refund (no coupon)');
+            }
+
+            // Ensure positive and round
+            refundAmount = Math.max(refundAmount, 0);
+            refundAmount = Math.round(refundAmount * 100) / 100;
+
+            console.log('💰 Final refund amount:', refundAmount);
+
+            // ✅ STEP 5: Credit wallet
+            if (refundAmount > 0) {
+                let wallet = await Wallet.findOne({ userId });
+                if (!wallet) {
+                    wallet = new Wallet({
+                        userId,
+                        balance: 0,
+                        transactions: [],
+                    });
+                }
+
+                console.log('👛 Wallet before:', wallet.balance);
+
+                await wallet.addTransaction(
+                    'credit',
+                    refundAmount,
+                    `Refund for cancelled item: ${item.productName} (Order: ${order.orderId})`,
+                    order._id
+                );
+
+                console.log('👛 Wallet after:', wallet.balance);
+            }
+        }
+
+        // ✅ STEP 6: Update order
+        order.finalAmount = Math.max(order.finalAmount - itemPrice, 0);
+
+        const remainingActiveItems = order.orderedItems.filter(
+            (orderItem) => !['Cancelled', 'Returned'].includes(orderItem.status)
+        );
+
+        if (remainingActiveItems.length === 0) {
+            order.status = 'Cancelled';
+        }
+
+        await order.save();
+
         return res.status(200).json({
             success: true,
-            message: 'Item cancelled successfully',
-            order: order,
+            message:
+                refundAmount > 0
+                    ? `Item cancelled. ₹${refundAmount.toFixed(
+                          2
+                      )} refunded to wallet.`
+                    : 'Item cancelled successfully.',
+            refundAmount: refundAmount,
         });
     } catch (error) {
-        console.error('Error in cancelItem:', error);
+        console.error('❌ Error in cancelItem:', error);
         return res.status(500).json({
             success: false,
             message: 'Failed to cancel item',
+            error: error.message,
         });
     }
 };
