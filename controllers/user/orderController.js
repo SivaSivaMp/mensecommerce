@@ -9,8 +9,9 @@ import Order from '../../models/orderSchema.js';
 import Category from '../../models/categorySchema.js';
 import Coupon from '../../models/couponSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
+import razorpay from '../../config/razorpay.js';
+import crypto from 'crypto';
 const placeOrder = async (req, res, next) => {
-    // ✅ FIXED: Declare variables at function scope
     let appliedCouponCode = null;
     let couponId = null;
 
@@ -31,14 +32,14 @@ const placeOrder = async (req, res, next) => {
             );
         }
 
-        if (!['cod', 'online'].includes(paymentMethod)) {
+        if (!['cod', 'online', 'wallet'].includes(paymentMethod)) {
             return next(new AppError('Invalid payment method', 400));
         }
 
         const cart = await Cart.findOne({ userId })
             .populate({
                 path: 'items.productId',
-                select: 'name originalPrice salesPrice category', // ✅ Add category
+                select: 'name originalPrice salesPrice category',
             })
             .populate({
                 path: 'items.variantId',
@@ -46,7 +47,7 @@ const placeOrder = async (req, res, next) => {
             })
             .populate({
                 path: 'appliedCoupon.couponId',
-                select: 'code discountType discountValue maxDiscountAmount minPurchaseAmount usageLimit isActive startsAt expiresAt usedUsers', // ✅ Add all needed fields
+                select: 'code discountType discountValue maxDiscountAmount minPurchaseAmount usageLimit isActive startsAt expiresAt usedUsers',
             });
 
         if (!cart || cart.items.length === 0) {
@@ -66,7 +67,6 @@ const placeOrder = async (req, res, next) => {
         let totalDiscount = 0;
         const orderedItems = [];
 
-        // Validate and process cart items
         for (const item of cart.items) {
             const product = await Product.findById(item.productId._id).populate(
                 'category',
@@ -128,7 +128,6 @@ const placeOrder = async (req, res, next) => {
                 status: 'Pending',
             });
 
-            // Deduct stock
             variant.quantity -= item.quantity;
             await variant.save();
         }
@@ -138,11 +137,9 @@ const placeOrder = async (req, res, next) => {
         let finalAmount = subtotal + shipping;
         let couponDiscount = 0;
 
-        // ✅ FIXED: Handle coupon validation and application
         if (cart.appliedCoupon && cart.appliedCoupon.couponId) {
             const coupon = cart.appliedCoupon.couponId;
 
-            // Validate coupon exists and is active
             if (!coupon || !coupon.isActive) {
                 cart.appliedCoupon = {
                     couponId: null,
@@ -156,7 +153,6 @@ const placeOrder = async (req, res, next) => {
                 );
             }
 
-            // Validate coupon timing
             const now = new Date();
             if (now > new Date(coupon.expiresAt)) {
                 cart.appliedCoupon = {
@@ -180,7 +176,6 @@ const placeOrder = async (req, res, next) => {
                 return next(new AppError('Coupon has not started yet', 400));
             }
 
-            // Validate minimum purchase
             if (subtotal < coupon.minPurchaseAmount) {
                 cart.appliedCoupon = {
                     couponId: null,
@@ -197,7 +192,6 @@ const placeOrder = async (req, res, next) => {
                 );
             }
 
-            // Validate global usage limit
             if (
                 coupon.usedUsers &&
                 coupon.usedUsers.length >= coupon.usageLimit
@@ -212,7 +206,6 @@ const placeOrder = async (req, res, next) => {
                 return next(new AppError('Coupon usage limit reached', 400));
             }
 
-            // Validate user eligibility
             const userIdString = userId.toString();
 
             const hasUsedCoupon =
@@ -232,7 +225,6 @@ const placeOrder = async (req, res, next) => {
                 );
             }
 
-            // Recalculate discount (don't trust stored value)
             let calculatedDiscount = 0;
             if (coupon.discountType === 'flat') {
                 calculatedDiscount = coupon.discountValue;
@@ -251,27 +243,21 @@ const placeOrder = async (req, res, next) => {
             appliedCouponCode = coupon.code;
             couponId = coupon._id;
 
-            // ✅ CRITICAL: Mark coupon as used BEFORE creating order
             await Coupon.updateOne(
                 { _id: couponId },
                 { $addToSet: { usedUsers: userId } }
             );
-
-            console.log(
-                `✅ Coupon ${appliedCouponCode} marked as used for user ${userId}`
-            );
         }
 
-        // ✅ Create order with coupon details
         const order = new Order({
             userId,
             orderedItems,
             totalPrice,
             totalSalePrice,
             discount: totalDiscount,
-            couponDiscount: couponDiscount, // ✅ Store coupon discount
-            couponCode: appliedCouponCode, // ✅ Store coupon code
-            couponId: couponId, // ✅ Store coupon reference
+            couponDiscount: couponDiscount,
+            couponCode: appliedCouponCode,
+            couponId: couponId,
             shipping,
             finalAmount,
             address: shippingAddressId,
@@ -292,17 +278,60 @@ const placeOrder = async (req, res, next) => {
             paymentStatus: paymentMethod === 'cod' ? 'Pending' : 'Pending',
         });
 
-        await order.save();
+        if (paymentMethod === 'cod') {
+            await order.save();
+            await Cart.deleteOne({ userId });
 
-        console.log('✅ Order saved:', {
-            orderId: order.orderId,
-            couponCode: order.couponCode,
-            couponDiscount: order.couponDiscount,
-            finalAmount: order.finalAmount,
-        });
+            return res.status(201).json({
+                success: true,
+                message: 'Order placed successfully (COD)',
+                orderId: order.orderId,
+            });
+        }
 
-        // Delete cart (this also removes the coupon)
-        await Cart.deleteOne({ userId });
+        if (paymentMethod === 'wallet') {
+            let wallet = await Wallet.findOne({ userId });
+            if (!wallet || wallet.balance < finalAmount)
+                return next(new AppError('Insufficient wallet balance', 400));
+
+            await wallet.addTransaction(
+                'debit',
+                finalAmount,
+                'Order payment',
+                order._id,
+                null,
+                order.orderId
+            );
+            order.paymentStatus = 'Completed';
+            await order.save();
+            await Cart.deleteOne({ userId });
+
+            return res.status(201).json({
+                success: true,
+                message: 'Order placed successfully (Wallet)',
+                orderId: order.orderId,
+            });
+        }
+
+        // ONLINE PAYMENT (Razorpay)
+        if (paymentMethod === 'online') {
+            const razorpayOrder = await razorpay.orders.create({
+                amount: finalAmount * 100,
+                currency: 'INR',
+                receipt: order.orderId,
+            });
+
+            await order.save();
+
+            return res.status(201).json({
+                success: true,
+                message: 'Razorpay order created',
+                razorpayOrderId: razorpayOrder.id,
+                orderId: order.orderId,
+                amount: finalAmount,
+                currency: 'INR',
+            });
+        }
 
         return res.status(201).json({
             success: true,
@@ -320,20 +349,55 @@ const placeOrder = async (req, res, next) => {
     } catch (error) {
         console.error('Error in placeOrder:', error);
 
-        // ✅ FIXED: Rollback coupon if order creation failed
         if (couponId && userId) {
             try {
                 await Coupon.updateOne(
                     { _id: couponId },
                     { $pull: { usedUsers: userId } }
                 );
-                console.log(`🔄 Rolled back coupon usage for user ${userId}`);
             } catch (rollbackError) {
                 console.error('Error rolling back coupon:', rollbackError);
             }
         }
 
         return next(new AppError('Internal server error', 500));
+    }
+};
+
+const verifyPayment = async (req, res, next) => {
+    try {
+        const {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_signature,
+            orderId,
+        } = req.body;
+
+        const hmac = crypto.createHmac(
+            'sha256',
+            process.env.RAZORPAY_KEY_SECRET
+        );
+        hmac.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+        const generatedSignature = hmac.digest('hex');
+
+        if (generatedSignature !== razorpay_signature)
+            return next(new AppError('Payment verification failed', 400));
+
+        const order = await Order.findOne({ orderId });
+        if (!order) return next(new AppError('Order not found', 404));
+
+        order.paymentStatus = 'Completed';
+        await order.save();
+
+        await Cart.deleteOne({ userId: order.userId });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Payment verified and order confirmed',
+        });
+    } catch (err) {
+        console.error('Payment verification error:', err);
+        return next(new AppError('Payment verification failed', 500));
     }
 };
 
@@ -625,47 +689,27 @@ const cancelItem = async (req, res, next) => {
             );
         }
 
-        // ✅ STEP 1: Calculate BEFORE marking as cancelled
         const itemPrice = Number(item.price) * Number(item.quantity);
 
-        console.log('📦 Item to cancel:', {
-            name: item.productName,
-            price: item.price,
-            quantity: item.quantity,
-            itemPrice: itemPrice,
-        });
-
-        // Get currently active items (including this one)
         const activeItems = order.orderedItems.filter(
             (orderItem) => !['Cancelled', 'Returned'].includes(orderItem.status)
         );
 
-        // Calculate totals
         const originalTotal = activeItems.reduce((sum, orderItem) => {
             return sum + Number(orderItem.price) * Number(orderItem.quantity);
         }, 0);
 
         const newTotal = originalTotal - itemPrice;
 
-        console.log('💰 Totals:', {
-            originalTotal,
-            itemPrice,
-            newTotal,
-            activeItemsCount: activeItems.length,
-        });
-
-        // ✅ STEP 2: Now mark as cancelled
         item.status = 'Cancelled';
         item.cancellationReason = reason;
 
-        // ✅ STEP 3: Restore stock
         const productVariant = await ProductVariant.findById(item.variant);
         if (productVariant) {
             productVariant.quantity += item.quantity;
             await productVariant.save();
         }
 
-        // ✅ STEP 4: Calculate refund
         let refundAmount = 0;
 
         if (
@@ -675,49 +719,27 @@ const cancelItem = async (req, res, next) => {
             const coupon = order.couponId;
             const originalCouponDiscount = Number(order.couponDiscount) || 0;
 
-            console.log('🎟️ Coupon info:', {
-                hasCoupon: !!coupon,
-                couponCode: order.couponCode,
-                originalCouponDiscount,
-            });
-
             if (coupon && originalCouponDiscount > 0) {
                 const minPurchase = Number(coupon.minPurchaseAmount) || 0;
 
                 if (newTotal >= minPurchase) {
-                    // Coupon still valid - full refund
                     refundAmount = itemPrice;
-                    console.log('✅ Full refund (coupon still valid)');
                 } else if (newTotal > 0) {
-                    // Coupon invalid - proportional refund
                     const itemProportion = itemPrice / originalTotal;
                     const itemCouponShare =
                         originalCouponDiscount * itemProportion;
                     refundAmount = itemPrice - itemCouponShare;
-                    console.log('⚠️ Proportional refund:', {
-                        itemProportion,
-                        itemCouponShare,
-                        refundAmount,
-                    });
                 } else {
-                    // Last item - deduct proportional coupon
                     const itemCouponShare = originalCouponDiscount;
                     refundAmount = Math.max(itemPrice - itemCouponShare, 0);
-                    console.log('🔚 Last item refund:', refundAmount);
                 }
             } else {
-                // No coupon - full refund
                 refundAmount = itemPrice;
-                console.log('✅ Full refund (no coupon)');
             }
 
-            // Ensure positive and round
             refundAmount = Math.max(refundAmount, 0);
             refundAmount = Math.round(refundAmount * 100) / 100;
 
-            console.log('💰 Final refund amount:', refundAmount);
-
-            // ✅ STEP 5: Credit wallet
             if (refundAmount > 0) {
                 let wallet = await Wallet.findOne({ userId });
                 if (!wallet) {
@@ -728,20 +750,17 @@ const cancelItem = async (req, res, next) => {
                     });
                 }
 
-                console.log('👛 Wallet before:', wallet.balance);
-
                 await wallet.addTransaction(
                     'credit',
                     refundAmount,
                     `Refund for cancelled item: ${item.productName} (Order: ${order.orderId})`,
-                    order._id
+                    order._id,
+                    item._id,
+                    order.orderId
                 );
-
-                console.log('👛 Wallet after:', wallet.balance);
             }
         }
 
-        // ✅ STEP 6: Update order
         order.finalAmount = Math.max(order.finalAmount - itemPrice, 0);
 
         const remainingActiveItems = order.orderedItems.filter(
@@ -765,7 +784,6 @@ const cancelItem = async (req, res, next) => {
             refundAmount: refundAmount,
         });
     } catch (error) {
-        console.error('❌ Error in cancelItem:', error);
         return res.status(500).json({
             success: false,
             message: 'Failed to cancel item',
@@ -948,4 +966,5 @@ export default {
     returnItem,
     renderItemInvoice,
     getOrderSuccessPage,
+    verifyPayment,
 };

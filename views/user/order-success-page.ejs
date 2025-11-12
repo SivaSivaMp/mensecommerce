@@ -22,7 +22,7 @@
           </div>
           <div class="d-flex justify-content-between mb-2">
             <div>Payment Method:</div>
-            <div><%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %></div>
+            <div><%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod === 'online'?'Online Payment':'Wallet Payment' %></div>
           </div>
           <div class="d-flex justify-content-between mb-2">
             <div>Status:</div>

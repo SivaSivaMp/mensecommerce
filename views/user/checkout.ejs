@@ -491,14 +491,16 @@
                 <div class="payment-option-icon">💵</div>
               </label>
 
+              
+
               <label class="payment-option">
-                <input type="radio" name="paymentMethod" value="online" 
+                <input type="radio" name="paymentMethod" value="wallet" 
                        onchange="selectPaymentMethod(this)">
                 <div class="payment-option-content">
-                  <div class="payment-option-title">Online Payment</div>
-                  <div class="payment-option-desc">Credit/Debit Card, UPI, Wallet</div>
+                  <div class="payment-option-title">Wallet Payment</div>
+                  <div class="payment-option-desc">Pay with your Wallet</div>
                 </div>
-                <div class="payment-option-icon">💳</div>
+                <div class="payment-option-icon">👜</div>
               </label>
             </div>
           </div>
@@ -1053,4 +1055,112 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+<!-- Razorpay Checkout Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+async function payOnline() {
+  try {
+    const selectedAddressRadio = document.querySelector('input[name="shippingAddress"]:checked');
+    if (!selectedAddressRadio) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing Address',
+        text: 'Please select a shipping address before proceeding',
+      });
+      return;
+    }
+
+    const addressId = selectedAddressRadio.value;
+
+    // Create Razorpay order on backend
+    const res = await axios.post('/order/place', {
+      shippingAddressId: addressId,
+      paymentMethod: 'online'
+    });
+
+    if (!res.data.success) throw new Error('Failed to create order');
+
+    const { razorpayOrderId, amount, currency, orderId } = res.data;
+
+    const options = {
+      key: '<%= process.env.RAZORPAY_KEY_ID %>', // Your public key
+      amount: amount * 100,
+      currency: currency,
+      name: "Mens E-Commerce",
+      description: "Order Payment",
+      order_id: razorpayOrderId,
+      handler: async function (response) {
+        try {
+          await axios.post('/order/verify', {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            orderId
+          });
+          Swal.fire({
+            icon: 'success',
+            title: 'Payment Successful',
+            text: 'Your payment was completed successfully!',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          setTimeout(() => {
+            window.location.href = `/order/success/${orderId}`;
+          }, 1500);
+        } catch (err) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Payment Verification Failed',
+            text: err.response?.data?.message || 'Something went wrong verifying your payment.',
+          });
+        }
+      },
+      prefill: {
+        name: "<%= user?.name || '' %>",
+        email: "<%= user?.email || '' %>",
+        contact: "<%= user?.phone || '' %>"
+      },
+      theme: {
+        color: '#088178'
+      },
+      modal: {
+        ondismiss: function () {
+          Swal.fire({
+            icon: 'info',
+            title: 'Payment Cancelled',
+            text: 'You closed the payment window.',
+            confirmButtonColor: '#088178'
+          });
+        }
+      }
+    };
+
+    const rzp = new Razorpay(options);
+    rzp.open();
+  } catch (error) {
+    console.error(error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Payment Failed',
+      text: error.response?.data?.message || 'Could not start payment process',
+    });
+  }
+}
+
+// Add another button for online payment
+document.addEventListener('DOMContentLoaded', function() {
+  const checkoutContainer = document.querySelector('.cart-checkout-btn');
+  if (!checkoutContainer) return;
+
+  const onlineBtn = document.createElement('button');
+  onlineBtn.type = 'button';
+  onlineBtn.className = 'tf-btn w-100 btn-outline animate-hover-btn radius-3 justify-content-center mt-2';
+  onlineBtn.innerHTML = '<span>Pay With RazorPay</span>';
+  onlineBtn.addEventListener('click', payOnline);
+
+  checkoutContainer.appendChild(onlineBtn);
+});
+</script>
+
 

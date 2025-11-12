@@ -485,13 +485,11 @@ const getAvailableCoupons = async (req, res, next) => {
                 .status(400)
                 .json({ success: false, message: 'Your cart is empty' });
 
-        // Calculate cart total
         const cartTotal = cart.items.reduce(
             (sum, item) => sum + item.productId.salesPrice * item.quantity,
             0
         );
 
-        // Fetch active and valid coupons
         const now = new Date();
         const coupons = await Coupon.find({
             isActive: true,
@@ -499,7 +497,6 @@ const getAvailableCoupons = async (req, res, next) => {
             expiresAt: { $gte: now },
         }).lean();
 
-        // Filter only coupons eligible for this user
         const eligibleCoupons = coupons.filter((coupon) => {
             const notExpired = new Date() <= new Date(coupon.expiresAt);
             const meetsMin = cartTotal >= coupon.minPurchaseAmount;

@@ -58,9 +58,9 @@
               <button type="submit" class="btn btn-sm btn-primary">Apply</button>
               <a href="/profile/wallet" class="btn btn-sm btn-secondary">Reset</a>
             </form>
-
+            <h3>Total balance: <%=balance%> </h3>
             <!-- Right Side: Add Money Button -->
-            <a href="/profile/wallet/add-money" class="tf-btn btn-fill animate-hover-btn radius-3">
+            <a href="#" id="addMoneyBtn" class="tf-btn btn-fill animate-hover-btn radius-3">
               <span>Add Money</span>
             </a>
           </div>
@@ -85,7 +85,7 @@
                       <td><%= txn.transactionId %></td>
                       <td><%= new Date(txn.createdAt).toLocaleDateString() %></td>
                       <td><%= txn.description || '-' %></td>
-                      <td><%= txn.orderId ? txn.orderId : '-' %></td>
+                      <td><%= txn.userOrderId ? txn.userOrderId : '-' %></td>
                       <td>
                         <span class="badge <%= txn.type === 'credit' ? 'bg-success' : 'bg-danger' %> text-capitalize">
                           <%= txn.type %>
@@ -129,3 +129,55 @@
 </section>
 
 <%- include("../partials/user/footer") %>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+  document.getElementById('addMoneyBtn').addEventListener('click', async function (e) {
+    e.preventDefault();
+
+    const { value: amount } = await Swal.fire({
+      title: 'Add Money ',
+      input: 'number',
+      inputLabel: 'Enter amount (in ₹)',
+      inputPlaceholder: 'e.g. 500',
+      showCancelButton: true,
+      confirmButtonText: 'Add Money',
+    });
+
+    if (!amount || amount <= 0) return;
+
+    try {
+      // 1️⃣ Create Razorpay order
+      const { data } = await axios.post('/wallet/create-order', { amount });
+
+      // 2️⃣ Razorpay popup
+      const options = {
+        key: data.key_id,
+        amount: data.amount,
+        currency: 'INR',
+        name: 'Mens Ecommerce',
+        description: 'Add money to wallet',
+        order_id: data.order_id,
+        handler: async function (response) {
+          const verify = await axios.post('/wallet/verify-payment', {
+            ...response,
+            amount,
+          });
+          if (verify.data.success) {
+            Swal.fire('Success!', 'Money added successfully.', 'success').then(() => {
+              window.location.reload();
+            });
+          } else {
+            Swal.fire('Error', verify.data.message, 'error');
+          }
+        },
+      };
+      new Razorpay(options).open();
+    } catch (err) {
+      Swal.fire('Error', err.response?.data?.message || err.message, 'error');
+    }
+  });
+</script>
+

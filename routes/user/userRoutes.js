@@ -7,6 +7,7 @@ import wishlistRoutes from './wishlistRoutes.js';
 import cartRoutes from './cartRoutes.js';
 import checkoutRoutes from './checkoutRoutes.js';
 import orderRoutes from './orderRoutes.js';
+import walletRoutes from './walletRoutes.js';
 const userRouter = Router();
 
 // authenticaation related routes
@@ -24,6 +25,8 @@ userRouter.use('/cart', cartRoutes);
 userRouter.use('/checkout', auth.userAuth, checkoutRoutes);
 // order routes
 userRouter.use('/order', orderRoutes);
+// wallet routes
+userRouter.use('/wallet', walletRoutes);
 
 userRouter.use('/page-notfound', async (req, res) => {
     res.render('page-404');

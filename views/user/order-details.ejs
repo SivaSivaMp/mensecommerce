@@ -435,7 +435,7 @@
             <div class="price-details-box">
                 <h2>Payment Method</h2>
                 <p style="color: #666; font-size: 14px; margin: 0;">
-                    <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %>
+                    <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod === 'online'?'Online Payment':'Wallet Payment' %>
                 </p>
                 <p style="color: #666; font-size: 13px; margin-top: 5px;">
                     Status: <strong><%= order.paymentStatus %></strong>
