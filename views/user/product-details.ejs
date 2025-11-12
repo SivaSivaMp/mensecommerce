@@ -247,7 +247,7 @@
                                 <div class="price-on-sale">₹<%= product.salesPrice.toFixed(2) %></div>
                                 <div class="compare-at-price">₹<%= product.originalPrice.toFixed(2) %></div>
                                 <div class="badges-on-sale">
-                                    <span><%= ((product.originalPrice - product.salesPrice) / product.originalPrice * 100).toFixed(0) %></span>% OFF
+                                    <span><%=product.discountPercentage %></span>% OFF
                                 </div>
                             </div>
 

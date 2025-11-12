@@ -3,6 +3,7 @@ import profileController from '../../controllers/user/profileController.js';
 import addressController from '../../controllers/user/addressController.js';
 import orderController from '../../controllers/user/orderController.js';
 import upload from '../../middleware/uploadMiddleware.js';
+import walletController from '../../controllers/user/walletController.js';
 const router = Router();
 
 router.route('/').get(profileController.getProfile);
@@ -37,5 +38,9 @@ router
 router.route('/orders').get(orderController.getOrders);
 router.get('/order-details/:orderId/:itemId', orderController.getOrderDetails);
 router.get('/:orderId/item/:itemId/invoice', orderController.renderItemInvoice);
+
+// wallet routes
+
+router.route('/wallet').get(walletController.getWalletTransactions);
 
 export default router;

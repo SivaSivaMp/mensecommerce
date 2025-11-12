@@ -26,6 +26,14 @@ const walletTransactionSchema = new mongoose.Schema(
             ref: 'Order',
             default: null,
         },
+        orderItemId: {
+            type: Schema.Types.ObjectId,
+            default: null,
+        },
+        userOrderId: {
+            type: String,
+            default: null,
+        },
         createdAt: {
             type: Date,
             default: Date.now,
@@ -56,7 +64,9 @@ walletschema.methods.addTransaction = async function (
     type,
     amount,
     description,
-    orderId = null
+    orderId = null,
+    orderItemId = null,
+    userOrderId = null
 ) {
     const transaction = {
         transactionId: `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
@@ -64,12 +74,14 @@ walletschema.methods.addTransaction = async function (
         amount,
         description,
         orderId,
+        orderItemId,
+        userOrderId,
     };
     this.transactions.push(transaction);
     if (type === 'credit') {
-        this.balance += amount;
+        this.balance += Number(amount);
     } else if (type === 'debit') {
-        this.balance -= amount;
+        this.balance -= Number(amount);
     }
 
     return this.save();

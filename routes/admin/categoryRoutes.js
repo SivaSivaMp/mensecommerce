@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import categoryController from '../../controllers/admin/categoryController.js';
-
+import offerController from '../../controllers/admin/offerController.js';
 const router = Router();
 
 router.route('/').get(categoryController.categoryInfo);
@@ -15,4 +15,6 @@ router
     .patch(categoryController.editCategory);
 router.route('/listCategory').get(categoryController.listCategory);
 router.route('/unlistCategory').get(categoryController.unlistCategory);
+router.route('/add-offer/:id').post(offerController.addCategoryOffer);
+router.route('/remove-offer/:id').post(offerController.removeCategoryOffer);
 export default router;

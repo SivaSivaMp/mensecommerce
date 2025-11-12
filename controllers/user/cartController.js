@@ -267,7 +267,16 @@ const removeFromCart = async (req, res, next) => {
             return next(new AppError('Please login to modify your cart', 401));
         }
 
-        const cart = await Cart.findOne({ userId });
+        const cart = await Cart.findOne({ userId })
+            .populate({
+                path: 'items.productId',
+                select: 'salesPrice originalPrice',
+            })
+            .populate({
+                path: 'appliedCoupon.couponId',
+                select: 'code minPurchaseAmount isActive expiresAt',
+            });
+
         if (!cart) {
             return next(new AppError('Cart not found', 404));
         }
@@ -281,11 +290,102 @@ const removeFromCart = async (req, res, next) => {
         }
 
         cart.items.splice(itemIndex, 1);
+
+        let couponRemoved = false;
+        let couponRemovedReason = null;
+
+        if (cart.appliedCoupon && cart.appliedCoupon.couponId) {
+            if (cart.items.length === 0) {
+                cart.appliedCoupon = {
+                    couponId: null,
+                    code: null,
+                    discount: 0,
+                    appliedAt: null,
+                };
+                couponRemoved = true;
+                couponRemovedReason = 'Cart is now empty';
+            } else {
+                const coupon = cart.appliedCoupon.couponId;
+
+                let newCartTotal = 0;
+                for (const item of cart.items) {
+                    const product = item.productId;
+                    if (product) {
+                        const salePrice =
+                            product.salesPrice && Number(product.salesPrice) > 0
+                                ? Number(product.salesPrice)
+                                : Number(product.originalPrice || 0);
+                        newCartTotal += salePrice * item.quantity;
+                    }
+                }
+
+                const isCouponExpired =
+                    coupon && new Date() > new Date(coupon.expiresAt);
+                const isCouponInactive = coupon && !coupon.isActive;
+                const doesNotMeetMinimum =
+                    coupon && newCartTotal < coupon.minPurchaseAmount;
+
+                if (isCouponExpired) {
+                    cart.appliedCoupon = {
+                        couponId: null,
+                        code: null,
+                        discount: 0,
+                        appliedAt: null,
+                    };
+                    couponRemoved = true;
+                    couponRemovedReason = 'Coupon has expired';
+                } else if (isCouponInactive) {
+                    cart.appliedCoupon = {
+                        couponId: null,
+                        code: null,
+                        discount: 0,
+                        appliedAt: null,
+                    };
+                    couponRemoved = true;
+                    couponRemovedReason = 'Coupon is no longer active';
+                } else if (doesNotMeetMinimum) {
+                    const couponCode = cart.appliedCoupon.code;
+                    const minAmount = coupon.minPurchaseAmount;
+
+                    cart.appliedCoupon = {
+                        couponId: null,
+                        code: null,
+                        discount: 0,
+                        appliedAt: null,
+                    };
+                    couponRemoved = true;
+                    couponRemovedReason = `Coupon ${couponCode} removed. Minimum purchase of ₹${minAmount} required`;
+                } else {
+                    let newDiscount = 0;
+                    if (coupon.discountType === 'flat') {
+                        newDiscount = coupon.discountValue;
+                    } else if (coupon.discountType === 'percentage') {
+                        newDiscount =
+                            (newCartTotal * coupon.discountValue) / 100;
+                        if (coupon.maxDiscountAmount) {
+                            newDiscount = Math.min(
+                                newDiscount,
+                                coupon.maxDiscountAmount
+                            );
+                        }
+                    }
+
+                    cart.appliedCoupon.discount = newDiscount;
+                }
+            }
+        }
+
         await cart.save();
+        let message = 'Item removed from cart successfully';
+        if (couponRemoved && couponRemovedReason) {
+            message += `. ${couponRemovedReason}`;
+        }
 
         return res.status(200).json({
             success: true,
-            message: 'Item removed from cart successfully',
+            message: message,
+            couponRemoved: couponRemoved,
+            cartItemsCount: cart.items.length,
         });
     } catch (error) {
         console.error('Error in removeFromCart:', error);

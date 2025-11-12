@@ -1,7 +1,7 @@
 import AppError from '../../utils/appError.js';
-
+import Coupon from '../../models/couponSchema.js';
 import Order from '../../models/orderSchema.js';
-
+import Wallet from '../../models/walletSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Product from '../../models/productSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
@@ -394,13 +394,21 @@ const completeReturn = async (req, res, next) => {
             );
         }
 
-        const order = await Order.findOne({ 'orderedItems._id': itemId });
-        if (!order)
+        const order = await Order.findOne({
+            'orderedItems._id': itemId,
+        }).populate({
+            path: 'couponId',
+            select: 'code minPurchaseAmount discountType discountValue maxDiscountAmount',
+        });
+
+        if (!order) {
             return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
+        }
 
         const item = order.orderedItems.id(itemId);
-        if (!item)
+        if (!item) {
             return next(new AppError('Item not found', HTTP_STATUS.NOT_FOUND));
+        }
 
         if (item.returnStatus !== 'Approved') {
             return next(
@@ -408,6 +416,68 @@ const completeReturn = async (req, res, next) => {
                     'Return can only be completed after approval.',
                     HTTP_STATUS.BAD_REQUEST
                 )
+            );
+        }
+
+        const itemPrice = Number(item.price) * Number(item.quantity);
+
+        const activeItems = order.orderedItems.filter(
+            (orderItem) => !['Cancelled', 'Returned'].includes(orderItem.status)
+        );
+
+        const originalTotal = activeItems.reduce((sum, orderItem) => {
+            return sum + Number(orderItem.price) * Number(orderItem.quantity);
+        }, 0);
+
+        const newTotal = originalTotal - itemPrice;
+        let refundAmount = 0;
+        const coupon = order.couponId;
+        const originalCouponDiscount = Number(order.couponDiscount) || 0;
+
+        if (coupon && originalCouponDiscount > 0) {
+            const minPurchase = Number(coupon.minPurchaseAmount) || 0;
+
+            if (newTotal >= minPurchase) {
+                refundAmount = itemPrice;
+            } else if (newTotal > 0) {
+                const itemProportion = itemPrice / originalTotal;
+                const itemCouponShare = originalCouponDiscount * itemProportion;
+                refundAmount = itemPrice - itemCouponShare;
+            } else {
+                const itemCouponShare = originalCouponDiscount;
+                refundAmount = Math.max(itemPrice - itemCouponShare, 0);
+            }
+        } else {
+            refundAmount = itemPrice;
+        }
+
+        refundAmount = Math.max(refundAmount, 0);
+        refundAmount = Math.round(refundAmount * 100) / 100;
+
+        if (refundAmount > 0) {
+            const userId = order.userId;
+            let wallet = await Wallet.findOne({ userId });
+
+            if (!wallet) {
+                wallet = new Wallet({
+                    userId,
+                    balance: 0,
+                    transactions: [],
+                });
+            }
+
+            let description = `Refund for returned item: ${item.productName} (Order: ${order.orderId})`;
+            if (order.paymentMethod === 'cod') {
+                description += ` [COD order]`;
+            }
+
+            await wallet.addTransaction(
+                'credit',
+                refundAmount,
+                description,
+                order._id,
+                item._id,
+                order.orderId
             );
         }
 
@@ -435,21 +505,33 @@ const completeReturn = async (req, res, next) => {
         }
 
         const allItemsReturned = order.orderedItems.every(
-            (i) => i.returnStatus === 'Returned'
+            (i) => i.status === 'Returned' || i.status === 'Cancelled'
         );
-        if (allItemsReturned) order.status = 'Returned';
+
+        if (allItemsReturned) {
+            order.status = 'Returned';
+        }
+
+        order.finalAmount = Math.max(order.finalAmount - itemPrice, 0);
 
         await order.save();
 
+        let message = 'Return completed successfully. Stock updated.';
+        if (refundAmount > 0) {
+            message += ` ₹${refundAmount.toFixed(2)} credited to wallet.`;
+        }
+
         return res.status(200).json({
             success: true,
-            message: 'Return completed successfully. Stock updated.',
+            message: message,
+            refundAmount: refundAmount,
+            paymentMethod: order.paymentMethod,
         });
     } catch (error) {
-        console.error('Error in completeReturn:', error);
         return res.status(500).json({
             success: false,
             message: 'Internal server error while completing return.',
+            error: error.message,
         });
     }
 };

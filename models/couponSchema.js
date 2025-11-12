@@ -70,15 +70,18 @@ const couponSchema = new Schema(
                 ref: 'User',
             },
         ],
-
-        createdBy: {
-            type: Schema.Types.ObjectId,
-            ref: 'Admin',
-            default: null,
-        },
     },
     { timestamps: true }
 );
+couponSchema.pre('save', function (next) {
+    if (this.startsAt && this.startsAt > new Date()) {
+        this.isActive = false;
+    }
+    if (this.expiresAt && this.expiresAt < new Date()) {
+        this.isActive = false;
+    }
+    next();
+});
 
 couponSchema.methods.isExpired = function () {
     return new Date() > this.expiresAt;

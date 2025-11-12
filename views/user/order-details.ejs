@@ -435,18 +435,16 @@
             <div class="price-details-box">
                 <h2>Payment Method</h2>
                 <p style="color: #666; font-size: 14px; margin: 0;">
-                    <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment' %>
+                    <%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : order.paymentMethod === 'online'?'Online Payment':'Wallet Payment' %>
                 </p>
                 <p style="color: #666; font-size: 13px; margin-top: 5px;">
                     Status: <strong><%= order.paymentStatus %></strong>
                 </p>
-                <!-- <% if (orderItem.status === 'Delivered' ) { %>
-                <div>
-                <a href="/profile/orders" class="tf-btn btn-outline animate-hover-btn radius-3">
-                <span>Download Invoice</span>
-                </a>
-                </div>
-                <% } %> -->
+                <% if (order.couponCode ) { %>
+                <p style="color: #666; font-size: 13px; margin-top: 5px;">
+                    Coupon Applied: <strong style="color: #2ca02c;"><%= order.couponCode %></strong>
+                </p>
+                <% } %>
                 <%if(['Delivered','Cancelled','Returned'].includes(orderItem.status)){%>  
                 <div>
                 <a href="/profile/<%= order.orderId %>/item/<%= orderItem._id %>/invoice" class="tf-btn btn-outline animate-hover-btn radius-3">
