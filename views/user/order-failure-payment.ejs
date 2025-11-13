@@ -1,0 +1,46 @@
+<%- include("../partials/user/header") %>
+
+<div class="tf-page-title">
+  <div class="container-full text-center">
+    <h2 style="color:#d9534f;">
+      <i class="icofont-close-circled"></i> Payment Failed
+    </h2>
+  </div>
+</div>
+
+<section class="flat-spacing-11">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+
+        <div class="text-center p-4" style="border:1px solid #eee; border-radius:12px;">
+          
+          <h4 class="text-danger fw-bold mb-3">Your payment could not be completed</h4>
+          <p class="text-muted mb-4">
+            <%= message || "Something went wrong while processing your payment." %>
+          </p>
+
+          <div class="d-flex justify-content-center gap-3">
+
+            <!-- Retry Payment -->
+            <a href="/checkout"
+               class="tf-btn btn-fill animate-hover-btn radius-3">
+               Retry Payment
+            </a>
+
+            <!-- View Order -->
+            <a href="/profile/orders/<%= orderId %>"
+               class="tf-btn btn-outline radius-3 animate-hover-btn">
+               View Order
+            </a>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include("../partials/user/footer") %>

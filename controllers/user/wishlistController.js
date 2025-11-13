@@ -4,7 +4,7 @@ import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import AppError from '../../utils/appError.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
 import ProductVariant from '../../models/productVarintSchema.js';
-
+import Cart from '../../models/cartSchema.js';
 const getWishlist = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
@@ -98,6 +98,18 @@ const addToWishlist = async (req, res, next) => {
                 new AppError(
                     'product currently unavailable',
                     HTTP_STATUS.NOT_FOUND
+                )
+            );
+        }
+        let existingInCart = await Cart.findOne({
+            userId: userId,
+            'items.productId': productId,
+        });
+        if (existingInCart) {
+            return next(
+                new AppError(
+                    `The product ${product.name} already exist in cart`,
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }

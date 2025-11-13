@@ -303,12 +303,14 @@
             </div>
           </form>
           </div>
+          <% if (itemCount<=0) { %>
           <div style="text-align: center; padding: 40px;">
             <p style="font-size: 18px; color: #666;">Your cart is empty</p>
             <a href="/products" class="tf-btn btn-fill animate-hover-btn radius-3" style="display: inline-block; margin-top: 20px;">
               <span>Continue Shopping</span>
             </a>
           </div>
+          <% } %>
       </div>
         <!-- Price Details Section -->
         <div class="tf-page-cart-footer">
@@ -335,6 +337,12 @@
                         <span>₹<%= priceDetails.platformFee %></span>
                     </div>
                 <% } %>
+                <% if (couponCode && discount > 0) { %>
+                  <div class="price-row discount">
+                    <span>Coupon Discount (<%= couponCode %>)</span>
+                    <span>- ₹<%= discount.toLocaleString('en-IN') %></span>
+                  </div>
+                <% } %>
                 
                 <hr class="divider">
                 
@@ -342,6 +350,7 @@
                     <strong>Total Amount</strong>
                     <strong>₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
                 </div>
+                
                 
                 <hr class="divider">
                 
@@ -357,6 +366,7 @@
                     <span>Continue Payment</span>
                 </button>
             </div>
+            
         </div>
     </div>
 </div>

@@ -1079,12 +1079,15 @@ async function payOnline() {
       paymentMethod: 'online'
     });
 
-    if (!res.data.success) throw new Error('Failed to create order');
+    if (!res.data.success) {
+            Swal.fire("Error", res.data.message, "error");
+            return;
+        }
 
-    const { razorpayOrderId, amount, currency, orderId } = res.data;
+    const { razorpayOrderId, amount, currency, pendingOrder  } = res.data;
 
     const options = {
-      key: '<%= process.env.RAZORPAY_KEY_ID %>', // Your public key
+      key: '<%= process.env.RAZORPAY_KEY_ID %>', 
       amount: amount * 100,
       currency: currency,
       name: "Mens E-Commerce",
@@ -1092,28 +1095,38 @@ async function payOnline() {
       order_id: razorpayOrderId,
       handler: async function (response) {
         try {
-          await axios.post('/order/verify', {
+           const verifyRes = await axios.post('/order/verify', {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
-            orderId
+            pendingOrder
           });
-          Swal.fire({
-            icon: 'success',
-            title: 'Payment Successful',
-            text: 'Your payment was completed successfully!',
-            timer: 2000,
-            showConfirmButton: false
-          });
-          setTimeout(() => {
-            window.location.href = `/order/success/${orderId}`;
-          }, 1500);
+          if (verifyRes.data.success) {
+              Swal.fire({
+              icon: 'success',
+              title: 'Payment Successful',
+              text: 'Your payment was completed successfully!',
+              timer: 2000,
+              showConfirmButton: false
+            });
+            setTimeout(() => {
+              window.location.href = `/order/success/${verifyRes.data.orderId}`;
+            }, 1500);
+          } else {
+                 window.location.href = `/order/failure/payment?orderId=${verifyRes.data.orderId}&msg=${encodeURIComponent(verifyRes.data.message)}`;
+                }
+          
         } catch (err) {
           Swal.fire({
             icon: 'error',
             title: 'Payment Verification Failed',
             text: err.response?.data?.message || 'Something went wrong verifying your payment.',
+            timer: 2000,
+            showConfirmButton: false
           });
+          setTimeout(() => {
+            window.location.href = `/order/failure/payment?orderId=${verifyRes.data.orderId}&msg=${encodeURIComponent("Payment failed")}`;
+          }, 1500);
         }
       },
       prefill: {
@@ -1126,17 +1139,23 @@ async function payOnline() {
       },
       modal: {
         ondismiss: function () {
-          Swal.fire({
-            icon: 'info',
-            title: 'Payment Cancelled',
-            text: 'You closed the payment window.',
-            confirmButtonColor: '#088178'
-          });
+          // Swal.fire({
+          //   icon: 'info',
+          //   title: 'Payment Cancelled',
+          //   text: 'You closed the payment window.',
+          //   confirmButtonColor: '#088178'
+          // });
+          
+            window.location.href = `/order/failure/payment?msg=Payment%20failed`;
+          
         }
       }
     };
 
     const rzp = new Razorpay(options);
+    rzp.on("payment.failed", function () {
+    window.location.href = `/order/failure/payment?orderId=${orderId}&msg=${encodeURIComponent("Payment failed")}`;
+});
     rzp.open();
   } catch (error) {
     console.error(error);

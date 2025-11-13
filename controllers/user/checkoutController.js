@@ -6,6 +6,7 @@ import Cart from '../../models/cartSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Coupon from '../../models/couponSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
+import { calculatePriceDetails } from '../../helpers/calculatePriceDetails.js';
 const getCheckout = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
@@ -53,89 +54,8 @@ const getCheckout = async (req, res, next) => {
             });
         }
 
-        let totalPrice = 0;
-        let totalDiscount = 0;
-        const cartItems = [];
-
-        for (const item of cart.items) {
-            const product = item.productId;
-            if (!product) continue;
-
-            const variant = await ProductVariant.findById(item.variantId);
-            const variantQuantity = variant ? variant.quantity : 0;
-
-            const originalPrice = Number(product.originalPrice || 0);
-            const salePrice =
-                product.salesPrice && Number(product.salesPrice) > 0
-                    ? Number(product.salesPrice)
-                    : originalPrice;
-
-            const isUnlistedProduct = !product.isListed;
-            const isUnlistedCategory = !product.category?.isListed;
-            const isOutOfStock =
-                item.quantity > variantQuantity || variantQuantity === 0;
-
-            cartItems.push({
-                _id: item._id,
-                productId: product._id,
-                productName: product.name,
-                productImage: product.images?.[0] || '/images/placeholder.jpg',
-                originalPrice,
-                salePrice,
-                quantity: item.quantity,
-                size: variant?.size || item.size,
-                variantQuantity,
-                totalPrice: salePrice * item.quantity,
-                isOutOfStock,
-                isUnlisted: isUnlistedProduct || isUnlistedCategory,
-            });
-
-            if (!isOutOfStock && !isUnlistedProduct && !isUnlistedCategory) {
-                const itemOriginalTotal = originalPrice * item.quantity;
-                const itemSaleTotal = salePrice * item.quantity;
-                const itemDiscount = itemOriginalTotal - itemSaleTotal;
-
-                totalPrice += itemOriginalTotal;
-                totalDiscount += itemDiscount;
-            }
-        }
-
-        let totalAmount = totalPrice - totalDiscount;
-        let savings = totalDiscount;
-
-        let couponCode = null;
-        let couponDiscount = 0;
-
-        if (cart.appliedCoupon && cart.appliedCoupon.couponId) {
-            const coupon = cart.appliedCoupon.couponId;
-
-            if (
-                coupon &&
-                coupon.isActive &&
-                new Date() <= new Date(coupon.expiresAt)
-            ) {
-                couponCode = cart.appliedCoupon.code;
-                couponDiscount = cart.appliedCoupon.discount || 0;
-
-                totalAmount = Math.max(totalAmount - couponDiscount, 0);
-                savings += couponDiscount;
-            } else {
-                cart.appliedCoupon = {
-                    couponId: null,
-                    code: null,
-                    discount: 0,
-                    appliedAt: null,
-                };
-                await cart.save();
-            }
-        }
-
-        const priceDetails = {
-            totalPrice,
-            discount: totalDiscount,
-            totalAmount,
-            savings,
-        };
+        const { cartItems, priceDetails, couponCode, couponDiscount } =
+            await calculatePriceDetails(cart);
 
         const totalAddresses = await Address.countDocuments({ userId });
         const totalPages = Math.ceil(totalAddresses / itemsPerPage);
@@ -194,55 +114,35 @@ const getCheckoutAddAddress = async (req, res, next) => {
         if (!userId) {
             return next(new AppError('Please login to view cart', 401));
         }
-        const cart = await Cart.findOne({ userId }).populate({
-            path: 'items.productId',
-            select: 'originalPrice salesPrice',
-        });
+        const cart = await Cart.findOne({ userId })
+            .populate({
+                path: 'items.productId',
+                select: 'name originalPrice salesPrice images isListed category',
+                populate: { path: 'category', select: 'isListed categoryName' },
+            })
+            .populate({
+                path: 'appliedCoupon.couponId',
+                select: 'code discountValue discountType maxDiscountAmount minPurchaseAmount expiresAt isActive',
+            });
 
         if (!cart || cart.items.length === 0) {
             return res.render('cart', {
                 priceDetails: {
                     totalPrice: 0,
                     discount: 0,
-
                     totalAmount: 0,
                     savings: 0,
                 },
                 itemCount: 0,
             });
         }
-        let totalPrice = 0;
-        let totalDiscount = 0;
-
-        cart.items.forEach((item) => {
-            const originalPrice = Number(item.productId.originalPrice) || 0;
-            const salePrice =
-                item.productId.salesPrice &&
-                Number(item.productId.salesPrice) > 0
-                    ? Number(item.productId.salesPrice)
-                    : originalPrice;
-
-            const itemOriginalTotal = originalPrice * item.quantity;
-            const itemSaleTotal = salePrice * item.quantity;
-            const itemDiscount = itemOriginalTotal - itemSaleTotal;
-
-            totalPrice += itemOriginalTotal;
-            totalDiscount += itemDiscount;
-        });
-
-        const totalAmount = totalPrice - totalDiscount;
-        const savings = totalDiscount;
-
-        const priceDetails = {
-            totalPrice: totalPrice,
-            discount: totalDiscount,
-
-            totalAmount: totalAmount,
-            savings: savings,
-        };
+        const { priceDetails, couponCode, couponDiscount } =
+            await calculatePriceDetails(cart);
         return res.render('checkout-addaddress', {
             priceDetails: priceDetails,
             itemCount: cart.items.length,
+            couponCode,
+            discount: couponDiscount,
         });
     } catch (error) {
         console.log('error while loading checkout edit address', error);
@@ -261,11 +161,16 @@ const getCheckoutEditAddress = async (req, res, next) => {
         if (!userId) {
             return next(new AppError('Please login to view cart', 401));
         }
-        const cart = await Cart.findOne({ userId }).populate({
-            path: 'items.productId',
-            select: 'originalPrice salesPrice',
-        });
-
+        const cart = await Cart.findOne({ userId })
+            .populate({
+                path: 'items.productId',
+                select: 'name originalPrice salesPrice images isListed category',
+                populate: { path: 'category', select: 'isListed categoryName' },
+            })
+            .populate({
+                path: 'appliedCoupon.couponId',
+                select: 'code discountValue discountType maxDiscountAmount minPurchaseAmount expiresAt isActive',
+            });
         if (!cart || cart.items.length === 0) {
             return res.render('cart', {
                 priceDetails: {
@@ -278,39 +183,14 @@ const getCheckoutEditAddress = async (req, res, next) => {
                 itemCount: 0,
             });
         }
-        let totalPrice = 0;
-        let totalDiscount = 0;
-
-        cart.items.forEach((item) => {
-            const originalPrice = Number(item.productId.originalPrice) || 0;
-            const salePrice =
-                item.productId.salesPrice &&
-                Number(item.productId.salesPrice) > 0
-                    ? Number(item.productId.salesPrice)
-                    : originalPrice;
-
-            const itemOriginalTotal = originalPrice * item.quantity;
-            const itemSaleTotal = salePrice * item.quantity;
-            const itemDiscount = itemOriginalTotal - itemSaleTotal;
-
-            totalPrice += itemOriginalTotal;
-            totalDiscount += itemDiscount;
-        });
-
-        const totalAmount = totalPrice - totalDiscount;
-        const savings = totalDiscount;
-
-        const priceDetails = {
-            totalPrice: totalPrice,
-            discount: totalDiscount,
-
-            totalAmount: totalAmount,
-            savings: savings,
-        };
+        const { priceDetails, couponCode, couponDiscount } =
+            await calculatePriceDetails(cart);
         res.render('checkout-editaddress', {
             address: userAddress,
             priceDetails: priceDetails,
             itemCount: cart.items.length,
+            couponCode,
+            discount: couponDiscount,
         });
     } catch (error) {
         console.log('error while geting edit address');

@@ -134,6 +134,10 @@ const addProduct = async (req, res, next) => {
                 )
             );
         }
+        const productOffer = Number(
+            ((originalPrice - salesPrice) / originalPrice) * 100
+        ).toFixed(2);
+
         if (!req.files || req.files.length < 1) {
             return next(
                 new AppError(
@@ -208,6 +212,7 @@ const addProduct = async (req, res, next) => {
             colorName: colorName.trim(),
             colorCode: colorCode || '',
             images: imageUrls,
+            productOffer,
             totalStock,
         });
 
@@ -326,6 +331,9 @@ const editProduct = async (req, res, next) => {
                 )
             );
         }
+        const productOffer = Number(
+            ((originalPrice - salesPrice) / originalPrice) * 100
+        ).toFixed(2);
         if (!validator.isLength(name, { min: 2, max: 50 })) {
             return next(
                 new AppError(
@@ -429,6 +437,7 @@ const editProduct = async (req, res, next) => {
                 colorName: colorName.trim(),
                 colorCode: colorCode || '',
                 images: currentImages,
+                productOffer,
                 totalStock,
             },
             { new: true, runValidators: true }
