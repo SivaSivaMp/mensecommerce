@@ -105,6 +105,32 @@
         z-index: 1000;
         animation: fadeInOut 2s ease-in-out;
     }
+    .referral-container,
+    .share-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    }
+
+    .referral-container input,
+    .share-link input {
+    flex: 1;
+    border: 1px solid #ddd;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 15px;
+    background-color: #f9f9f9;
+    }
+
+    button.btn {
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+    }
+
+    button.btn:hover {
+    opacity: 0.85;
+    }
 
     @keyframes fadeInOut {
         0% { opacity: 0; transform: translateY(-20px); }
@@ -186,7 +212,21 @@
                         </div>
                     
                 </div>                
-                
+                <div class="profile-card">
+                    <h4 class="mb-4">My Referral code</h4>
+                     <div class="referral-container" style="max-width: 400px;">
+                    <input
+                    type="text"
+                    id="referralCode"
+                    value="<%= user.referralCode %>"
+                    readonly
+                    
+                    />
+                    <button id="copyReferralBtn" class="btn btn-outline-primary">
+                    <i class="icofont-ui-copy"></i>
+                    </button>
+                </div>
+                </div>
                 <!-- Change Password Card -->
                 <div class="profile-card">
                     <h4 class="mb-4">Change Password</h4>
@@ -253,6 +293,25 @@
             icon.classList.add("bi-eye");
             }
         });
+        });
+          
+        document.addEventListener("DOMContentLoaded", () => {
+            const referralBtn = document.getElementById("copyReferralBtn");
+            const linkBtn = document.getElementById("copyLinkBtn");
+
+            referralBtn?.addEventListener("click", () => {
+            const code = document.getElementById("referralCode").value;
+            navigator.clipboard.writeText(code);
+            referralBtn.textContent = "Copied!";
+            setTimeout(() => (referralBtn.textContent = "Copy"), 2000);
+            });
+
+            linkBtn?.addEventListener("click", () => {
+            const link = document.getElementById("referralLink").value;
+            navigator.clipboard.writeText(link);
+            linkBtn.textContent = "Copied!";
+            setTimeout(() => (linkBtn.textContent = "Copy Link"), 2000);
+            });
         });
 
 

@@ -5,14 +5,16 @@ import { sendVerificationEmail } from '../../utils/email.js';
 import { generateOtp } from '../../utils/generateOtp.js';
 import validator from 'validator';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
-import { get } from 'mongoose';
+import crypto from 'crypto';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
+import Wallet from '../../models/walletSchema.js';
 // load login
 
 const loadLogin = async (req, res) => {
     if (getCurrentUserId(req)) {
         return res.redirect('/');
     }
+
     res.render('login', {
         title: 'Login',
         error: null,
@@ -24,6 +26,8 @@ const loadSignup = async (req, res) => {
     if (getCurrentUserId(req)) {
         return res.redirect('/');
     }
+    console.log(generateReferralCode());
+
     res.render('signup', {
         title: 'Register',
         error: null,
@@ -94,10 +98,12 @@ const login = async (req, res, next) => {
 };
 
 // signup-post
-
+const generateReferralCode = () => {
+    return crypto.randomBytes(4).toString('hex').toUpperCase();
+};
 const signup = async (req, res, next) => {
     try {
-        const { name, email, password, cpassword } = req.body;
+        const { name, email, password, cpassword, referralCode } = req.body;
 
         if (!name || !email || !password || !cpassword) {
             return next(
@@ -139,7 +145,7 @@ const signup = async (req, res, next) => {
         }
 
         req.session.userOtp = otp;
-        req.session.userData = { name, email, password };
+        req.session.userData = { name, email, password, referralCode };
 
         res.status(200).json({
             status: 'success',
@@ -177,9 +183,67 @@ const verifyOtp = async (req, res, next) => {
             return next(new AppError('Invalid otp', HTTP_STATUS.BAD_REQUEST));
         }
 
-        const { name, email, password } = req.session.userData;
-        const newUser = new User({ name, email, password });
+        const { name, email, password, referralCode } = req.session.userData;
+        const newReferralCode = crypto
+            .randomBytes(4)
+            .toString('hex')
+            .toUpperCase();
+        const newUser = new User({
+            name,
+            email,
+            password,
+            referralCode: newReferralCode,
+            referredBy: referralCode || null,
+        });
         await newUser.save();
+        if (referralCode) {
+            const referrer = await User.findOne({ referralCode: referralCode });
+            if (!referrer) {
+                return next(
+                    new AppError(
+                        'Invalid referral code',
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
+            }
+            const referrerReward = 100;
+            const newUserReward = 50;
+            await Wallet.findOneAndUpdate(
+                { userId: referrer._id },
+                {
+                    $inc: { balance: referrerReward },
+                    $push: {
+                        transactions: {
+                            transactionId: `TXN-${Date.now()}-${Math.floor(
+                                Math.random() * 10000
+                            )}`,
+                            type: 'credit',
+                            amount: referrerReward,
+                            description: `Referral reward for inviting ${email}`,
+                        },
+                    },
+                },
+                { upsert: true, new: true }
+            );
+            await Wallet.findOneAndUpdate(
+                { userId: newUser._id },
+                {
+                    $inc: { balance: newUserReward },
+                    $push: {
+                        transactions: {
+                            transactionId: `TXN-${Date.now()}-${Math.floor(
+                                Math.random() * 10000
+                            )}`,
+                            type: 'credit',
+                            amount: newUserReward,
+                            description: `Welcome bonus for using referral code ${referralCode}`,
+                        },
+                    },
+                },
+                { upsert: true, new: true }
+            );
+        }
+
         req.session.user = {
             id: newUser._id,
             name: newUser.name,

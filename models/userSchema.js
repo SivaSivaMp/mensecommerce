@@ -47,6 +47,14 @@ const userSchema = new mongoose.Schema(
                 'please provide valid phonenumber',
             ],
         },
+        referralCode: {
+            type: String,
+            unique: true,
+        },
+        referredBy: {
+            type: String,
+            default: null,
+        },
         googleId: {
             type: String,
             unique: true,

@@ -74,7 +74,5 @@ const login = async (req, res, next) => {
     }
 };
 //load dashboard
-const loadDashboard = async (req, res) => {
-    return res.render('dashboard');
-};
-export default { getAdminLogin, loadDashboard, login, logout };
+
+export default { getAdminLogin, login, logout };
