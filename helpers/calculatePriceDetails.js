@@ -1,5 +1,3 @@
-// helpers/calculatePriceDetails.js
-
 import ProductVariant from '../models/productVarintSchema.js';
 
 export const calculatePriceDetails = async (cart) => {
@@ -55,7 +53,6 @@ export const calculatePriceDetails = async (cart) => {
     let totalAmount = totalPrice - totalDiscount;
     savings = totalDiscount;
 
-    // --------- COUPON HANDLING ----------
     let couponCode = null;
     let couponDiscount = 0;
 
@@ -74,7 +71,6 @@ export const calculatePriceDetails = async (cart) => {
             totalAmount = Math.max(totalAmount - couponDiscount, 0);
             savings += couponDiscount;
         } else {
-            // remove invalid coupon
             cart.appliedCoupon = {
                 couponId: null,
                 code: null,

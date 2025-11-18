@@ -1020,7 +1020,7 @@ document.addEventListener('DOMContentLoaded', () => {
               document.querySelectorAll('.apply-coupon-btn').forEach(btn => {
                 btn.addEventListener('click', async function() {
                   const code = this.getAttribute('data-code');
-                  Swal.close(); // Close the modal first
+                  Swal.close(); 
                   
                   // Set the coupon code in input
                   document.getElementById('couponCode').value = code;
@@ -1073,7 +1073,7 @@ async function payOnline() {
 
     const addressId = selectedAddressRadio.value;
 
-    // Create Razorpay order on backend
+    
     const res = await axios.post('/order/place', {
       shippingAddressId: addressId,
       paymentMethod: 'online'

@@ -61,8 +61,8 @@
                              value="<%= coupon.usageLimit %>" />
                     </div>
                     <div class="col-md-12">
-                      <label class="form-label">Usage Limit per User</label>
-                      <input id="usageLimitPerUser" name="usageLimitPerUser" type="number" min="0" class="form-control"
+                      <!-- <label class="form-label">Usage Limit per User</label> -->
+                      <input id="usageLimitPerUser" name="usageLimitPerUser" type="hidden" min="0" class="form-control"
                              value="<%= coupon.usageLimitPerUser %>" />
                     </div>
                   </div>
@@ -232,7 +232,7 @@
           startsAt: startsAtEl.value || null,
           expiresAt: expiresAtEl.value,
           usageLimit: parseInt(document.getElementById('usageLimit').value, 10) || null,
-          usageLimitPerUser: parseInt(document.getElementById('usageLimitPerUser').value, 10) || null
+          usageLimitPerUser: parseInt(document.getElementById('usageLimitPerUser').value, 10) || 1
         };
 
         try {

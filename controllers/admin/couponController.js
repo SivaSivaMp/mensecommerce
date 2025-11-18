@@ -7,7 +7,7 @@ const getCouponList = async (req, res, next) => {
     try {
         const search = req.query.search?.trim() || '';
         const page = parseInt(req.query.page) || 1;
-        const limit = 4;
+        const limit = 8;
         const skip = (page - 1) * limit;
 
         const query = {};
@@ -43,7 +43,12 @@ const getCouponList = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error loading coupons list:', error);
-        return next(new AppError('Internal server error', 500));
+        return next(
+            new AppError(
+                'Internal server error',
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            )
+        );
     }
 };
 
@@ -80,6 +85,14 @@ const addCoupon = async (req, res, next) => {
                     HTTP_STATUS.BAD_REQUEST
                 )
             );
+        }
+        const codePattern = /^[A-Za-z0-9-]+$/;
+        if (!codePattern.test(code)) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'Invalid coupon code. Only letters, numbers, and hyphens (-) are allowed.',
+            });
         }
         const existingCoupon = await Coupon.findOne({
             code: code.toUpperCase(),
@@ -264,6 +277,22 @@ const editCoupon = async (req, res, next) => {
                 new AppError(
                     'Please fill all required fields.',
                     HTTP_STATUS.BAD_REQUEST
+                )
+            );
+        }
+        const codePattern = /^[A-Za-z0-9-]+$/;
+        if (!codePattern.test(code)) {
+            return next(
+                new AppError(
+                    'Invalid coupon code. Only letters, numbers, and hyphens (-) are allowed.',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
+        }
+        if (minPurchaseAmount <= discountValue) {
+            return next(
+                new AppError(
+                    'minimum purchase amount should be greater than discount value'
                 )
             );
         }

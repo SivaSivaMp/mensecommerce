@@ -2,11 +2,7 @@ import User from '../../models/userSchema.js';
 import Order from '../../models/orderSchema.js';
 import Category from '../../models/categorySchema.js';
 import Product from '../../models/productSchema.js';
-import ExcelJS from 'exceljs';
-import PDFDocument from 'pdfkit';
 import AppError from '../../utils/appError.js';
-import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
-import { HTTP_STATUS } from '../../utils/httpStatus.js';
 
 const loadDashboard = async (req, res) => {
     return res.render('dashboard');
@@ -33,7 +29,7 @@ async function getDashboardData(startDate, endDate) {
             {
                 $match: {
                     createdAt: { $gte: start, $lte: end },
-                    status: { $in: ['Delivered', 'Return Rejected'] },
+                    // status: { $in: ['Delivered', 'Return Rejected'] },
                 },
             },
             {
@@ -54,7 +50,7 @@ async function getDashboardData(startDate, endDate) {
             {
                 $match: {
                     createdAt: { $gte: start, $lte: end },
-                    status: { $in: ['Delivered', 'Return Rejected'] },
+                    // status: { $in: ['Delivered', 'Return Rejected'] },
                 },
             },
             { $group: { _id: null, totalSales: { $sum: '$finalAmount' } } },
@@ -124,12 +120,15 @@ async function getDashboardData(startDate, endDate) {
     };
 }
 
-/* --------------------------------------------
-   🔹 2. Dashboard Summary API (AJAX fetch)
---------------------------------------------- */
-const getSummary = async (req, res) => {
+const getSummary = async (req, res, next) => {
     try {
         const { startDate, endDate } = req.query;
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const now = new Date();
+        if (now < start) {
+            return next(new AppError(`Future date cannot be given`, 400));
+        }
 
         if (!startDate || !endDate) {
             return res
@@ -148,10 +147,6 @@ const getSummary = async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
-
-/* --------------------------------------------
-   🔹 3. Excel Report
---------------------------------------------- */
 
 export default {
     getSummary,

@@ -118,7 +118,7 @@
                         <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between">
                           <div class="left-info">
                             <span class="text-muted">Total Discount</span>
-                            <div><span id="totalDiscount" class="fs-6 fw-bold me-2">$0</span></div>
+                            <div><span id="totalDiscount" class="fs-6 fw-bold me-2">₹0</span></div>
                           </div>
                           <div class="right-icon"><i class="icofont-sale-discount fs-3 color-santa-fe"></i></div>
                         </div>
@@ -131,7 +131,7 @@
                         <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between">
                           <div class="left-info">
                             <span class="text-muted">Avg Sale</span>
-                            <div><span id="avgSale" class="fs-6 fw-bold me-2">$0</span></div>
+                            <div><span id="avgSale" class="fs-6 fw-bold me-2">₹0</span></div>
                           </div>
                           <div class="right-icon"><i class="icofont-calculator-alt-2 fs-3 color-danger"></i></div>
                         </div>
@@ -144,7 +144,7 @@
                         <div class="card-body py-3 d-flex flex-wrap align-items-center justify-content-between">
                           <div class="left-info">
                             <span class="text-muted">Total Sale</span>
-                            <div><span id="totalSales" class="fs-6 fw-bold me-2">$0</span></div>
+                            <div><span id="totalSales" class="fs-6 fw-bold me-2">₹0</span></div>
                           </div>
                           <div class="right-icon"><i class="icofont-calculator-alt-1 fs-3 color-lightblue"></i></div>
                         </div>
@@ -281,16 +281,26 @@
           $('#totalCustomers').text(data.totalCustomers.toLocaleString());
           $('#totalOrders').text(data.totalOrders.toLocaleString());
           $('#totalOrderItem').text(data.totalOrderItemCount.toLocaleString());
-          $('#totalDiscount').text(`$${data.totalDiscount.toLocaleString()}`);
-          $('#avgSale').text(`$${data.avgSale}`);
-          $('#totalSales').text(`$${data.totalSales.toLocaleString()}`);
+          $('#totalDiscount').text(`₹${data.totalDiscount.toLocaleString()}`);
+          $('#avgSale').text(`₹${data.avgSale}`);
+          $('#totalSales').text(`₹${data.totalSales.toLocaleString()}`);
           $('#totalCategories').text(data.totalCategories);
           $('#totalProducts').text(data.totalProducts);
           showToast(`Dashboard updated (${label.toUpperCase()})`, "success");
         },
-        error: function (err) {
-          console.error('Error fetching summary:', err);
-          showToast("Failed to load dashboard data", "error");
+        error: function (xhr) {
+          console.error('Error fetching summary:', xhr);
+          
+          let errorMessage = "Failed to load dashboard data"; // default fallback
+          
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            errorMessage = xhr.responseJSON.message; // backend message
+          } else if (xhr.responseText) {
+            // sometimes backend sends raw text
+            errorMessage = xhr.responseText;
+          }
+
+          showToast(errorMessage, "error");
         }
       });
     }
@@ -326,7 +336,7 @@
       getDateRange(period);
     });
 
-    // 🔹 Apply custom date filter
+   
     $("#applyFilter").click(function () {
       const start = $("#startDate").val();
       const end = $("#endDate").val();
@@ -345,22 +355,48 @@
     });
 
     // 🔹 Download Excel/PDF (Now uses lastRange)
-    window.downloadReport = function (format) {
-      if (!lastRange.start || !lastRange.end) {
-        showToast("Please select a date range before downloading", "warning");
-        return;
-      }
+      window.downloadReport = function (format) {
+        if (!lastRange.start || !lastRange.end) {
+          showToast("Please select a date range before downloading", "warning");
+          return;
+        }
 
-      const route = format === 'excel'
-        ? '/admin/reports/dashboard-excel'
-        : '/admin/reports/dashboard-pdf';
+        $.ajax({
+          url: "/admin/reports/validate",
+          method: "POST",
+          data: {
+            startDate: lastRange.start,
+            endDate: lastRange.end
+          },
+          success: function () {
+            const route = format === "excel"
+              ? "/admin/reports/dashboard-excel"
+              : "/admin/reports/dashboard-pdf";
 
-      showToast(`Generating ${format.toUpperCase()} report for ${lastRange.label}...`, "info");
+            showToast(`Downloading ${format.toUpperCase()} report...`, "success");
 
-      window.location.href = `${route}?startDate=${lastRange.start}&endDate=${lastRange.end}`;
-    };
+            // Trigger download after validation passes
+            window.location.href = `${route}?startDate=${lastRange.start}&endDate=${lastRange.end}`;
+          },
+          error: function (xhr) {
+            let msg = "Unable to download report";
 
-    // 🔹 Load "Today" by default on page load
+            if (xhr.responseJSON?.message) {
+              msg = xhr.responseJSON.message;
+            }
+
+            showToast(msg, "error");
+
+            if (xhr.status === 401) {
+              setTimeout(() => {
+                window.location.href = "/admin/login";
+              }, 1200);
+            }
+          }
+        });
+      };
+
+  
     getDateRange('today');
   });
 </script>

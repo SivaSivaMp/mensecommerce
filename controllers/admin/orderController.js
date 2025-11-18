@@ -58,7 +58,9 @@ const getOrdersList = async (req, res, next) => {
             paymentMethod:
                 order.paymentMethod === 'cod'
                     ? 'Cash on Delivery'
-                    : 'Online Payment',
+                    : order.paymentMethod === 'online'
+                    ? 'Online Payment'
+                    : 'Wallet Payment',
             paymentStatus: order.paymentStatus,
             status: order.status,
             itemCount: order.orderedItems.length,
@@ -133,7 +135,9 @@ const getAdminOrderDetails = async (req, res, next) => {
             paymentMethod:
                 order.paymentMethod === 'cod'
                     ? 'Cash on Delivery'
-                    : 'Online Payment',
+                    : order.paymentMethod === 'online'
+                    ? 'Online Payment'
+                    : 'Wallet Payment',
             paymentStatus: order.paymentStatus,
             createdAt: order.createdAt,
             deliveredAt: order.deliveredAt,
@@ -383,103 +387,31 @@ const rejectReturn = async (req, res, next) => {
     }
 };
 
-// Complete return
 const completeReturn = async (req, res, next) => {
     try {
         const { itemId } = req.body;
 
         if (!itemId) {
-            return next(
-                new AppError('Item ID is required', HTTP_STATUS.BAD_REQUEST)
-            );
+            return next(new AppError('Item ID is required', 400));
         }
 
         const order = await Order.findOne({
             'orderedItems._id': itemId,
-        }).populate({
-            path: 'couponId',
-            select: 'code minPurchaseAmount discountType discountValue maxDiscountAmount',
-        });
+        }).populate('couponId');
 
         if (!order) {
-            return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
+            return next(new AppError('Order not found', 404));
         }
 
         const item = order.orderedItems.id(itemId);
-        if (!item) {
-            return next(new AppError('Item not found', HTTP_STATUS.NOT_FOUND));
-        }
+        if (!item) return next(new AppError('Item not found', 404));
 
         if (item.returnStatus !== 'Approved') {
-            return next(
-                new AppError(
-                    'Return can only be completed after approval.',
-                    HTTP_STATUS.BAD_REQUEST
-                )
-            );
+            return next(new AppError('Return must be approved first.', 400));
         }
 
-        const itemPrice = Number(item.price) * Number(item.quantity);
-
-        const activeItems = order.orderedItems.filter(
-            (orderItem) => !['Cancelled', 'Returned'].includes(orderItem.status)
-        );
-
-        const originalTotal = activeItems.reduce((sum, orderItem) => {
-            return sum + Number(orderItem.price) * Number(orderItem.quantity);
-        }, 0);
-
-        const newTotal = originalTotal - itemPrice;
-        let refundAmount = 0;
-        const coupon = order.couponId;
-        const originalCouponDiscount = Number(order.couponDiscount) || 0;
-
-        if (coupon && originalCouponDiscount > 0) {
-            const minPurchase = Number(coupon.minPurchaseAmount) || 0;
-
-            if (newTotal >= minPurchase) {
-                refundAmount = itemPrice;
-            } else if (newTotal > 0) {
-                const itemProportion = itemPrice / originalTotal;
-                const itemCouponShare = originalCouponDiscount * itemProportion;
-                refundAmount = itemPrice - itemCouponShare;
-            } else {
-                const itemCouponShare = originalCouponDiscount;
-                refundAmount = Math.max(itemPrice - itemCouponShare, 0);
-            }
-        } else {
-            refundAmount = itemPrice;
-        }
-
-        refundAmount = Math.max(refundAmount, 0);
-        refundAmount = Math.round(refundAmount * 100) / 100;
-
-        if (refundAmount > 0) {
-            const userId = order.userId;
-            let wallet = await Wallet.findOne({ userId });
-
-            if (!wallet) {
-                wallet = new Wallet({
-                    userId,
-                    balance: 0,
-                    transactions: [],
-                });
-            }
-
-            let description = `Refund for returned item: ${item.productName} (Order: ${order.orderId})`;
-            if (order.paymentMethod === 'cod') {
-                description += ` [COD order]`;
-            }
-
-            await wallet.addTransaction(
-                'credit',
-                refundAmount,
-                description,
-                order._id,
-                item._id,
-                order.orderId
-            );
-        }
+        const itemTotal = item.price * item.quantity;
+        const originalFinalAmount = order.finalAmount;
 
         item.status = 'Returned';
         item.returnStatus = 'Returned';
@@ -495,46 +427,88 @@ const completeReturn = async (req, res, next) => {
                 const allVariants = await ProductVariant.find({
                     productId: product._id,
                 });
-                const newTotalStock = allVariants.reduce(
+                product.totalStock = allVariants.reduce(
                     (sum, v) => sum + v.quantity,
                     0
                 );
-                product.totalStock = newTotalStock;
                 await product.save();
             }
         }
 
-        const allItemsReturned = order.orderedItems.every(
-            (i) => i.status === 'Returned' || i.status === 'Cancelled'
+        const activeItems = order.orderedItems.filter(
+            (i) => !['Cancelled', 'Returned'].includes(i.status)
+        );
+
+        const newActiveTotal = activeItems.reduce(
+            (sum, i) => sum + i.price * i.quantity,
+            0
+        );
+
+        let newCouponDiscount = 0;
+        const coupon = order.couponId;
+
+        if (coupon && newActiveTotal >= coupon.minPurchaseAmount) {
+            if (coupon.discountType === 'flat') {
+                newCouponDiscount = coupon.discountValue;
+            } else if (coupon.discountType === 'percentage') {
+                const raw = (newActiveTotal * coupon.discountValue) / 100;
+                const max = coupon.maxDiscountAmount || Infinity;
+                newCouponDiscount = Math.min(raw, max);
+            }
+        }
+
+        const newFinalAmount = Math.max(newActiveTotal - newCouponDiscount, 0);
+
+        const refundAmount = Number(
+            (originalFinalAmount - newFinalAmount).toFixed(2)
+        );
+
+        if (refundAmount > 0) {
+            let wallet = await Wallet.findOne({ userId: order.userId });
+
+            if (!wallet) {
+                wallet = new Wallet({
+                    userId: order.userId,
+                    balance: 0,
+                    transactions: [],
+                });
+            }
+
+            await wallet.addTransaction(
+                'credit',
+                refundAmount,
+                `Refund for returned item: ${item.productName}`,
+                order._id,
+                item._id,
+                order.orderId
+            );
+        }
+
+        order.finalAmount = newFinalAmount;
+
+        const allItemsReturned = order.orderedItems.every((i) =>
+            ['Returned', 'Cancelled'].includes(i.status)
         );
 
         if (allItemsReturned) {
             order.status = 'Returned';
         }
 
-        order.finalAmount = Math.max(order.finalAmount - itemPrice, 0);
-
         await order.save();
-
-        let message = 'Return completed successfully. Stock updated.';
-        if (refundAmount > 0) {
-            message += ` ₹${refundAmount.toFixed(2)} credited to wallet.`;
-        }
 
         return res.status(200).json({
             success: true,
-            message: message,
-            refundAmount: refundAmount,
-            paymentMethod: order.paymentMethod,
+            refundAmount,
+            message:
+                refundAmount > 0
+                    ? `Return completed. ₹${refundAmount} refunded to wallet.`
+                    : 'Return completed.',
         });
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error while completing return.',
-            error: error.message,
-        });
+        return next(new AppError(error.message, 500));
     }
 };
+
 export default {
     getOrdersList,
     getAdminOrderDetails,

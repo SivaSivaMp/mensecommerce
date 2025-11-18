@@ -3,7 +3,17 @@ import Address from '../../models/addressSchema.js';
 import validator from 'validator';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
-
+/**
+ * Fetches paginated address records for the logged-in user and renders the
+ * address page with pagination data.
+ *
+ * @param {Object} req - Express request object
+ * @param {Object} req.query.page - Optional page number for pagination
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express error-handling middleware
+ *
+ * @returns {void} Renders the address page or passes errors to next()
+ */
 const getAddressInfo = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);

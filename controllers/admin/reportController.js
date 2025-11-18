@@ -5,239 +5,13 @@ import Product from '../../models/productSchema.js';
 import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 import AppError from '../../utils/appError.js';
-import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
 
-async function getDashboardData(startDate, endDate) {
+async function getSalesData(startDate, endDate) {
     const start = new Date(startDate);
     const end = new Date(endDate);
     end.setHours(23, 59, 59);
 
-    const [
-        totalCustomers,
-        totalOrders,
-        discountAgg,
-        salesAgg,
-        totalCategories,
-        totalProducts,
-        orderItem,
-        totalOrderItem,
-    ] = await Promise.all([
-        User.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-        Order.countDocuments({ createdAt: { $gte: start, $lte: end } }),
-        Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: start, $lte: end },
-                    status: { $in: ['Delivered', 'Return Rejected'] },
-                },
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalDiscount: {
-                        $sum: {
-                            $add: [
-                                { $ifNull: ['$discount', 0] },
-                                { $ifNull: ['$couponDiscount', 0] },
-                            ],
-                        },
-                    },
-                },
-            },
-        ]),
-        Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: start, $lte: end },
-                    status: { $in: ['Delivered', 'Return Rejected'] },
-                },
-            },
-            { $group: { _id: null, totalSales: { $sum: '$finalAmount' } } },
-        ]),
-        Category.countDocuments(),
-        Product.countDocuments(),
-        Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: start, $lte: end },
-                },
-            },
-            {
-                $unwind: '$orderedItems',
-            },
-            {
-                $match: {
-                    'orderedItems.status': {
-                        $in: ['Delivered', 'Return Rejected'],
-                    },
-                },
-            },
-            {
-                $group: {
-                    _id: null,
-                    orderItemCount: { $sum: 1 },
-                },
-            },
-        ]),
-        Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: start, $lte: end },
-                },
-            },
-            {
-                $unwind: '$orderedItems',
-            },
-
-            {
-                $group: {
-                    _id: null,
-                    totalOrderItemCount: { $sum: 1 },
-                },
-            },
-        ]),
-    ]);
-
-    const totalDiscount = discountAgg[0]?.totalDiscount || 0;
-    const totalSales = salesAgg[0]?.totalSales || 0;
-    const orderItemCount = orderItem[0]?.orderItemCount || 0;
-    const avgSale =
-        orderItemCount > 0 ? (totalSales / orderItemCount).toFixed(2) : 0;
-    const totalOrderItemCount = totalOrderItem[0]?.totalOrderItemCount || 0;
-
-    const [
-        paymentBreakdown,
-        categoryBreakdown,
-        topProducts,
-        dailyTrend,
-        returnStats,
-    ] = await Promise.all([
-        // Payment breakdown
-        Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: start, $lte: end },
-                    status: { $in: ['Delivered', 'Return Rejected'] },
-                },
-            },
-            {
-                $group: {
-                    _id: '$paymentMethod',
-                    total: { $sum: '$finalAmount' },
-                },
-            },
-        ]),
-
-        // Category breakdown
-        Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: start, $lte: end },
-                    'orderedItems.status': {
-                        $in: ['Delivered', 'Return Rejected'],
-                    },
-                },
-            },
-            { $unwind: '$orderedItems' },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'orderedItems.product',
-                    foreignField: '_id',
-                    as: 'productData',
-                },
-            },
-            { $unwind: '$productData' },
-            {
-                $lookup: {
-                    from: 'categories',
-                    localField: 'productData.category',
-                    foreignField: '_id',
-                    as: 'categoryData',
-                },
-            },
-            { $unwind: '$categoryData' },
-            {
-                $group: {
-                    _id: '$categoryData.categoryName',
-                    totalSales: {
-                        $sum: {
-                            $multiply: [
-                                '$orderedItems.quantity',
-                                '$orderedItems.price',
-                            ],
-                        },
-                    },
-                    totalItems: { $sum: '$orderedItems.quantity' },
-                },
-            },
-            { $sort: { totalSales: -1 } },
-        ]),
-
-        // Top 10 products
-        Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: start, $lte: end },
-                    'orderedItems.status': {
-                        $in: ['Delivered', 'Return Rejected'],
-                    },
-                },
-            },
-            { $unwind: '$orderedItems' },
-            {
-                $group: {
-                    _id: '$orderedItems.productName',
-                    totalQuantity: { $sum: '$orderedItems.quantity' },
-                    totalRevenue: { $sum: '$orderedItems.price' },
-                },
-            },
-            { $sort: { totalRevenue: -1 } },
-            { $limit: 10 },
-        ]),
-
-        // Daily trend
-        Order.aggregate([
-            {
-                $match: {
-                    createdAt: { $gte: start, $lte: end },
-                    status: { $in: ['Delivered', 'Return Rejected'] },
-                },
-            },
-            {
-                $group: {
-                    _id: {
-                        $dateToString: {
-                            format: '%Y-%m-%d',
-                            date: '$createdAt',
-                        },
-                    },
-                    total: { $sum: '$finalAmount' },
-                },
-            },
-            { $sort: { _id: 1 } },
-        ]),
-
-        // Returns and cancellations
-        Order.aggregate([
-            { $match: { createdAt: { $gte: start, $lte: end } } },
-            {
-                $facet: {
-                    returns: [
-                        { $unwind: '$orderedItems' },
-                        { $match: { 'orderedItems.status': 'Returned' } },
-                        { $count: 'count' },
-                    ],
-                    cancellations: [
-                        { $unwind: '$orderedItems' },
-                        { $match: { 'orderedItems.status': 'Cancelled' } },
-                        { $count: 'count' },
-                    ],
-                },
-            },
-        ]),
-    ]);
     const orderSummary = await Order.aggregate([
         {
             $match: {
@@ -273,7 +47,7 @@ async function getDashboardData(startDate, endDate) {
         {
             $lookup: {
                 from: User.collection.name,
-                localField: 'user',
+                localField: 'userId',
                 foreignField: '_id',
                 as: 'userData',
             },
@@ -282,272 +56,457 @@ async function getDashboardData(startDate, endDate) {
         {
             $project: {
                 orderId: '$orderId',
+                customerName: '$userData.name',
                 createdAt: 1,
                 paymentMethod: 1,
-                'orderedItems.status': 1,
-                'orderedItems.quantity': 1,
-                'orderedItems.price': 1,
-                productName: '$orderedItems.productName',
-                categoryName: '$categoryData.categoryName',
-                userName: '$userData.name',
-                userEmail: '$userData.email',
+                status: '$status',
+                orderItemStatus: '$orderedItems.status',
+                subtotal: {
+                    $multiply: [
+                        '$orderedItems.quantity',
+                        '$orderedItems.price',
+                    ],
+                },
+                discount: { $ifNull: ['$discount', 0] },
+                couponCode: { $ifNull: ['$couponCode', '-'] },
+                couponDiscount: { $ifNull: ['$couponDiscount', 0] },
+                finalAmount: '$finalAmount',
+                itemsOrdered: '$orderedItems.productName',
+                quantity: '$orderedItems.quantity',
             },
         },
         { $sort: { createdAt: -1 } },
     ]);
+
+    const totalOrders = [...new Set(orderSummary.map((o) => o.orderId))].length;
+    const validStatuses = ['Delivered', 'Return Rejected'];
+    const totalAmount = orderSummary.reduce(
+        (sum, o) => sum + (o.subtotal || 0),
+        0
+    );
+    const totalDiscount = orderSummary.reduce(
+        (sum, o) => sum + (o.discount || 0),
+        0
+    );
+    const totalCouponDeduction = orderSummary.reduce(
+        (sum, o) => sum + (o.couponDiscount || 0),
+        0
+    );
+
+    const cancelledOrders = orderSummary.filter(
+        (o) => o.orderItemStatus === 'Cancelled'
+    ).length;
+    const cancelledValue = orderSummary
+        .filter((o) => o.orderItemStatus === 'Cancelled')
+        .reduce((sum, o) => sum + (o.subtotal || 0), 0);
+
+    const returnedOrders = orderSummary.filter(
+        (o) => o.orderItemStatus === 'Returned'
+    ).length;
+    const returnedValue = orderSummary
+        .filter((o) => o.orderItemStatus === 'Returned')
+        .reduce((sum, o) => sum + (o.subtotal || 0), 0);
+
+    const totalOrderPrice = totalAmount - totalDiscount - totalCouponDeduction;
+    const netRevenue = totalOrderPrice - cancelledValue - returnedValue;
+
+    const groupedOrders = {};
+    orderSummary.forEach((order) => {
+        if (!groupedOrders[order.orderId]) {
+            groupedOrders[order.orderId] = {
+                ...order,
+                items: [],
+            };
+        }
+        groupedOrders[order.orderId].items.push({
+            name: order.itemsOrdered,
+            quantity: order.quantity,
+        });
+    });
+
     return {
-        range: `${start.toDateString()} to ${end.toDateString()}`,
-        totalCustomers,
-        totalOrders,
-        totalDiscount,
-        totalSales,
-        avgSale,
-        totalCategories,
-        totalProducts,
-        orderItemCount,
-        totalOrderItemCount,
-        paymentBreakdown,
-        categoryBreakdown,
-        topProducts,
-        dailyTrend,
-        returnStats,
-        orderSummary,
+        summary: {
+            totalOrders,
+            totalAmount,
+            totalDiscount,
+            totalCouponDeduction,
+            totalOrderPrice,
+            cancelledOrders,
+            cancelledValue,
+            returnedOrders,
+            returnedValue,
+            netRevenue,
+        },
+        orders: Object.values(groupedOrders),
+        period: {
+            start,
+            end,
+        },
     };
 }
 
 const generateDashboardExcel = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const data = await getDashboardData(startDate, endDate);
+
+        const data = await getSalesData(startDate, endDate);
 
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Sales Report');
 
-        // --- HEADER ---
-        sheet.mergeCells('A1', 'E1');
-        sheet.getCell('A1').value = 'Comprehensive Sales Report';
+        sheet.mergeCells('A1', 'L1');
+        sheet.getCell('A1').value = 'Sales Summary Overview';
         sheet.getCell('A1').font = {
-            size: 18,
-            bold: true,
-            color: { argb: '003366' },
-        };
-        sheet.getCell('A1').alignment = { horizontal: 'center' };
-
-        sheet.addRow([]);
-        sheet.addRow(['Report Period', data.range]);
-        sheet.addRow(['Generated On', new Date().toLocaleString()]);
-        sheet.addRow([]);
-        sheet.addRow([]);
-
-        // --- SUMMARY KPIs ---
-        sheet.addRow(['🧾 Sales Summary']);
-        sheet.lastRow.font = { bold: true, size: 14 };
-        sheet.addRow(['Metric', 'Value']);
-        sheet.addRows([
-            ['Total Customers', data.totalCustomers],
-            ['Total Orders', data.totalOrders],
-            ['Total Order Items', data.totalOrderItemCount],
-            ['Total Sales', `$${data.totalSales}`],
-            ['Total Discount', `$${data.totalDiscount}`],
-            ['Average Sale Value', `$${data.avgSale}`],
-        ]);
-        sheet.addRow([]);
-        sheet.addRow([]);
-
-        // --- PAYMENT BREAKDOWN ---
-        sheet.addRow(['💳 Sales by Payment Method']);
-        sheet.lastRow.font = { bold: true, size: 14 };
-        sheet.addRow(['Payment Method', 'Revenue']);
-        data.paymentBreakdown.forEach((p) => {
-            sheet.addRow([p._id?.toUpperCase() || 'UNKNOWN', `$${p.total}`]);
-        });
-        sheet.addRow([]);
-        sheet.addRow([]);
-
-        // --- CATEGORY BREAKDOWN ---
-        sheet.addRow(['📦 Category-wise Sales']);
-        sheet.lastRow.font = { bold: true, size: 14 };
-        sheet.addRow(['Category', 'Revenue', 'Items Sold']);
-        data.categoryBreakdown.forEach((c) => {
-            sheet.addRow([c._id, `$${c.totalSales}`, c.totalItems]);
-        });
-        sheet.addRow([]);
-        sheet.addRow([]);
-
-        // --- TOP PRODUCTS ---
-        sheet.addRow(['🏆 Top 10 Products']);
-        sheet.lastRow.font = { bold: true, size: 14 };
-        sheet.addRow(['Product', 'Revenue', 'Quantity']);
-        data.topProducts.forEach((p) => {
-            sheet.addRow([p._id, `$${p.totalRevenue}`, p.totalQuantity]);
-        });
-        sheet.addRow([]);
-        sheet.addRow([]);
-
-        // --- DAILY TREND ---
-        sheet.addRow(['📈 Daily Sales Trend']);
-        sheet.lastRow.font = { bold: true, size: 14 };
-        sheet.addRow(['Date', 'Total Sales']);
-        data.dailyTrend.forEach((d) => {
-            sheet.addRow([d._id, `$${d.total}`]);
-        });
-        sheet.addRow([]);
-        sheet.addRow([]);
-
-        // --- RETURNS / CANCELLATIONS ---
-        sheet.addRow(['⚖️ Returns & Cancellations']);
-        sheet.lastRow.font = { bold: true, size: 14 };
-        const returns = data.returnStats[0]?.returns[0]?.count || 0;
-        const cancels = data.returnStats[0]?.cancellations[0]?.count || 0;
-        sheet.addRows([
-            ['Returned Items', returns],
-            ['Cancelled Items', cancels],
-        ]);
-
-        sheet.columns.forEach((col) => (col.width = 25));
-        sheet.eachRow((row) => {
-            row.alignment = { vertical: 'middle', horizontal: 'center' };
-        });
-
-        /* ------------------------------------------------------------
-       🧾 SECOND SHEET: ORDER SUMMARY (DETAILED ITEMS)
-    ------------------------------------------------------------ */
-        const orderSheet = workbook.addWorksheet('Order Summary');
-
-        orderSheet.mergeCells('A1', 'K1');
-        orderSheet.getCell('A1').value = 'Detailed Order Summary';
-        orderSheet.getCell('A1').font = {
             size: 16,
             bold: true,
-            color: { argb: '003366' },
+            color: { argb: '4472C4' },
         };
-        orderSheet.getCell('A1').alignment = { horizontal: 'center' };
-        orderSheet.addRow([]);
-        orderSheet.addRow([
-            'Order ID',
-            'Order Date',
-            'Product Name',
-            'Category',
-            'Quantity',
-            'Price',
-            'Subtotal',
-            'Status',
-            'Payment Method',
-            'Customer Name',
-            'Customer Email',
-        ]);
+        // sheet.getCell('A1').fill = {
+        //     type: 'pattern',
+        //     pattern: 'solid',
+        //     fgColor: { argb: '4472C4' },
+        // };
+        sheet.getCell('A1').alignment = {
+            horizontal: 'center',
+            vertical: 'middle',
+        };
 
-        // Style header row
-        const headerRow = orderSheet.lastRow;
-        headerRow.font = { bold: true, color: { argb: 'FFFFFF' } };
-        headerRow.fill = {
+        sheet.addRow([]);
+
+        const summaryHeaders = [
+            'Total Orders',
+            'Total Amount (₹)',
+            'Total Discount (₹)',
+            'Coupon Deduction (₹)',
+            'Total Order Price (₹)',
+            'Cancelled Orders',
+            'Cancelled Value (₹)',
+            'Returned Orders',
+            'Returned Value (₹)',
+            'Net Revenue (₹)',
+        ];
+
+        const summaryRow = sheet.addRow(summaryHeaders);
+        summaryRow.font = { bold: true, color: { argb: 'FFFFFF' } };
+        summaryRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: '70AD47' },
+        };
+        summaryRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        const summaryValues = [
+            data.summary.totalOrders,
+            data.summary.totalAmount,
+            data.summary.totalDiscount,
+            data.summary.totalCouponDeduction,
+            data.summary.totalOrderPrice,
+            data.summary.cancelledOrders,
+            data.summary.cancelledValue,
+            data.summary.returnedOrders,
+            data.summary.returnedValue,
+            data.summary.netRevenue,
+        ];
+
+        const valuesRow = sheet.addRow(summaryValues);
+        valuesRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+        sheet.addRow([]);
+        sheet.addRow([]);
+
+        sheet.mergeCells(
+            `A${sheet.lastRow.number + 1}`,
+            `L${sheet.lastRow.number + 1}`
+        );
+        const detailsHeaderCell = sheet.getCell(`A${sheet.lastRow.number}`);
+        detailsHeaderCell.value = 'Order Details';
+        detailsHeaderCell.font = {
+            size: 14,
+            bold: true,
+            color: { argb: 'FFFFFF' },
+        };
+        detailsHeaderCell.fill = {
             type: 'pattern',
             pattern: 'solid',
             fgColor: { argb: '4472C4' },
         };
+        detailsHeaderCell.alignment = {
+            horizontal: 'center',
+            vertical: 'middle',
+        };
+
+        sheet.addRow([]);
+
+        const orderHeaders = [
+            'Order ID',
+            'Customer Name',
+            'Order Date',
+            'Payment Method',
+            'Order Status',
+            'Subtotal (₹)',
+            'Discount (₹)',
+            'Coupon Code',
+            'Coupon Deduction (₹)',
+            'Total Price (₹)',
+            'Items Ordered',
+        ];
+
+        const headerRow = sheet.addRow(orderHeaders);
+        headerRow.font = { bold: true, color: { argb: 'FFFFFF' } };
+        headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: '203864' },
+        };
         headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
-        // Add all order items
-        data.orderSummary.forEach((o) => {
-            const subtotal = o.orderedItems.price * o.orderedItems.quantity;
-            orderSheet.addRow([
-                o.orderId, // short order ID
-                new Date(o.createdAt).toLocaleDateString(),
-                o.productName || 'N/A',
-                o.categoryName || 'N/A',
-                o.orderedItems.quantity,
-                `$${o.orderedItems.price}`,
-                `$${subtotal}`,
-                o.orderedItems.status,
-                o.paymentMethod.toUpperCase(),
-                o.userName || 'N/A',
-                o.userEmail || 'N/A',
-            ]);
-        });
+        data.orders.forEach((order) => {
+            const itemsText = order.items
+                .map((item) => `${item.name} (${item.quantity})`)
+                .join(', ');
 
-        orderSheet.columns.forEach((col) => (col.width = 20));
-        orderSheet.eachRow((row) => {
+            const row = sheet.addRow([
+                order.orderId,
+                order.customerName || 'N/A',
+                new Date(order.createdAt).toLocaleDateString(),
+                order.paymentMethod
+                    ? order.paymentMethod.charAt(0).toUpperCase() +
+                      order.paymentMethod.slice(1)
+                    : 'N/A',
+                order.orderItemStatus,
+                order.subtotal,
+                order.discount,
+                order.couponCode,
+                order.couponDiscount,
+                order.finalAmount,
+                itemsText,
+            ]);
+
             row.alignment = { vertical: 'middle', horizontal: 'center' };
         });
 
-        // Response
+        sheet.columns = [
+            { width: 20 },
+            { width: 25 },
+            { width: 15 },
+            { width: 18 },
+            { width: 18 },
+            { width: 15 },
+            { width: 15 },
+            { width: 20 },
+            { width: 20 },
+            { width: 15 },
+            { width: 50 },
+        ];
+
         res.setHeader(
             'Content-Type',
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         );
         res.setHeader(
             'Content-Disposition',
-            `attachment; filename=Sales-Report(${
-                start.toISOString().split('T')[0]
-            }_${end.toISOString().split('T')[0]}).xlsx`
+            `attachment; filename=Sales-Report-${
+                data.period.start.toISOString().split('T')[0]
+            }_${data.period.end.toISOString().split('T')[0]}.xlsx`
         );
         await workbook.xlsx.write(res);
         res.end();
     } catch (err) {
         console.error(err);
-        res.status(500).json({
-            message: 'Error generating detailed sales report',
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            message: 'Error generating sales report',
         });
     }
 };
 
-/* --------------------------------------------
-   🔹 4. PDF Report
---------------------------------------------- */
 const generateDashboardPDF = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        const data = await getDashboardData(startDate, endDate);
+        const data = await getSalesData(startDate, endDate);
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
         const doc = new PDFDocument({ margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader(
             'Content-Disposition',
-            `attachment; filename=Dashboard-Report(${start.toLocaleDateString()}-${end.toLocaleDateString()}).pdf`
+            `attachment; filename=Sales-Report-${data.period.start.toLocaleDateString()}-${data.period.end.toLocaleDateString()}.pdf`
         );
         doc.pipe(res);
 
-        // Header
-        doc.fontSize(20).text('Dashboard Summary Report', { align: 'center' });
+        doc.fontSize(20).text('SALES REPORT', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(10).text(`Period: October 2025`, { align: 'center' });
+        doc.fontSize(10).text(`Generated: ${new Date().toLocaleDateString()}`, {
+            align: 'center',
+        });
         doc.moveDown(2);
-        doc.fontSize(12).text(`Report Period: ${data.range}`);
+
+        doc.fontSize(14).text('Summary', { underline: true });
         doc.moveDown(1);
 
-        // Table-like output
-        const metrics = [
-            ['Total Customers', data.totalCustomers],
-            ['Total Orders', data.totalOrders],
-            ['Total Discount', `$${data.totalDiscount}`],
-            ['Average Sale', `$${data.avgSale}`],
-            ['Total Sales', `$${data.totalSales}`],
-            ['Total Categories', data.totalCategories],
-            ['Total Products', data.totalProducts],
+        const summaryData = [
+            ['Total Sales Count:', data.summary.totalOrders],
+            [
+                'Total Order Amount:',
+                `Rs.${data.summary.totalAmount.toFixed(2)}`,
+            ],
+            ['Total Discount:', `Rs.${data.summary.totalDiscount.toFixed(2)}`],
+            [
+                'Total Coupon Deduction:',
+                `Rs.${data.summary.totalCouponDeduction.toFixed(2)}`,
+            ],
+            [
+                'Total Order Price:',
+                `Rs.${data.summary.totalOrderPrice.toFixed(2)}`,
+            ],
+            ['Cancelled Orders Count:', data.summary.cancelledOrders],
+            [
+                'Cancelled Amount:',
+                `Rs.${data.summary.cancelledValue.toFixed(2)}`,
+            ],
+            ['Returned Orders Count:', data.summary.returnedOrders],
+            ['Returned Amount:', `Rs.${data.summary.returnedValue.toFixed(2)}`],
         ];
 
-        metrics.forEach(([label, value]) => {
-            doc.font('Helvetica-Bold').text(`${label}: `, { continued: true });
-            doc.font('Helvetica').text(value.toString());
-            doc.moveDown(0.4);
+        summaryData.forEach(([label, value]) => {
+            const y = doc.y;
+            doc.fontSize(11).text(label, 50, y, {
+                width: 250,
+                continued: false,
+            });
+            doc.text(value.toString(), 350, y, { align: 'right' });
+            doc.moveDown(0.5);
         });
 
-        doc.moveDown(2);
-        doc.fontSize(10).text(`Generated on: ${new Date().toLocaleString()}`, {
+        doc.moveDown(1);
+
+        const netY = doc.y;
+        doc.fontSize(12)
+            .fillColor('green')
+            .text('Net Revenue:', 50, netY, { continued: false });
+        doc.text(`Rs.${data.summary.netRevenue.toFixed(2)}`, 350, netY, {
             align: 'right',
-            oblique: true,
+        });
+        doc.fillColor('black');
+        doc.moveDown(2);
+
+        doc.fontSize(14).text('Order Details', { underline: true });
+        doc.moveDown(1);
+
+        const tableTop = doc.y;
+        const colWidths = [30, 120, 80, 80, 100, 100];
+        const headers = [
+            '#',
+            'Order ID',
+            'Date',
+            'Items',
+            'Subtotal',
+            'Total Amount',
+        ];
+
+        doc.fontSize(10).fillColor('white');
+        doc.rect(50, tableTop, 530, 20).fill('#4472C4');
+
+        let xPos = 50;
+        headers.forEach((header, i) => {
+            doc.text(header, xPos + 5, tableTop + 5, {
+                width: colWidths[i],
+                align: 'center',
+            });
+            xPos += colWidths[i];
+        });
+
+        doc.fillColor('black');
+        let currentY = tableTop + 25;
+
+        data.orders.forEach((order, index) => {
+            if (currentY > 700) {
+                doc.addPage();
+                currentY = 50;
+            }
+
+            const itemCount = order.items.reduce(
+                (sum, item) => sum + item.quantity,
+                0
+            );
+
+            xPos = 50;
+            const rowData = [
+                (index + 1).toString(),
+                order.orderId,
+                new Date(order.createdAt).toLocaleDateString(),
+                itemCount.toString(),
+                `Rs.${order.subtotal.toFixed(2)}`,
+                `Rs.${order.finalAmount.toFixed(2)}`,
+            ];
+
+            rowData.forEach((text, i) => {
+                doc.fontSize(9).text(text, xPos + 5, currentY, {
+                    width: colWidths[i] - 10,
+                    align: i === 0 ? 'center' : 'left',
+                });
+                xPos += colWidths[i];
+            });
+
+            currentY += 20;
         });
 
         doc.end();
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Error generating PDF report' });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+            message: 'Error generating PDF report',
+        });
     }
+};
+const validateReportRequest = (req, res, next) => {
+    const { startDate, endDate } = req.body;
+
+    if (!startDate || !endDate) {
+        return res
+            .status(HTTP_STATUS.BAD_REQUEST)
+            .json({ message: 'Start and end dates are required.' });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const now = new Date();
+    if (now < start) {
+        return next(
+            new AppError(
+                `Future date cannot be given for start date`,
+                HTTP_STATUS.BAD_REQUEST
+            )
+        );
+    }
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return next(
+            new AppError(`Invalid date format.`, HTTP_STATUS.BAD_REQUEST)
+        );
+    }
+
+    if (start > end) {
+        return next(
+            new AppError(
+                `Start date cannot be after end date.`,
+                HTTP_STATUS.BAD_REQUEST
+            )
+        );
+    }
+
+    if (end > now) {
+        return next(
+            new AppError(
+                `End date cannot be in the future.`,
+                HTTP_STATUS.BAD_REQUEST
+            )
+        );
+    }
+
+    return res.status(HTTP_STATUS.OK).json({ message: 'OK' });
 };
 
 export default {
     generateDashboardExcel,
     generateDashboardPDF,
+    validateReportRequest,
 };

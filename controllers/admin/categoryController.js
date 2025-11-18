@@ -72,10 +72,20 @@ const addCategory = async (req, res, next) => {
                 )
             );
         }
+        const namePattern = /^[A-Za-z0-9-]+$/;
+        if (!namePattern.test(name)) {
+            return next(
+                new AppError(
+                    'Invalid category name. Only letters, numbers, and hyphens (-) are allowed.',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
+        }
 
         const existingCategory = await Category.findOne({
             categoryName: { $regex: name.trim(), $options: 'i' },
         });
+
         if (existingCategory) {
             return next(
                 new AppError(
@@ -134,6 +144,15 @@ const editCategory = async (req, res, next) => {
             return next(
                 new AppError(
                     'Name must be between 2 and 50 characters',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
+        }
+        const namePattern = /^[A-Za-z0-9-]+$/;
+        if (!namePattern.test(name)) {
+            return next(
+                new AppError(
+                    'Invalid category name. Only letters, numbers, and hyphens (-) are allowed.',
                     HTTP_STATUS.BAD_REQUEST
                 )
             );
