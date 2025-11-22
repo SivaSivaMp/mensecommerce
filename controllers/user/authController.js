@@ -145,6 +145,8 @@ const signup = async (req, res, next) => {
         }
 
         req.session.userOtp = otp;
+        req.session.otpExpire = Date.now() + 1 * 60 * 1000;
+
         req.session.userData = { name, email, password, referralCode };
 
         res.status(200).json({
@@ -179,6 +181,10 @@ const verifyOtp = async (req, res, next) => {
                 )
             );
         }
+        if (!req.session.userOtp || Date.now() > req.session.otpExpire) {
+            return next(new AppError('OTP expired', HTTP_STATUS.BAD_REQUEST));
+        }
+
         if (otp !== req.session.userOtp) {
             return next(new AppError('Invalid otp', HTTP_STATUS.BAD_REQUEST));
         }
@@ -251,6 +257,7 @@ const verifyOtp = async (req, res, next) => {
         };
         req.session.userOtp = null;
         req.session.userData = null;
+        req.session.otpExpire = null;
 
         return res.status(200).json({
             status: 'success',
@@ -296,6 +303,7 @@ const resendOtp = async (req, res, next) => {
             );
         }
         req.session.userOtp = otp;
+        req.session.otpExpire = Date.now() + 1 * 60 * 1000;
         res.status(200).json({
             success: true,
             status: 'success',

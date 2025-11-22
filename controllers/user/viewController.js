@@ -3,7 +3,8 @@ import AppError from '../../utils/appError.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Category from '../../models/categorySchema.js';
 import mongoose from 'mongoose';
-
+import Review from '../../models/reviewSchema.js';
+import { sendContactEmail } from '../../utils/email.js';
 // load home page
 const loadHomepage = async (req, res, next) => {
     try {
@@ -350,11 +351,25 @@ const getProductDetails = async (req, res, next) => {
             },
             { $match: { totalQuantity: { $gt: 0 } } },
         ]);
+        const reviews = await Review.find({ productId })
+            .populate('userId', 'name')
+            .sort({ createdAt: -1 });
+
+        const avgRating =
+            reviews.length > 0
+                ? (
+                      reviews.reduce((sum, r) => sum + r.rating, 0) /
+                      reviews.length
+                  ).toFixed(1)
+                : 0;
 
         res.render('product-details', {
             product,
             similarProducts,
             availableSizes: product.availableSizes,
+            reviews,
+            avgRating,
+            totalReviews: reviews.length,
 
             messages: 'product details rendered successfullt',
             status: 200,
@@ -364,5 +379,52 @@ const getProductDetails = async (req, res, next) => {
         next(error);
     }
 };
+const getAboutus = async (req, res, next) => {
+    try {
+        res.render('about-us');
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+};
+const getContact = async (req, res, next) => {
+    try {
+        res.render('contact');
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+};
+const getPrivacyPolicy = async (req, res, next) => {
+    try {
+        res.render('privacy-policy');
+    } catch (error) {
+        console.log(error);
+        next(error);
+    }
+};
 
-export default { loadHomepage, loadShoppingPage, getProductDetails };
+const getinTouch = async (req, res) => {
+    try {
+        const { name, email, message } = req.body;
+
+        const sent = await sendContactEmail(name, email, message);
+
+        if (!sent) {
+            res.redirect('/contact');
+        }
+
+        return res.redirect('/contact');
+    } catch (error) {
+        console.error('Contact error:', error);
+    }
+};
+export default {
+    loadHomepage,
+    loadShoppingPage,
+    getProductDetails,
+    getAboutus,
+    getContact,
+    getPrivacyPolicy,
+    getinTouch,
+};

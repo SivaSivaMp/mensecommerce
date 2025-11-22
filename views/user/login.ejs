@@ -31,8 +31,14 @@
                                         <label class="tf-field-label fw-4 text_black-2" for="property3">Email *</label>
                                     </div>
                                     <div id="error-2" class="error-message"></div>
-                                    <div class="tf-field style-1 mb_30">
+                                    <div class="tf-field style-1 mb_30" style="position: relative;">
                                         <input class="tf-field-input tf-input" placeholder="" type="password" id="property4" name="password">
+
+                                        <i id="togglePass" class="bi bi-eye"
+                                        style="position:absolute; right:15px; top:50%; transform:translateY(-50%);
+                                                cursor:pointer; font-size:18px; color:#555;">
+                                        </i>
+
                                         <label class="tf-field-label fw-4 text_black-2" for="property4">Password *</label>
                                     </div>
                                     <div id="error-3" class="error-message"></div>
@@ -91,7 +97,19 @@
             </script>
             <!-- frontend validation -->
             <script>
-                
+const passInput = document.getElementById("property4");
+const toggle = document.getElementById("togglePass");
+
+toggle.addEventListener("click", () => {
+    const isPassword = passInput.type === "password";
+
+    passInput.type = isPassword ? "text" : "password";
+
+    // toggle icon class
+    toggle.classList.toggle("bi-eye");
+    toggle.classList.toggle("bi-eye-slash");
+});
+
                 const emailid = document.getElementById('property3');
                 const passid = document.getElementById('property4');
                 const error1=document.getElementById('error-1')

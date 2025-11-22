@@ -7,7 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>::eBazar::  Dashboard </title>
-    <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Favicon-->
+    <link rel="icon" href="/images/logo/favicon.png" type="image/x-icon"> <!-- Favicon-->
 
     <!-- plugin css file  -->
     <link rel="stylesheet" href="/assets/plugin/datatables/responsive.dataTables.min.css">
@@ -34,30 +34,30 @@
             <div class="body d-flex py-3">
                 <div class="container-xxl">
 
-                    <div class="row g-3">
+                    <div class="row g-3 mb-5">
                         <div class="col-lg-12 col-md-12">
 
-              <!-- Filter Tabs -->
-              <div class="tab-filter d-flex align-items-center justify-content-between mb-3 flex-wrap">
-                <ul class="nav nav-tabs tab-card tab-body-header rounded d-inline-flex w-sm-100">
-                  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#summery-today">Today</a></li>
-                  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#summery-week">Week</a></li>
-                  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#summery-month">Month</a></li>
-                  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#summery-year">Year</a></li>
-                </ul>
+                      <!-- Filter Tabs -->
+                      <div class="tab-filter d-flex align-items-center justify-content-between mb-3 flex-wrap">
+                        <ul class="nav nav-tabs tab-card tab-body-header rounded d-inline-flex w-sm-100">
+                          <li class="nav-item"><a class="nav-link summary active" data-bs-toggle="tab" href="#summery-today">Today</a></li>
+                          <li class="nav-item"><a class="nav-link summary" data-bs-toggle="tab" href="#summery-week">Week</a></li>
+                          <li class="nav-item"><a class="nav-link summary" data-bs-toggle="tab" href="#summery-month">Month</a></li>
+                          <li class="nav-item"><a class="nav-link summary" data-bs-toggle="tab" href="#summery-year">Year</a></li>
+                        </ul>
 
-                <!-- Custom Date Filter -->
-                <div class="date-filter d-flex align-items-center mt-2 mt-sm-0 w-sm-100">
-                  <div class="input-group justify-content-between">
-                    <input id="startDate" type="date" class="form-control">
-                    <p class="mx-2 my-0">to</p>
-                    <input id="endDate" type="date" class="form-control">
-                    <button id="applyFilter" class="btn btn-primary" type="button">
-                      <i class="icofont-filter fs-5"></i> Apply
-                    </button>
-                  </div>
-                </div>
-              </div>
+                        <!-- Custom Date Filter -->
+                        <div class="date-filter d-flex align-items-center mt-2 mt-sm-0 w-sm-100">
+                          <div class="input-group justify-content-between">
+                            <input id="startDate" type="date" class="form-control">
+                            <p class="mx-2 my-0">to</p>
+                            <input id="endDate" type="date" class="form-control">
+                            <button id="applyFilter" class="btn btn-primary" type="button">
+                              <i class="icofont-filter fs-5"></i> Apply
+                            </button>
+                          </div>
+                        </div>
+                      </div>
 
               <!-- Download Buttons -->
               <div class="d-flex gap-2 mb-3">
@@ -184,43 +184,140 @@
             </div>
                     </div>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-xl-12">
-                            <div class="card mb-3">
-                                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
-                                    <h6 class="m-0 fw-bold">Sales Status</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="ac-line-transparent" id="apex-shoppingstatus"></div>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
-                                    <h6 class="m-0 fw-bold">Top Selling Product</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div id="topselling"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                    </div><!-- Row end  -->
+<div class="row g-3 mb-3">
 
-                    <div class="row g-3 mb-3 row-deck">
-                        
-                        <div class="col-lg-8 col-md-12">
-                            <div class="card">
+    <!-- FILTERS FOR CHARTS ONLY -->
+    <div class="tab-filter d-flex align-items-center justify-content-between mb-3 flex-wrap">
+
+        <!-- Chart Tabs -->
+        <ul class="nav nav-tabs tab-card tab-body-header rounded d-inline-flex w-sm-100">
+            <li class="nav-item">
+                <a class="nav-link chart active" data-bs-toggle="tab" href="#chart-today">Today</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link chart" data-bs-toggle="tab" href="#chart-week">Week</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link chart" data-bs-toggle="tab" href="#chart-month">Month</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link chart" data-bs-toggle="tab" href="#chart-year">Year</a>
+            </li>
+        </ul>
+
+        <!-- Custom Date Filter for CHARTS ONLY -->
+        <div class="date-filter d-flex align-items-center mt-2 mt-sm-0 w-sm-100">
+            <div class="input-group justify-content-between">
+                <input id="startDateChart" type="date" class="form-control">
+                <p class="mx-2 my-0">to</p>
+                <input id="endDateChart" type="date" class="form-control">
+
+                <button id="applyFilterChart" class="btn btn-primary" type="button">
+                    <i class="icofont-filter fs-5"></i> Apply
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SALES LINE CHART -->
+    <div class="col-xxl-8 col-xl-8">
+        <div class="card mb-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
+                <h6 class="m-0 fw-bold">Sales Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="ac-line-transparent" id="apex-shoppingstatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DONUT CHART -->
+    <div class="col-xxl-4 col-xl-4">
+        <div class="card mb-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
+                <h6 class="m-0 fw-bold">Order Item Status Overview</h6>
+            </div>
+            <div class="card-body">
+                <div id="apex-simple-donut"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+            <!-- Row end  -->
+ 
+                     <div class="row g-3 mb-3"> 
+                        <div class="col-md-12">
+                            <div class="card"> 
                                 <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
-                                    <h6 class="m-0 fw-bold">Avg Expense Costs</h6>
+                                    <h6 class="m-0 fw-bold">Best Selling Products</h6>
                                 </div>
-                                <div class="card-body">
-                                    <div class="h2 mb-0">$1105.5</div>
-                                    <span class="text-muted small">Avg Expense Costs All Month</span>
-                                    <div id="apex-expense"></div>  
+                                <div class="card-body"> 
+                                    <table id="myDataTable" class="table table-hover align-middle mb-0" style="width: 100%;">  
+                                        <thead>
+                                            <tr>
+                                               <th>Rank</th>
+                                                <th>Product Name</th>
+                                                <th>Product Category</th>
+                                                <th>Total Units Sold</th>
+                                                <th>Total Revenue</th>
+                                                <th>Total Order</th>
+                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        <% bestSellingProducts.forEach((item, index) => { %>
+                                          <tr>
+                                            <td><%= index + 1 %></td>
+                                            <td><%= item.productName %></td>
+                                            <td><%= item.categoryName %></td>
+                                            <td><%= item.totalUnitsSold %></td>
+                                            <td>₹<%= item.totalRevenue %></td>
+                                            <td><%= item.totalOrders %></td>
+                                          </tr>
+                                        <% }) %>
+                                      </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
-                    </div><!-- Row end  -->   
+                    </div><!-- Row end  --> 
+                    <div class="row g-3 mb-3"> 
+                        <div class="col-md-12">
+                            <div class="card"> 
+                                <div class="card-header py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom-0">
+                                    <h6 class="m-0 fw-bold">Best Selling Categories</h6>
+                                </div>
+                                <div class="card-body"> 
+                                    <table id="myDataTable1" class="table table-hover align-middle mb-0" style="width: 100%;">  
+                                        <thead>
+                                            <tr>
+                                                <th>Rank</th>
+                                                <th>Category Name</th>
+                                                <th>Total Unit Sold</th>
+                                                <th>Total Revenue</th>
+                                                <th>Total Orders</th>
+                                               
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                          <% bestSellingCategories.forEach((item, index) => { %>
+                                            <tr>
+                                              <td><%= index + 1 %></td>
+                                              <td><%= item.categoryName %></td>
+                                              <td><%= item.totalUnitsSold %></td>
+                                              <td>₹<%= item.totalRevenue %></td>
+                                              <td><%= item.totalOrders %></td>
+                                            </tr>
+                                          <% }) %>
+                                        </tbody>
+
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- Row end  --> 
                 </div>
             </div> 
     </div>
@@ -241,15 +338,29 @@
         $('#myDataTable')
         .addClass( 'nowrap')
         .dataTable( {
-            responsive: true,
-            columnDefs: [
-                { targets: [-1, -3], className: 'dt-body-right' }
-            ]
-        });
+                responsive: true,
+                 paging: false,
+                 sort:true,
+                 searching:false,
+                columnDefs: [
+                    { targets: [-1, -3], className: 'dt-body-right' }
+                ]
+            });
+                $('#myDataTable1')
+        .addClass( 'nowrap')
+       .dataTable( {
+                responsive: true,
+                 paging: false,
+                 sort:true,
+                 searching:false,
+                columnDefs: [
+                    { targets: [-1, -3], className: 'dt-body-right' }
+                ]
+            });
     </script>
 <script>
   $(document).ready(function () {
-    // 🔹 Keep track of last-used date range
+    
     let lastRange = { start: null, end: null, label: 'today' };
 
     function showToast(message, type = "info") {
@@ -272,7 +383,7 @@
     }
 
     function fetchSummary(start, end, label = 'custom') {
-      lastRange = { start, end, label }; // 🔹 Save the range for later use (for reports)
+      lastRange = { start, end, label }; 
 
       $.ajax({
         url: `/admin/dashboard-summary?startDate=${start}&endDate=${end}`,
@@ -303,6 +414,7 @@
           showToast(errorMessage, "error");
         }
       });
+      
     }
 
     function getDateRange(type) {
@@ -331,7 +443,7 @@
     }
 
     // 🔹 Handle Tab Click (Today/Week/Month/Year)
-    $(".nav-link").click(function () {
+    $(".nav-link.summary").click(function () {
       const period = $(this).text().trim().toLowerCase();
       getDateRange(period);
     });
@@ -400,6 +512,135 @@
     getDateRange('today');
   });
 </script>
+<script>
+$(document).ready(function () {
+
+  let salesChart, donutChart;
+  function showToast(message, type = "info") {
+      let bgColor;
+      switch (type) {
+        case "success": bgColor = "linear-gradient(to right, #00b09b, #96c93d)"; break;
+        case "error": bgColor = "linear-gradient(to right, #ff5f6d, #ffc371)"; break;
+        case "warning": bgColor = "linear-gradient(to right, #f7971e, #ffd200)"; break;
+        default: bgColor = "linear-gradient(to right, #00b4db, #0083b0)";
+      }
+
+      Toastify({
+        text: message,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: bgColor,
+        stopOnFocus: true,
+      }).showToast();
+    }
+  function initSalesChart() {
+    salesChart = new ApexCharts(
+      document.querySelector("#apex-shoppingstatus"),
+      {
+        series: [
+          { name: "Sales", data: [] },
+          { name: "Order Items", data: [] }
+        ],
+        chart: { height: 270, type: "line", toolbar: { show: false } },
+        stroke: { width: 2, curve: "smooth" },
+        dataLabels: { enabled: false },
+        xaxis: { categories: [] }
+      }
+    );
+    salesChart.render();
+  }
+
+  function updateSalesChart(dates, sales, items) {
+    salesChart.updateOptions({ xaxis: { categories: dates } });
+    salesChart.updateSeries([
+      { name: "Sales", data: sales },
+      { name: "Order Items", data: items }
+    ]);
+  }
+
+  function initDonutChart() {
+    donutChart = new ApexCharts(
+      document.querySelector("#apex-simple-donut"),
+      {
+        chart: { height: 250, type: "donut" },
+        labels: [],
+        series: []
+      }
+    );
+    donutChart.render();
+  }
+
+  function updateDonutChart(counts) {
+    donutChart.updateOptions({ labels: Object.keys(counts) });
+    donutChart.updateSeries(Object.values(counts));
+  }
+
+ 
+  function loadCharts(start, end) {
+    $.ajax({
+      url: `/admin/dashboard-charts?startDate=${start}&endDate=${end}`,
+      method: "GET",
+      success: function (data) {
+        updateSalesChart(data.dates, data.sales, data.orderItems);
+
+        if (!data.statusCounts || Object.keys(data.statusCounts).length === 0) {
+          updateDonutChart({ "No Data": 1 });
+        } else {
+          updateDonutChart(data.statusCounts);
+        }
+      }
+    });
+  }
+
+ 
+  window.loadCharts = loadCharts;
+  window.updateSalesChart = updateSalesChart;
+  window.updateDonutChart = updateDonutChart;
+
+  $(document).on("click", ".nav-link.chart", function () {
+    const period = $(this).text().trim().toLowerCase();
+    const now = new Date();
+    let start, end = new Date();
+
+    switch (period) {
+      case "today":
+        start = new Date(now.setHours(0,0,0,0)); break;
+      case "week":
+        start = new Date(); start.setDate(end.getDate() - 7); break;
+      case "month":
+        start = new Date(); start.setDate(end.getDate() - 30); break;
+      case "year":
+        start = new Date(); start.setFullYear(end.getFullYear() - 1); break;
+    }
+
+    loadCharts(start.toISOString(), end.toISOString());
+  });
+
+
+  $("#applyFilterChart").click(function () {
+    const start = $("#startDateChart").val();
+    const end = $("#endDateChart").val();
+     if (!start || !end) {
+        showToast("Please select both start and end dates", "warning");
+        return;
+      }
+
+    loadCharts(start, end);
+  });
+
+  initSalesChart();
+  initDonutChart();
+
+  const today = new Date();
+  const s = new Date(today.setHours(0,0,0,0)).toISOString();
+  const e = new Date().toISOString();
+
+  loadCharts(s, e);
+});
+</script>
+
+
 
 </body>
 

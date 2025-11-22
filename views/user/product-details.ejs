@@ -375,12 +375,7 @@
                                 <li class="item-title">
                                     <span class="inner">Review</span>
                                 </li>
-                                <!-- <li class="item-title">
-                                    <span class="inner">Shipping</span>
-                                </li> -->
-                                <!-- <li class="item-title">
-                                    <span class="inner">Return Policies</span>
-                                </li> -->
+                                
                             </ul>
                             <div class="widget-content-tab">
                                 <div class="widget-content-inner active">
@@ -393,76 +388,60 @@
 
 <div class="widget-content-inner">
     <!-- Overall Rating Summary -->
-    <div class="review-rating-summary">
-        <div class="rating-overview">
-            <div class="rating-number">4.5</div>
-            <div class="rating-stars">
-                <i class="icon-star"></i>
-                <i class="icon-star"></i>
-                <i class="icon-star"></i>
-                <i class="icon-star"></i>
-                <i class="icon-star-half"></i>
-            </div>
-            <div class="rating-count">Based on 245 reviews</div>
+<div class="review-rating-summary">
+    <div class="rating-overview">
+        <div class="rating-number"><%= avgRating %></div>
+
+        <div class="rating-stars">
+            <% for (let i = 1; i <= 5; i++) { %>
+                <% if (i <= Math.floor(avgRating)) { %>
+                    <i class="icon-star"></i>
+                <% } else if (i - avgRating < 1) { %>
+                    <i class="icon-star-half"></i>
+                <% } else { %>
+                    <i class="icon-star-line"></i>
+                <% } %>
+            <% } %>
         </div>
+
+        <div class="rating-count">Based on <%= totalReviews %> review(s)</div>
     </div>
+</div>
 
     <!-- Individual Reviews -->
-    <div class="reviews-list">
-        <!-- Review 1 -->
+<div class="reviews-list">
+
+    <% if (reviews.length === 0) { %>
+        <p class="text-muted mt-3">No reviews yet.</p>
+    <% } %>
+
+    <% reviews.forEach(r => { %>
         <div class="review-item">
             <div class="review-header">
-                <div class="review-rating-badge">5 ★</div>
-                <h4 class="review-title">Awesome</h4>
+                <div class="review-rating-badge"><%= r.rating %> ★</div>
+                <h4 class="review-title"><%= r.title %></h4>
             </div>
-            <p class="review-text">Nice shirt ❤️ ❤️</p>
+
+            <p class="review-text"><%= r.review %></p>
+
             <div class="review-footer">
-                <span class="reviewer-name">Deepak Kumar</span>
+                <span class="reviewer-name"><%= r.userId?.name || "User" %></span>
+
                 <span class="verified-badge">
-                    <i class="icon-check"></i> Certified Buyer
+                    <i class="icon-check"></i> Verified Buyer
                 </span>
-                <!-- <span class="review-location">Hyderabad</span>
-                <span class="review-date">2 months ago</span> -->
-            </div>
 
-        </div>
-
-        <!-- Review 2 -->
-        <div class="review-item">
-            <div class="review-header">
-                <div class="review-rating-badge">4 ★</div>
-                <h4 class="review-title">Wonderful</h4>
-            </div>
-            <p class="review-text">good material</p>
-            <div class="review-footer">
-                <span class="reviewer-name">Flipkart Customer</span>
-                <span class="verified-badge">
-                    <i class="icon-check"></i> Certified Buyer
+                <span class="review-date">
+                    <%= r.createdAt.toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                    }) %>
                 </span>
-                <!-- <span class="review-location">Sanawad</span>
-                <span class="review-date">2 months ago</span> -->
             </div>
-
         </div>
-
-        <!-- Review 3 -->
-        <div class="review-item">
-            <div class="review-header">
-                <div class="review-rating-badge">5 ★</div>
-                <h4 class="review-title">Excellent Product</h4>
-            </div>
-            <p class="review-text">Great quality and fast delivery. Highly recommend this product to everyone looking for value for money.</p>
-            <div class="review-footer">
-                <span class="reviewer-name">Rajesh Sharma</span>
-                <span class="verified-badge">
-                    <i class="icon-check"></i> Certified Buyer
-                </span>
-                <!-- <span class="review-location">Mumbai</span>
-                <span class="review-date">1 month ago</span> -->
-            </div>
-
-        </div>
-    </div>
+    <% }) %>
+</div>
 </div>
                                 <div class="widget-content-inner">
                                     <div class="tf-page-privacy-policy">

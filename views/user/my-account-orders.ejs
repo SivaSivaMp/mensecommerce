@@ -28,41 +28,62 @@
                     <div class="col-lg-9">
                         <div class="my-account-content account-order">
                             <!-- Search Bar -->
-                            <div class="order-0 col-lg-12 mb-3 mb-md-4">
-                            <form method="GET" action="/profile/orders"
-                                    class="d-flex flex-wrap justify-content-start align-items-center gap-3">
+                            <div class="order-0 col-lg-12 mb-3 mb-md-4 d-flex justify-content-between align-items-start flex-wrap">
 
-                                <!-- LEFT SIDE: Search -->
-                                <div class="input-group input-group-sm" style="max-width: 280px;">
-                                <input type="search" name="search" class="form-control"
-                                        placeholder="Search by Order ID or Name..." value="<%= searchQuery %>">
-                                <button type="submit" class="input-group-text">
-                                    <i class="icofont-search"></i>
-                                </button>
-                                <% if (searchQuery) { %>
-                                    <a href="/admin/orders" class="input-group-text bg-danger text-white">
-                                    <i class="icofont-close"></i>
-                                    </a>
-                                <% } %>
-                                </div>
+    <!-- LEFT SIDE - Search + Filters -->
+    <div>
+        <form method="GET" action="/profile/orders"
+            class="d-flex flex-wrap justify-content-start align-items-center gap-3">
 
-                                <!-- RIGHT SIDE: Filters + Buttons -->
-                                <div class="d-flex flex-wrap align-items-center gap-2">
-                                <select name="status" class="form-select form-select-sm" style="max-width:180px;">
-                                    <option value="">All Statuses</option>
-                                    <% ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Return Request', 'Return Approved', 'Return Rejected', 'Returned'].forEach(st => { %>
-                                    <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>><%= st %></option>
-                                    <% }); %>
-                                </select>
-                                </div>
-                                 <div class="d-flex flex-wrap align-items-center gap-2">
-                                
-                                <button type="submit" class="btn btn-sm btn-primary">Apply Filters</button>
-                                <a href="/profile/orders" class="btn btn-sm btn-secondary">Reset</a>
-                                </div>
+            <!-- LEFT SIDE: Search -->
+            <div class="input-group input-group-sm" style="max-width: 280px;">
+                <input type="search" name="search" class="form-control"
+                    placeholder="Search by Order ID or Name..." value="<%= searchQuery %>">
+                <button type="submit" class="input-group-text">
+                    <i class="icofont-search"></i>
+                </button>
 
-                            </form>
-                            </div>
+                <% if (searchQuery) { %>
+                    <a href="/profile/orders" class="input-group-text bg-danger text-white">
+                        <i class="icofont-close"></i>
+                    </a>
+                <% } %>
+            </div>
+
+            <!-- RIGHT SIDE: Filters -->
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <select name="status" class="form-select form-select-sm" style="max-width:180px;">
+                    <option value="">All Statuses</option>
+                    <% ['Pending', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Cancelled', 'Return Request', 'Return Approved', 'Return Rejected', 'Returned'].forEach(st => { %>
+                        <option value="<%= st %>" <%= statusFilter === st ? 'selected' : '' %>>
+                            <%= st %>
+                        </option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="submit" class="btn btn-sm btn-primary">Apply Filters</button>
+                <a href="/profile/orders" class="btn btn-sm btn-secondary">Reset</a>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- RIGHT SIDE - View Tabs -->
+    <div class="d-flex gap-2">
+        <select id="viewMode" class="form-select form-select-sm" style="max-width:180px;">
+    <option value="/profile/orders-summary">Order Wise</option>
+    <option value="/profile/orders">Item Wise</option>
+</select>
+       
+
+        
+    </div>
+
+</div>
+
+                            
 
                             
 
@@ -223,8 +244,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 title: 'Rate & Review',
                 html: `
                     <input id="swal-title" class="swal2-input" placeholder="Enter a short title">
-                    <label style="font-size: 14px; margin-top: 10px;">Rating (1–5):</label>
-                    <input id="swal-rating" type="number" min="1" max="5" class="swal2-input" placeholder="e.g., 4">
+                    
+                    <input id="swal-rating" type="number" min="1" max="5"  margin-top: 10px; placeholder="Rating (1–5)">
                     <textarea id="swal-review" class="swal2-textarea" placeholder="Write your review here..." style="height: 100px;"></textarea>
                 `,
                 focusConfirm: false,
@@ -280,6 +301,19 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById("viewMode");
+    const path = window.location.pathname;
 
+    select.value = path.includes("orders-summary")
+        ? "/profile/orders-summary"
+        : "/profile/orders";
+
+    select.addEventListener("change", function () {
+        window.location.href = this.value;
+    });
+});
+</script>
 
 <%-include("../partials/user/footer")%>

@@ -1,5 +1,4 @@
 import AppError from '../../utils/appError.js';
-import Coupon from '../../models/couponSchema.js';
 import Order from '../../models/orderSchema.js';
 import Wallet from '../../models/walletSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
@@ -264,7 +263,9 @@ const updateOrderItemStatus = async (req, res, next) => {
             allStatuses.some((s) => s === 'Shipped' || s === 'Out for Delivery')
         ) {
             order.status = 'Shipped';
-        } else if (allStatuses.some((s) => s === 'Processing')) {
+        } else if (
+            allStatuses.some((s) => s === 'Processing' || s === 'Pending')
+        ) {
             order.status = 'Processing';
         }
 

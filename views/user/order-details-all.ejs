@@ -1,0 +1,499 @@
+<%-include("../partials/user/header")%>
+
+<style>
+/* Main Container */
+.order-details-wrapper {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 35px;
+}
+
+/* Header */
+.order-header {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 20px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #eaeaea;
+}
+
+/* LEFT: Products */
+.products-section {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.product-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 22px;
+}
+
+.product-item {
+    display: flex;
+    gap: 18px;
+}
+
+.product-image {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.product-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.product-meta {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.product-price {
+    font-size: 18px;
+    font-weight: 600;
+    color: #088178;
+    margin-top: 10px;
+}
+
+/* Timeline */
+.status-timeline {
+    margin: 25px 0 15px;
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 0 10px;
+}
+
+.status-timeline::before {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 10px;
+    right: 10px;
+    height: 3px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.timeline-dot {
+    width: 36px;
+    height: 36px;
+    background: #e9ecef;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.timeline-dot.completed {
+    background: #088178;
+    color: #fff;
+}
+
+.timeline-dot.current {
+    background: #ff9800;
+    color: #fff;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.btn-cancel,
+.btn-return {
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.btn-cancel {
+    background: #dc3545;
+    color: #fff;
+}
+.btn-return {
+    background: #ffc107;
+    color: #333;
+}
+
+/* RIGHT: Sticky Summary Section */
+.summary-section {
+    position: sticky;
+    top: 120px;
+    height: fit-content;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Boxes */
+.box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #ddd;
+}
+
+.box h3 {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* Price rows */
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 15px;
+}
+
+.price-row.total {
+    font-size: 18px;
+    font-weight: 600;
+    border-top: 1px solid #ccc;
+    margin-top: 10px;
+    padding-top: 12px;
+}
+.status-strip {
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+/* Cancelled */
+.status-strip.cancelled {
+    background: #dc3545;
+}
+
+/* Return Request */
+.status-strip.return-request {
+    background: #ffc107;
+    color: #333;
+}
+
+/* Return Approved */
+.status-strip.return-approved {
+    background: #28a745;
+}
+
+/* Return Rejected */
+.status-strip.return-rejected {
+    background: #6c757d;
+}
+
+/* Returned */
+.status-strip.returned {
+    background: #17a2b8;
+}
+
+/* Mobile Responsive */
+@media (max-width: 820px) {
+    .order-details-wrapper {
+        grid-template-columns: 1fr;
+    }
+    .summary-section {
+        position: static;
+        top: auto;
+    }
+}
+
+</style>
+
+<!-- Order Details Section -->
+<section class="order-details-wrapper">
+
+    <!-- HEADER -->
+    <div class="order-header">
+        <div>
+            <h3>Order ID: <%= order.orderId %></h3>
+            <p>Placed on 
+                <%= new Date(order.createdAt).toLocaleDateString('en-US', {year:'numeric', month:'long', day:'numeric'}) %>
+            </p>
+        </div>
+
+        <a href="/profile/orders-summary" class="tf-btn btn-outline animate-hover-btn radius-3">
+            ← Back to Orders
+        </a>
+    </div>
+
+    <!-- LEFT : PRODUCT LIST -->
+    <div class="products-section">
+        <% orderItems.forEach(item => { %>
+        <div class="product-card">
+            <% const specialStatuses = [
+                                        'Cancelled',
+                                        'Return Request',
+                                        'Return Approved',
+                                        'Return Rejected',
+                                        'Returned'
+                                    ]; %>
+
+                                    <% if (specialStatuses.includes(item.status)) { %>
+                                        <div class="status-strip <%= item.status.replace(/ /g, '-').toLowerCase() %>">
+                                            <%= item.status %>
+                                        </div>
+                                    <% } %>
+
+            <div class="product-item">
+                <img src="<%= item.productImage %>" class="product-image">
+
+                <div>
+                    <h4 class="product-name"><%= item.productName %></h4>
+
+                    <p class="product-meta">
+                        Size: <%= item.size %> | Qty: <%= item.quantity %>
+                    </p>
+
+                    <p class="product-price">₹<%= item.totalPrice.toLocaleString('en-IN') %></p>
+                </div>
+            </div>
+
+            <!-- STATUS TIMELINE -->
+             <% if (!specialStatuses.includes(item.status)) { %>
+            <div class="status-timeline">
+                <% const timeline = ['Pending','Processing','Shipped','Out for Delivery','Delivered']; %>
+
+                <% timeline.forEach(stage => { %>
+                    <div class="timeline-item">
+                        <div class="timeline-dot 
+                            <%= ['Processing','Shipped','Out for Delivery','Delivered'].includes(item.status) || stage==='Pending' ? 'completed':'' %>
+                            <%= item.status === stage ? 'current':'' %>
+                        ">
+                            ✓
+                        </div>
+                        <p><%= stage %></p>
+                    </div>
+                <% }) %>
+            </div>
+            <% } %>
+
+            <!-- BUTTONS -->
+            <div class="action-buttons">
+                <% if (item.canCancel) { %>
+                    <button class="btn-cancel" onclick="cancelItem('<%= item._id %>')">Cancel</button>
+                <% } %>
+
+                <% if (item.canReturn) { %>
+                    <button class="btn-return" onclick="returnItem('<%= item._id %>')">Return</button>
+                <% } %>
+            </div>
+
+        </div>
+        <% }) %>
+    </div>
+
+    <!-- RIGHT : ORDER SUMMARY / ADDRESS -->
+    <div class="summary-section">
+
+        <!-- Order Summary -->
+        <div class="box">
+            <h3>Order Summary</h3>
+
+            <% let total = order.totalSalePrice-order.couponDiscount; %>
+            
+            <% let totalQuantity = orderItems.reduce((a,b)=>a+b.quantity,0); %>
+            
+
+            <div class="price-row">
+                <span>Total Listing Price (<%= totalQuantity.toLocaleString('en-IN') %> Items)</span>
+                <span>₹<%= order.totalPrice.toLocaleString('en-IN') %></span>
+            </div>
+            
+
+            <div class="price-row">
+                <span>Discount</span>
+                <span style="color:#2ca02c">₹<%= order.discount.toLocaleString('en-IN') %></span>
+            </div>
+            <% if (order.couponCode && order.couponDiscount > 0) { %>
+             <div class="price-row">
+                <span>Coupon Discount(<%= order.couponCode %>)</span>
+                <span style="color:#2ca02c">₹<%= order.couponDiscount.toLocaleString('en-IN') %></span>
+            </div>
+            <% } %>
+
+            <div class="price-row total">
+                <span>Final Total</span>
+                <span>₹<%= total.toLocaleString('en-IN') %></span>
+            </div>
+        </div>
+
+        <!-- Payment -->
+        <div class="box">
+            <h3>Payment Method</h3>
+
+            <p><strong><%= order.paymentMethod === 'cod' ? 'Cash on Delivery' : (order.paymentMethod === 'online' ? 'Online Payment' : 'Wallet Payment') %></strong></p>
+            <p>Status: <strong><%= order.paymentStatus %></strong></p>
+
+            <% if (order.couponCode) { %>
+                <p style="color:#2ca02c;">Coupon Applied: <%= order.couponCode %></p>
+            <% } %>
+           <% if (orderItems.some(i => ['Delivered', 'Returned', 'Cancelled'].includes(i.status))) { %>
+                <div>
+                    <a href="/order/invoice/<%= order.orderId %>" 
+                    class="tf-btn btn-outline animate-hover-btn radius-3">
+                        <span>Download Invoice</span>
+                    </a>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Address -->
+        <div class="box">
+            <h3>Shipping Address</h3>
+
+            <p><strong><%= shippingAddress.name %></strong></p>
+            <p><%= shippingAddress.building %>, <%= shippingAddress.street %></p>
+            <% if (shippingAddress.landmark) { %><p><%= shippingAddress.landmark %></p><% } %>
+            <p><%= shippingAddress.city %>, <%= shippingAddress.state %> - <%= shippingAddress.pincode %></p>
+            <p>Phone: <%= shippingAddress.phone %></p>
+            <% if (shippingAddress.altPhone) { %><p>Alt: <%= shippingAddress.altPhone %></p><% } %>
+        </div>
+
+    </div>
+
+</section>
+
+<%-include("../partials/user/footer")%>
+
+<!-- Sweet Alert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<script>
+async function cancelItem(itemId) {
+    const { value: reason } = await Swal.fire({
+        title: 'Cancel Item',
+        text: 'Please provide a reason for cancellation',
+        input: 'textarea',
+        inputPlaceholder: 'Enter cancellation reason...',
+        inputAttributes: {
+            'aria-label': 'Enter cancellation reason',
+            'maxlength': 500
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Cancel Item',
+        cancelButtonText: 'Go Back',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Please provide a reason!'
+            }
+            if (value.trim().length < 10) {
+                return 'Reason must be at least 10 characters long'
+            }
+        },
+        showLoaderOnConfirm: true,
+        preConfirm: async (reason) => {
+            try {
+                const response = await axios.post('/order/cancel-item', {
+                    itemId: itemId,
+                    reason: reason.trim()
+                });
+                return response.data;
+            } catch (error) {
+                Swal.showValidationMessage(
+                    error.response?.data?.message || 'Failed to cancel item. Please try again.'
+                );
+            }
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    });
+
+    if (reason) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Item Cancelled',
+            text: 'Your item has been cancelled successfully',
+            confirmButtonColor: '#088178',
+            confirmButtonText: 'OK'
+        }).then(() => {
+            location.reload();
+        });
+    }
+}
+
+async function returnItem(itemId) {
+    const { value: reason } = await Swal.fire({
+        title: 'Return Item',
+        text: 'Please provide a reason for return',
+        input: 'textarea',
+        inputPlaceholder: 'Enter return reason...',
+        inputAttributes: {
+            'aria-label': 'Enter return reason',
+            'maxlength': 500
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Request Return',
+        cancelButtonText: 'Go Back',
+        confirmButtonColor: '#ffc107',
+        cancelButtonColor: '#6c757d',
+        inputValidator: (value) => {
+            if (!value) {
+                return 'Please provide a reason!'
+            }
+            if (value.trim().length < 10) {
+                return 'Reason must be at least 10 characters long'
+            }
+        },
+        showLoaderOnConfirm: true,
+        preConfirm: async (reason) => {
+            try {
+                const response = await axios.post('/order/return-item', {
+                    itemId: itemId,
+                    reason: reason.trim()
+                });
+                return response.data;
+            } catch (error) {
+                Swal.showValidationMessage(
+                    error.response?.data?.message || 'Failed to request return. Please try again.'
+                );
+            }
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    });
+
+    if (reason) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Return Requested',
+            text: 'Your return request has been submitted successfully',
+            confirmButtonColor: '#088178',
+            confirmButtonText: 'OK'
+        }).then(() => {
+            location.reload();
+        });
+    }
+}
+
+
+document.getElementById('clear-search')?.addEventListener('click', function() {
+    window.location.href = '/profile/orders';
+});
+</script>

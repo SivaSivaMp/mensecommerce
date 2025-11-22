@@ -37,14 +37,22 @@
                                 <label class="tf-field-label fw-4 text_black-2" for="property3">Email *</label>
                             </div>
                             <div id="error-2" class="error-message"></div>
-                            <div class="tf-field style-1 mb_15">
+                            <div class="tf-field style-1 mb_15" style="position: relative;">
                                 <input class="tf-field-input tf-input" placeholder=" " type="password" id="property4" name="password">
+                                <i id="togglePass" class="bi bi-eye"
+                                        style="position:absolute; right:15px; top:50%; transform:translateY(-50%);
+                                                cursor:pointer; font-size:18px; color:#555;">
+                                        </i>
                                 <label class="tf-field-label fw-4 text_black-2" for="property4">Password *</label>
                             </div>
                             <div id="error-3" class="error-message"></div>
 
-                            <div class="tf-field style-1 mb_30">
+                            <div class="tf-field style-1 mb_30" style="position: relative;">
                                 <input class="tf-field-input tf-input" placeholder=" " type="password" id="property5" name="cpassword">
+                                <i id="togglePass1" class="bi bi-eye"
+                                        style="position:absolute; right:15px; top:50%; transform:translateY(-50%);
+                                                cursor:pointer; font-size:18px; color:#555;">
+                                        </i>
                                 <label class="tf-field-label fw-4 text_black-2" for="property5">Confirm Password *</label>
                             </div>
                             <div class="tf-field style-1 mb_30">
@@ -110,6 +118,31 @@
   });
 });
 
+</script>
+<script>
+
+    const passInput = document.getElementById("property4");
+    const toggle = document.getElementById("togglePass");
+    const passInput1 = document.getElementById("property5");
+    const toggle1 = document.getElementById("togglePass1");
+toggle.addEventListener("click", () => {
+    const isPassword = passInput.type === "password";
+
+    passInput.type = isPassword ? "text" : "password";
+
+    // toggle icon class
+    toggle.classList.toggle("bi-eye");
+    toggle.classList.toggle("bi-eye-slash");
+});
+toggle1.addEventListener("click", () => {
+    const isPassword = passInput1.type === "password";
+
+    passInput1.type = isPassword ? "text" : "password";
+
+    // toggle icon class
+    toggle1.classList.toggle("bi-eye");
+    toggle1.classList.toggle("bi-eye-slash");
+});
 </script>
 
    <%-include("../partials/user/footer")%>

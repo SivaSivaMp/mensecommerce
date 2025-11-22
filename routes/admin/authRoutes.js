@@ -25,4 +25,6 @@ router
 router
     .route('/reports/validate')
     .post(auth.adminCheck, reportController.validateReportRequest);
+
+router.get('/dashboard-charts', adminDashboardController.getDashboardCharts);
 export default router;
