@@ -1,6 +1,6 @@
 import AppError from '../../utils/appError.js';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
-import Order from '../../models/orderSchema.js';
+
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
 import Wallet from '../../models/walletSchema.js';
 import razorpay from '../../config/razorpay.js';

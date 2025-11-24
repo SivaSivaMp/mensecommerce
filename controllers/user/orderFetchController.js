@@ -1,8 +1,6 @@
 import AppError from '../../utils/appError.js';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
-
 import Order from '../../models/orderSchema.js';
-
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
 
 const getOrders = async (req, res, next) => {
@@ -13,14 +11,23 @@ const getOrders = async (req, res, next) => {
         const skip = (page - 1) * limit;
         const searchQuery = req.query.query || '';
         const statusFilter = req.query.status || '';
+
         if (!userId) {
-            return next(new AppError('Please login to view your orders', 401));
+            return next(
+                new AppError(
+                    'Please login to view your orders',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
+            );
         }
 
-        let searchFilter = { userId };
+        const filter = {
+            userId,
+            $nor: [{ paymentMethod: 'online', paymentStatus: 'Pending' }],
+        };
 
         if (searchQuery) {
-            searchFilter.$or = [
+            filter.$or = [
                 { orderId: { $regex: searchQuery, $options: 'i' } },
                 {
                     'orderedItems.productName': {
@@ -31,18 +38,18 @@ const getOrders = async (req, res, next) => {
             ];
         }
 
-        const totalOrders = await Order.countDocuments(searchFilter);
+        const totalOrders = await Order.countDocuments(filter);
         const totalPages = Math.ceil(totalOrders / limit);
 
-        const orders = await Order.find(searchFilter)
+        const orders = await Order.find(filter)
             .populate({
                 path: 'orderedItems.product',
-
                 select: 'name images',
             })
             .sort({ createdAt: -1 })
             .skip(skip)
-            .limit(limit);
+            .limit(limit)
+            .lean();
 
         const formattedOrders = [];
 
@@ -73,7 +80,7 @@ const getOrders = async (req, res, next) => {
 
         const pagination = {
             currentPage: page,
-            totalPages: totalPages,
+            totalPages,
             hasNextPage: page < totalPages,
             hasPrevPage: page > 1,
             nextPage: page < totalPages ? page + 1 : null,
@@ -90,9 +97,9 @@ const getOrders = async (req, res, next) => {
 
         return res.render('my-account-orders', {
             orders: formattedOrders,
-            searchQuery: searchQuery,
-            pagination: pagination,
-            totalOrders: totalOrders,
+            searchQuery,
+            pagination,
+            totalOrders,
             statusFilter,
         });
     } catch (error) {
@@ -240,6 +247,7 @@ const getOrderDetails = async (req, res, next) => {
                 paymentStatus: order.paymentStatus,
                 couponCode: order.couponCode,
                 createdAt: order.createdAt,
+                shipping: order.shipping,
             },
             orderItem: orderItem,
             itemSummary: itemSummary,
@@ -346,12 +354,10 @@ const listOrdersOnly = async (req, res, next) => {
 
         let filter = { userId };
 
-        // Search by orderId
         if (searchQuery) {
             filter.orderId = { $regex: searchQuery, $options: 'i' };
         }
 
-        // Main order status (top level)
         if (statusFilter) {
             filter.status = statusFilter;
         }
@@ -359,7 +365,6 @@ const listOrdersOnly = async (req, res, next) => {
         const totalOrders = await Order.countDocuments(filter);
         const totalPages = Math.ceil(totalOrders / limit);
 
-        // Fetch orders (not items)
         const orders = await Order.find(filter)
             .populate({
                 path: 'orderedItems.product',
@@ -382,6 +387,9 @@ const listOrdersOnly = async (req, res, next) => {
                 totalAmount: order.finalAmount,
                 orderDate: order.createdAt,
                 thumbnail,
+                isPaymentPending:
+                    order.paymentMethod === 'online' &&
+                    order.paymentStatus === 'Pending',
             };
         });
 
@@ -439,7 +447,6 @@ const getOrderDetailsAllItems = async (req, res, next) => {
             return next(new AppError('Order not found', 404));
         }
 
-        // ⭐ Format all order items (NOT just one)
         const orderItems = order.orderedItems.map((item) => {
             const originalItemPrice =
                 Number(item.product?.originalPrice || 0) * item.quantity;
@@ -488,10 +495,11 @@ const getOrderDetailsAllItems = async (req, res, next) => {
                 createdAt: order.createdAt,
                 finalAmount: order.finalAmount,
                 itemCount: order.orderedItems.length,
+                shipping: order.shipping,
             },
 
-            orderItems, // ⭐ ALL ITEMS
-            shippingAddress, // ⭐ Address
+            orderItems,
+            shippingAddress,
         });
     } catch (error) {
         console.error('Error in getOrderDetailsAllItems:', error);
@@ -517,7 +525,6 @@ const renderFullInvoice = async (req, res, next) => {
             );
         }
 
-        // Build all item-level invoice details
         const invoiceItems = order.orderedItems.map((item) => {
             const originalTotal =
                 Number(item.product?.originalPrice || 0) * item.quantity;
@@ -540,13 +547,13 @@ const renderFullInvoice = async (req, res, next) => {
             };
         });
 
-        // Order-level totals
         const invoiceSummary = {
-            subTotal: order.totalPrice, // total listing price
+            subTotal: order.totalPrice,
             discount: order.discount || 0,
             couponCode: order.couponCode || null,
             couponDiscount: order.couponDiscount || 0,
             finalAmount: order.finalAmount,
+            shipping: order.shipping,
         };
 
         return res.render('invoice-all', {

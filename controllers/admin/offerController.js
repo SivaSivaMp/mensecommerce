@@ -2,7 +2,6 @@ import Category from '../../models/categorySchema.js';
 import Product from '../../models/productSchema.js';
 import AppError from '../../utils/appError.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
-import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 
 const addCategoryOffer = async (req, res, next) => {
     try {

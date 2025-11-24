@@ -12,7 +12,7 @@ import { HTTP_STATUS } from '../../utils/httpStatus.js';
  * @param {Object} res - Express response object
  * @param {Function} next - Express error-handling middleware
  *
- * @returns {void} Renders the address page or passes errors to next()
+ * @returns {*} Renders the address page or passes errors to next()
  */
 const getAddressInfo = async (req, res, next) => {
     try {

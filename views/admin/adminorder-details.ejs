@@ -266,13 +266,33 @@
                                                 <% if (order.discount > 0) { %>
                                                     <div class="single-total">
                                                         <p class="value">Discount (-):</p>
-                                                        <p class="price">₹<%= order.discount.toLocaleString('en-IN') %></p>
+                                                        <p class="price" style="color:#2ca02c">- ₹<%= order.discount.toLocaleString('en-IN') %></p>
                                                     </div>
                                                 <% } %>
                                                 <% if (order.shipping > 0) { %>
                                                     <div class="single-total">
                                                         <p class="value">Shipping (+):</p>
                                                         <p class="price">₹<%= order.shipping.toLocaleString('en-IN') %></p>
+                                                    </div>
+                                                <% } %>
+                                                 <% if (order.couponCode && order.couponDiscount > 0) { %>
+                                                    <div class="single-total">
+                                                        <p class="value">Coupon Discount (-) (<%= order.couponCode %>):</p>
+                                                        <p class="price" style="color:#2ca02c">- ₹<%= order.couponDiscount.toLocaleString('en-IN') %></p>
+                                                    </div>
+                                                <% } %>
+                                                <% if (order.cancelledItemquantity > 0) { %>
+                                                <% let total = order.totalSalePrice-order.couponDiscount; %>
+                                                <div class="single-total total-payable">
+                                                    <p class="value">Total :</p>
+                                                    <p class="price">₹<%= total.toLocaleString('en-IN') %></p>
+                                                </div>
+                                                <% } %>
+                                                <% if (order.cancelledItemquantity > 0) { %>
+                                                    <% let cancelledTotal = order.totalSalePrice-order.finalAmount; %>
+                                                    <div class="single-total">
+                                                        <p class="value" >Cancelled/Returned Item total (-) (<%= order.cancelledItemquantity %>items):</p>
+                                                        <p class="price" style="color:#b2382d">- ₹<%= cancelledTotal.toLocaleString('en-IN') %></p>
                                                     </div>
                                                 <% } %>
                                                 <div class="single-total total-payable">

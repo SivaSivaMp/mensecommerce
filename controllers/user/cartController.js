@@ -1,12 +1,12 @@
 import AppError from '../../utils/appError.js';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
-import mongoose from 'mongoose';
 import Product from '../../models/productSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Wishlist from '../../models/whishListSchema.js';
-
+import { calculatePriceDetails } from '../../helpers/calculatePriceDetails.js';
 import Cart from '../../models/cartSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
+
 // get cart page
 
 const viewCart = async (req, res, next) => {
@@ -20,14 +20,19 @@ const viewCart = async (req, res, next) => {
             return next(new AppError('Please login to view your cart', 401));
         }
 
-        const cart = await Cart.findOne({ userId }).populate({
-            path: 'items.productId',
-            select: 'name originalPrice salesPrice images isListed category',
-            populate: {
-                path: 'category',
-                select: 'isListed categoryName',
-            },
-        });
+        const cart = await Cart.findOne({ userId })
+            .populate({
+                path: 'items.productId',
+                select: 'name originalPrice salesPrice images isListed category',
+                populate: {
+                    path: 'category',
+                    select: 'isListed categoryName',
+                },
+            })
+            .populate({
+                path: 'appliedCoupon.couponId',
+                select: 'code discountValue discountType maxDiscountAmount minPurchaseAmount expiresAt isActive',
+            });
 
         if (!cart || !cart.items.length) {
             return res.render('view-cart', {
@@ -37,6 +42,8 @@ const viewCart = async (req, res, next) => {
                     discount: 0,
                     totalAmount: 0,
                     savings: 0,
+                    shipping: 0,
+                    finalAmount: 0,
                 },
                 pagination: {
                     currentPage: 1,
@@ -47,100 +54,25 @@ const viewCart = async (req, res, next) => {
             });
         }
 
+        const { cartItems, priceDetails, couponCode, couponDiscount } =
+            await calculatePriceDetails(cart);
+
         const totalItems = cart.items.length;
         const totalPages = Math.ceil(totalItems / limit);
-        const paginatedItems = cart.items.slice(skip, skip + limit);
+        const paginatedItems = cartItems.slice(skip, skip + limit);
 
-        let totalPrice = 0;
-        let totalDiscount = 0;
-        const cartItems = [];
-        for (const item of paginatedItems) {
-            let variantObjectId;
-            try {
-                variantObjectId = new mongoose.Types.ObjectId(item.variantId);
-            } catch (err) {
-                await Cart.updateOne(
-                    { _id: cart._id },
-                    { $pull: { items: { _id: item._id } } }
-                );
-
-                continue;
-            }
-
-            const variant = await ProductVariant.findById(variantObjectId);
-            if (!variant) {
-                await Cart.updateOne(
-                    { _id: cart._id },
-                    { $pull: { items: { _id: item._id } } }
-                );
-                continue;
-            }
-            const variantQuantity = variant.quantity;
-
-            const product = item.productId;
-            if (!product) {
-                return next(
-                    new AppError('product currently not available', 400)
-                );
-            }
-
-            const originalPrice = Number(product.originalPrice || 0);
-            const salePrice =
-                Number(product.salesPrice) > 0
-                    ? Number(product.salesPrice)
-                    : originalPrice;
-
-            const isUnlisted = !product.isListed;
-            const isUnlistedCategory = !product.category?.isListed;
-            const isOutOfStock =
-                item.quantity > variantQuantity || variantQuantity === 0;
-
-            if (!isUnlisted && !isOutOfStock && !isUnlistedCategory) {
-                const itemOriginalTotal = originalPrice * item.quantity;
-                const itemSaleTotal = salePrice * item.quantity;
-                const itemDiscount = itemOriginalTotal - itemSaleTotal;
-
-                totalPrice += itemOriginalTotal;
-                totalDiscount += itemDiscount;
-            }
-
-            cartItems.push({
-                _id: item._id,
-                productId: product._id,
-                productName: product.name,
-                productImage: product.images?.[0] || '/images/placeholder.jpg',
-                originalPrice,
-                salePrice,
-                quantity: item.quantity,
-                variantQuantity,
-                size: item.size || variant.size,
-                totalPrice: salePrice * item.quantity,
-                isOutOfStock,
-                isUnlisted: isUnlisted || isUnlistedCategory,
-            });
-        }
-
-        const totalAmount = totalPrice - totalDiscount;
-        const savings = totalDiscount;
-
-        const priceDetails = {
-            totalPrice,
-            discount: totalDiscount,
-            totalAmount,
-            savings,
-        };
-
-        const pagination = {
-            currentPage: page,
-            totalPages,
-            hasNext: page < totalPages,
-            hasPrev: page > 1,
-        };
         return res.render('view-cart', {
-            cartItems,
+            cartItems: paginatedItems,
             priceDetails,
             itemCount: totalItems,
-            pagination,
+            pagination: {
+                currentPage: page,
+                totalPages,
+                hasNext: page < totalPages,
+                hasPrev: page > 1,
+            },
+            couponCode,
+            discount: couponDiscount,
         });
     } catch (error) {
         console.error('Error in viewCart:', error);
@@ -274,7 +206,7 @@ const removeFromCart = async (req, res, next) => {
             })
             .populate({
                 path: 'appliedCoupon.couponId',
-                select: 'code minPurchaseAmount isActive expiresAt',
+                select: 'code minPurchaseAmount isActive expiresAt discountType discountValue maxDiscountAmount',
             });
 
         if (!cart) {

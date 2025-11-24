@@ -1,12 +1,13 @@
 import AppError from '../../utils/appError.js';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
-import Product from '../../models/productSchema.js';
+
 import Address from '../../models/addressSchema.js';
 import Cart from '../../models/cartSchema.js';
-import ProductVariant from '../../models/productVarintSchema.js';
+
 import Coupon from '../../models/couponSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
 import { calculatePriceDetails } from '../../helpers/calculatePriceDetails.js';
+
 const getCheckout = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
@@ -351,7 +352,7 @@ const removeCoupon = async (req, res, next) => {
         });
     }
 };
-const getAvailableCoupons = async (req, res, next) => {
+const getAvailableCoupons = async (req, res) => {
     try {
         const userId = getCurrentUserId(req);
         if (!userId)

@@ -239,7 +239,7 @@ const getSummary = async (req, res, next) => {
     try {
         const { startDate, endDate } = req.query;
         const start = new Date(startDate);
-        const end = new Date(endDate);
+
         const now = new Date();
         if (now < start) {
             return next(new AppError(`Future date cannot be given`, 400));

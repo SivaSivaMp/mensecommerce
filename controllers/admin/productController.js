@@ -491,7 +491,7 @@ const editProduct = async (req, res, next) => {
     }
 };
 
-const getEditProduct = async (req, res) => {
+const getEditProduct = async (req, res, next) => {
     try {
         const productId = req.params.id;
 

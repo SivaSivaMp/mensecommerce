@@ -222,6 +222,37 @@
         font-size: 24px;
         flex-shrink: 0;
     }
+    .price-row.shipping {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+/* FREE delivery text */
+.delivery-info small {
+  font-size: 13px;
+  color: #777;
+  line-height: 1.3;
+}
+
+/* Delivery charges row (Delivery Charges | ₹50) */
+.delivery-charge-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  color: #333;
+}
+
+/* FREE style */
+.delivery-charge-row .green {
+  font-weight: 600;
+  color: #2ca02c;
+}
 </style>
         <!-- page-title -->
         <div class="tf-page-title style-2">
@@ -317,49 +348,73 @@
     <div class="tf-cart-footer-inner">
         <div class="tf-page-cart-checkout">
             <div class="price-details-box">
-                <h2>PRICE DETAILS</h2>
-                
-                <div class="price-row">
-                    <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %>)</span>
-                    <span>₹<%= priceDetails.totalPrice.toLocaleString('en-IN') %></span>
-                </div>
-                
-                <% if (priceDetails.discount > 0) { %>
-                    <div class="price-row discount">
-                        <span>Discount</span>
-                        <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
-                    </div>
-                <% } %>
-                
-                <% if (priceDetails.platformFee > 0) { %>
-                    <div class="price-row">
-                        <span>Platform Fee</span>
-                        <span>₹<%= priceDetails.platformFee %></span>
-                    </div>
-                <% } %>
-                <% if (couponCode && discount > 0) { %>
-                  <div class="price-row discount">
-                    <span>Coupon Discount (<%= couponCode %>)</span>
-                    <span>- ₹<%= discount.toLocaleString('en-IN') %></span>
+                  <h2>PRICE DETAILS</h2>
+
+                  <!-- Price Row -->
+                  <div class="price-row">
+                    <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? "s" : "" %>)</span>
+                    <span>₹<%= priceDetails.totalPrice.toLocaleString("en-IN") %></span>
                   </div>
-                <% } %>
-                
-                <hr class="divider">
-                
-                <div class="price-row total">
-                    <strong>Total Amount</strong>
-                    <strong>₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
-                </div>
-                
-                
-                <hr class="divider">
-                
-                <% if (priceDetails.savings > 0) { %>
-                    <div class="save-text">
-                        You will save <span class="green">₹<%= priceDetails.savings.toLocaleString('en-IN') %></span> on this order
+
+                  <!-- Product Discount -->
+                  <% if (priceDetails.discount > 0) { %>
+                    <div class="price-row discount">
+                      <span>Product Discount</span>
+                      <span>- ₹<%= priceDetails.discount.toLocaleString("en-IN") %></span>
                     </div>
-                <% } %>
-            </div>
+                  <% } %>
+
+                  <!-- Coupon Discount -->
+                  <% if (couponCode && discount > 0) { %>
+                    <div class="price-row discount">
+                      <span>Coupon Discount (<%= couponCode %>)</span>
+                      <span>- ₹<%= discount.toLocaleString("en-IN") %></span>
+                    </div>
+                  <% } %>
+
+                  <!-- SHIPPING SECTION -->
+                  <% if (priceDetails.shipping > 0) { %>
+                    <div class="price-row shipping">
+
+                      <!-- Free Delivery Info -->
+                      <div class="delivery-info">
+                        <small>
+                          Add ₹<%= (800 - priceDetails.totalAmount).toLocaleString("en-IN") %> more to get FREE delivery!
+                        </small>
+                      </div>
+
+                      <!-- Delivery Charge -->
+                      <div class="delivery-charge-row">
+                        <span>Delivery Charges</span>
+                        <span>+ ₹<%= priceDetails.shipping.toLocaleString("en-IN") %></span>
+                      </div>
+
+                    </div>
+                  <% } else { %>
+                    <div class="price-row shipping">
+                      <div class="delivery-charge-row">
+                        <span>Delivery Charges</span>
+                        <span class="green">FREE</span>
+                      </div>
+                    </div>
+                  <% } %>
+
+                  <hr class="divider">
+
+                  <!-- FINAL AMOUNT -->
+                  <div class="price-row total">
+                    <strong>Total Amount</strong>
+                    <strong id="finalAmount">₹<%= priceDetails.finalAmount.toLocaleString("en-IN") %></strong>
+                  </div>
+
+                  <hr class="divider">
+
+                  <% if (priceDetails.savings > 0) { %>
+                    <div class="save-text">
+                      You will save <span class="green">₹<%= priceDetails.savings.toLocaleString("en-IN") %></span> on this order
+                    </div>
+                  <% } %>
+                </div>
             
             <div class="cart-checkout-btn">
                 <button type="button" class="tf-btn w-100 btn-fill animate-hover-btn radius-3 justify-content-center checkout-btn" onclick="window.location.href='/checkout'">

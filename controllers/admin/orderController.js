@@ -8,12 +8,16 @@ import { HTTP_STATUS } from '../../utils/httpStatus.js';
 const getOrdersList = async (req, res, next) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = 8;
+        const limit = 12;
         const skip = (page - 1) * limit;
-        const searchQuery = req.query.search || '';
+
+        const searchQuery = req.query.search?.trim() || '';
         const statusFilter = req.query.status || '';
         const paymentFilter = req.query.paymentMethod || '';
-        let filter = {};
+
+        const filter = {
+            $nor: [{ paymentMethod: 'online', paymentStatus: 'Pending' }],
+        };
 
         if (searchQuery) {
             filter.$or = [
@@ -26,9 +30,11 @@ const getOrdersList = async (req, res, next) => {
                 },
             ];
         }
+
         if (statusFilter) {
             filter.status = statusFilter;
         }
+
         if (paymentFilter) {
             filter.paymentMethod = paymentFilter;
         }
@@ -37,29 +43,32 @@ const getOrdersList = async (req, res, next) => {
         const totalPages = Math.ceil(totalOrders / limit);
 
         const orders = await Order.find(filter)
-            .populate({
-                path: 'userId',
-                select: 'name email',
-            })
+            .populate({ path: 'userId', select: 'name email' })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
             .lean();
+
         const formattedOrders = orders.map((order) => ({
             orderId: order.orderId,
             orderIdshort: order.orderId,
             _id: order._id,
+
             userName:
                 order.userId?.name || order.shippingAddress?.name || 'N/A',
+
             userEmail: order.userId?.email || 'N/A',
+
             billingDate: order.createdAt,
-            totalAmount: order.finalAmount,
+            totalAmount: order.totalSalePrice,
+
             paymentMethod:
                 order.paymentMethod === 'cod'
                     ? 'Cash on Delivery'
                     : order.paymentMethod === 'online'
                     ? 'Online Payment'
                     : 'Wallet Payment',
+
             paymentStatus: order.paymentStatus,
             status: order.status,
             itemCount: order.orderedItems.length,
@@ -67,7 +76,7 @@ const getOrdersList = async (req, res, next) => {
 
         const pagination = {
             currentPage: page,
-            totalPages: totalPages,
+            totalPages,
             hasNextPage: page < totalPages,
             hasPrevPage: page > 1,
             nextPage: page < totalPages ? page + 1 : null,
@@ -77,18 +86,19 @@ const getOrdersList = async (req, res, next) => {
 
         return res.render('orders', {
             orders: formattedOrders,
-            searchQuery: searchQuery,
+            searchQuery,
             statusFilter,
             paymentFilter,
-            pagination: pagination,
-            totalOrders: totalOrders,
+            pagination,
+            totalOrders,
             user: req.user || null,
         });
     } catch (error) {
-        console.log('Error in getAdminOrders:', error);
+        console.error('Error in getOrdersList:', error);
         return next(new AppError('Internal server error', 500));
     }
 };
+
 const getAdminOrderDetails = async (req, res, next) => {
     try {
         const orderId = req.params.orderId;
@@ -126,6 +136,10 @@ const getAdminOrderDetails = async (req, res, next) => {
             (sum, item) => sum + item.quantity,
             0
         );
+        const inactiveStatuses = ['Cancelled', 'Returned'];
+        const cancelledItemquantity = orderedItems
+            .filter((item) => inactiveStatuses.includes(item.status))
+            .reduce((sum, item) => sum + item.quantity, 0);
 
         const orderData = {
             orderId: order.orderId,
@@ -142,14 +156,18 @@ const getAdminOrderDetails = async (req, res, next) => {
             deliveredAt: order.deliveredAt,
             totalQuantity: totalQuantity,
             totalPrice: order.totalPrice,
+            totalSalePrice: order.totalSalePrice,
             discount: order.discount,
             shipping: order.shipping,
+            couponDiscount: order.couponDiscount,
+            couponCode: order.couponCode,
             finalAmount: order.finalAmount,
+            cancelledItemquantity: cancelledItemquantity,
         };
 
         const shippingAddress = {
             addressType: order.shippingAddress.addressType || 'N/A',
-            name: order.shippingAddress.name || 'N/A',
+            name: order.shippingAddress.name || order.userId.name,
             building: order.shippingAddress.building || 'N/A',
             street: order.shippingAddress.street || 'N/A',
             landmark: order.shippingAddress.landmark || 'N/A',
@@ -411,7 +429,6 @@ const completeReturn = async (req, res, next) => {
             return next(new AppError('Return must be approved first.', 400));
         }
 
-        const itemTotal = item.price * item.quantity;
         const originalFinalAmount = order.finalAmount;
 
         item.status = 'Returned';

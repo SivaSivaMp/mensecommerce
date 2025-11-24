@@ -73,6 +73,5 @@ const login = async (req, res, next) => {
         console.log('error while login', error);
     }
 };
-//load dashboard
 
 export default { getAdminLogin, login, logout };

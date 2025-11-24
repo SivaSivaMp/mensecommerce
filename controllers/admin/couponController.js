@@ -1,5 +1,4 @@
 import AppError from '../../utils/appError.js';
-import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import Coupon from '../../models/couponSchema.js';
 import { HTTP_STATUS } from '../../utils/httpStatus.js';
 
@@ -105,10 +104,10 @@ const addCoupon = async (req, res, next) => {
                 )
             );
         }
-        if (discountType === 'percentage' && discountValue > 100) {
+        if (discountType === 'percentage' && discountValue > 90) {
             return next(
                 new AppError(
-                    'Percentage discount cannot exceed 100%.',
+                    'Percentage discount cannot exceed 90%.',
                     HTTP_STATUS.BAD_REQUEST
                 )
             );
@@ -226,7 +225,7 @@ const changeCouponStatus = async (req, res, next) => {
         });
     }
 };
-const getEditCoupon = async (req, res, next) => {
+const getEditCoupon = async (req, res) => {
     try {
         const { id } = req.params;
         const coupon = await Coupon.findById(id);
@@ -308,10 +307,10 @@ const editCoupon = async (req, res, next) => {
                 )
             );
         }
-        if (discountType === 'percentage' && discountValue > 100) {
+        if (discountType === 'percentage' && discountValue > 90) {
             return next(
                 new AppError(
-                    'Percentage discount cannot exceed 100%.',
+                    'Percentage discount cannot exceed 90%.',
                     HTTP_STATUS.BAD_REQUEST
                 )
             );

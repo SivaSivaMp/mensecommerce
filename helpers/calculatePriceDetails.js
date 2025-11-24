@@ -80,7 +80,16 @@ export const calculatePriceDetails = async (cart) => {
             await cart.save();
         }
     }
+    let shippingCharge = 0;
+    const shippingThreshold = 800;
 
+    if (totalAmount < shippingThreshold) {
+        shippingCharge = 50;
+    }
+    if (totalAmount < shippingThreshold) {
+        savings = savings - shippingCharge;
+    }
+    const finalAmountWithShipping = totalAmount + shippingCharge;
     return {
         cartItems,
         priceDetails: {
@@ -88,6 +97,9 @@ export const calculatePriceDetails = async (cart) => {
             discount: totalDiscount,
             totalAmount,
             savings,
+            shipping: shippingCharge,
+            finalAmount: finalAmountWithShipping,
+            shippingThreshold,
         },
         couponCode,
         couponDiscount,

@@ -175,6 +175,9 @@
 
     <!-- Jquery Page Js -->
     <script src="../js/template.js"></script>
+       
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -203,13 +206,11 @@
             
         });
     </script>
-    <!-- Include SweetAlert and Axios -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Select all add/remove offer buttons
+  
     document.querySelectorAll('.toggle-btn').forEach(button => {
         button.addEventListener('click', async function() {
             const categoryId = this.getAttribute('data-id');
@@ -240,13 +241,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             showConfirmButton: false
                         });
 
-                        // change button to remove offer
+                        
                         this.textContent = 'Remove Offer';
                         this.classList.remove('btn-success');
                         this.classList.add('btn-danger');
                         this.setAttribute('data-action', 'remove-offer');
 
-                        // optionally refresh page
+                        
                         setTimeout(() => window.location.reload(), 1000);
                     } catch (error) {
                         Swal.fire({
@@ -279,13 +280,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             showConfirmButton: false
                         });
 
-                        // change button to add offer
+                        
                         this.textContent = 'Add Offer';
                         this.classList.remove('btn-danger');
                         this.classList.add('btn-success');
                         this.setAttribute('data-action', 'add-offer');
 
-                        // optionally refresh page
+                        
                         setTimeout(() => window.location.reload(), 1000);
                     } catch (error) {
                         Swal.fire({

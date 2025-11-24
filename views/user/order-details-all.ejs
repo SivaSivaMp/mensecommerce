@@ -336,6 +336,13 @@
                 <span style="color:#2ca02c">₹<%= order.couponDiscount.toLocaleString('en-IN') %></span>
             </div>
             <% } %>
+             <% if (order.shipping> 0) { %>
+             <div class="price-row">
+                <span>Delivery Charge</span>
+                <span style="color:#b43b25">₹<%= order.shipping.toLocaleString('en-IN') %></span>
+            </div>
+            <% } %>
+            
 
             <div class="price-row total">
                 <span>Final Total</span>

@@ -59,7 +59,7 @@ const loadHomepage = async (req, res, next) => {
     }
 };
 
-const loadShoppingPage = async (req, res, next) => {
+const loadShoppingPage = async (req, res) => {
     try {
         const categories = await Category.find({ isListed: true }).lean();
         const categoryIds = categories.map((c) => c._id);

@@ -425,6 +425,13 @@
                     <span>Discount</span>
                     <span>₹<%= itemSummary.discount.toLocaleString('en-IN') %></span>
                 </div>
+                <% if (order.shipping>0 ) { %>
+                
+                <div class="price-row">
+                    <span>Delivery Charge</span>
+                    <span>₹<%= order.shipping.toLocaleString('en-IN') %></span>
+                </div>
+                <% } %>
                 <div class="price-row total">
                     <strong>Total</strong>
                     <strong>₹<%= itemSummary.itemPrice.toLocaleString('en-IN') %></strong>
@@ -445,6 +452,7 @@
                     Coupon Applied: <strong style="color: #2ca02c;"><%= order.couponCode %></strong>
                 </p>
                 <% } %>
+                
                 <%if(['Delivered','Cancelled','Returned'].includes(orderItem.status)){%>  
                 <div>
                 <a href="/profile/<%= order.orderId %>/item/<%= orderItem._id %>/invoice" class="tf-btn btn-outline animate-hover-btn radius-3">

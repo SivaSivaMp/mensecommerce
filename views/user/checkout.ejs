@@ -387,6 +387,37 @@
   font-size: 13px;
   color: #666;
 }
+.price-row.shipping {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+/* FREE delivery text */
+.delivery-info small {
+  font-size: 13px;
+  color: #777;
+  line-height: 1.3;
+}
+
+/* Delivery charges row (Delivery Charges | ₹50) */
+.delivery-charge-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  color: #333;
+}
+
+/* FREE style */
+.delivery-charge-row .green {
+  font-weight: 600;
+  color: #2ca02c;
+}
 </style>
 <!-- page-title -->
 <div class="tf-page-title style-2">
@@ -664,43 +695,74 @@
 
               <!-- ✅ FIXED: Price Details with Coupon Display -->
               <div class="price-details-box">
-                <h2>PRICE DETAILS</h2>
+                  <h2>PRICE DETAILS</h2>
 
-                <div class="price-row">
-                  <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? 's' : '' %>)</span>
-                  <span>₹<%= priceDetails.totalPrice.toLocaleString('en-IN') %></span>
+                  <!-- Price Row -->
+                  <div class="price-row">
+                    <span>Price (<%= itemCount %> item<%= itemCount !== 1 ? "s" : "" %>)</span>
+                    <span>₹<%= priceDetails.totalPrice.toLocaleString("en-IN") %></span>
+                  </div>
+
+                  <!-- Product Discount -->
+                  <% if (priceDetails.discount > 0) { %>
+                    <div class="price-row discount">
+                      <span>Product Discount</span>
+                      <span>- ₹<%= priceDetails.discount.toLocaleString("en-IN") %></span>
+                    </div>
+                  <% } %>
+
+                  <!-- Coupon Discount -->
+                  <% if (couponCode && discount > 0) { %>
+                    <div class="price-row discount">
+                      <span>Coupon Discount (<%= couponCode %>)</span>
+                      <span>- ₹<%= discount.toLocaleString("en-IN") %></span>
+                    </div>
+                  <% } %>
+
+                  <!-- SHIPPING SECTION -->
+                  <% if (priceDetails.shipping > 0) { %>
+                    <div class="price-row shipping">
+
+                      <!-- Free Delivery Info -->
+                      <div class="delivery-info">
+                        <small>
+                          Add ₹<%= (800 - priceDetails.totalAmount).toLocaleString("en-IN") %> more to get FREE delivery!
+                        </small>
+                      </div>
+
+                      <!-- Delivery Charge -->
+                      <div class="delivery-charge-row">
+                        <span>Delivery Charges</span>
+                        <span>+ ₹<%= priceDetails.shipping.toLocaleString("en-IN") %></span>
+                      </div>
+
+                    </div>
+                  <% } else { %>
+                    <div class="price-row shipping">
+                      <div class="delivery-charge-row">
+                        <span>Delivery Charges</span>
+                        <span class="green">FREE</span>
+                      </div>
+                    </div>
+                  <% } %>
+
+                  <hr class="divider">
+
+                  <!-- FINAL AMOUNT -->
+                  <div class="price-row total">
+                    <strong>Total Amount</strong>
+                    <strong id="finalAmount">₹<%= priceDetails.finalAmount.toLocaleString("en-IN") %></strong>
+                  </div>
+
+                  <hr class="divider">
+
+                  <% if (priceDetails.savings > 0) { %>
+                    <div class="save-text">
+                      You will save <span class="green">₹<%= priceDetails.savings.toLocaleString("en-IN") %></span> on this order
+                    </div>
+                  <% } %>
                 </div>
 
-                <% if (priceDetails.discount > 0) { %>
-                  <div class="price-row discount">
-                    <span>Product Discount</span>
-                    <span>- ₹<%= priceDetails.discount.toLocaleString('en-IN') %></span>
-                  </div>
-                <% } %>
-
-                <!-- ✅ Show Coupon Discount Separately -->
-                <% if (couponCode && discount > 0) { %>
-                  <div class="price-row discount">
-                    <span>Coupon Discount (<%= couponCode %>)</span>
-                    <span>- ₹<%= discount.toLocaleString('en-IN') %></span>
-                  </div>
-                <% } %>
-
-                <hr class="divider">
-
-                <div class="price-row total">
-                  <strong>Total Amount</strong>
-                  <strong id="finalAmount">₹<%= priceDetails.totalAmount.toLocaleString('en-IN') %></strong>
-                </div>
-
-                <hr class="divider">
-
-                <% if (priceDetails.savings > 0) { %>
-                  <div class="save-text">
-                    You will save <span class="green">₹<%= priceDetails.savings.toLocaleString('en-IN') %></span> on this order
-                  </div>
-                <% } %>
-              </div>
 
               <div class="cart-checkout-btn">
                 <button type="button" 
@@ -1061,7 +1123,9 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 async function payOnline() {
   try {
-    const selectedAddressRadio = document.querySelector('input[name="shippingAddress"]:checked');
+    const selectedAddressRadio = document.querySelector(
+      'input[name="shippingAddress"]:checked'
+    );
     if (!selectedAddressRadio) {
       Swal.fire({
         icon: 'warning',
@@ -1073,49 +1137,54 @@ async function payOnline() {
 
     const addressId = selectedAddressRadio.value;
 
-    
     const res = await axios.post('/order/place', {
       shippingAddressId: addressId,
       paymentMethod: 'online'
     });
 
     if (!res.data.success) {
-            Swal.fire("Error", res.data.message, "error");
-            return;
-        }
+      Swal.fire("Error", res.data.message, "error");
+      return;
+    }
 
-    const { razorpayOrderId, amount, currency, pendingOrder  } = res.data;
+    // IMPORTANT: must match new backend
+    const { razorpayOrderId, amount, currency, orderDbId } = res.data;
 
     const options = {
-      key: '<%= process.env.RAZORPAY_KEY_ID %>', 
+      key: '<%= process.env.RAZORPAY_KEY_ID %>',
       amount: amount * 100,
       currency: currency,
       name: "Mens E-Commerce",
       description: "Order Payment",
       order_id: razorpayOrderId,
+
       handler: async function (response) {
         try {
-           const verifyRes = await axios.post('/order/verify', {
+          const verifyRes = await axios.post('/order/verify', {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
-            pendingOrder
+            
+            // VERY IMPORTANT → send this instead of pendingOrder
+            orderDbId
           });
+
           if (verifyRes.data.success) {
-              Swal.fire({
+            Swal.fire({
               icon: 'success',
               title: 'Payment Successful',
               text: 'Your payment was completed successfully!',
               timer: 2000,
               showConfirmButton: false
             });
+
             setTimeout(() => {
               window.location.href = `/order/success/${verifyRes.data.orderId}`;
             }, 1500);
           } else {
-                 window.location.href = `/order/failure/payment?orderId=${verifyRes.data.orderId}&msg=${encodeURIComponent(verifyRes.data.message)}`;
-                }
-          
+            window.location.href = `/order/failure/payment?orderId=${verifyRes.data.orderId}&msg=${encodeURIComponent(verifyRes.data.message)}`;
+          }
+
         } catch (err) {
           Swal.fire({
             icon: 'error',
@@ -1124,39 +1193,38 @@ async function payOnline() {
             timer: 2000,
             showConfirmButton: false
           });
+
           setTimeout(() => {
-            window.location.href = `/order/failure/payment?orderId=${verifyRes.data.orderId}&msg=${encodeURIComponent("Payment failed")}`;
+            window.location.href = `/order/failure/payment?msg=${encodeURIComponent("Payment failed")}`;
           }, 1500);
         }
       },
+
       prefill: {
         name: "<%= user?.name || '' %>",
         email: "<%= user?.email || '' %>",
         contact: "<%= user?.phone || '' %>"
       },
+
       theme: {
         color: '#088178'
       },
+
       modal: {
         ondismiss: function () {
-          // Swal.fire({
-          //   icon: 'info',
-          //   title: 'Payment Cancelled',
-          //   text: 'You closed the payment window.',
-          //   confirmButtonColor: '#088178'
-          // });
-          
-            window.location.href = `/order/failure/payment?msg=Payment%20failed`;
-          
+          window.location.href = `/order/failure/payment?msg=Payment%20failed`;
         }
       }
     };
 
     const rzp = new Razorpay(options);
+
     rzp.on("payment.failed", function () {
-    window.location.href = `/order/failure/payment?orderId=${orderId}&msg=${encodeURIComponent("Payment failed")}`;
-});
+      window.location.href = `/order/failure/payment?msg=${encodeURIComponent("Payment failed")}`;
+    });
+
     rzp.open();
+
   } catch (error) {
     console.error(error);
     Swal.fire({
@@ -1167,7 +1235,6 @@ async function payOnline() {
   }
 }
 
-// Add another button for online payment
 document.addEventListener('DOMContentLoaded', function() {
   const checkoutContainer = document.querySelector('.cart-checkout-btn');
   if (!checkoutContainer) return;
@@ -1181,5 +1248,6 @@ document.addEventListener('DOMContentLoaded', function() {
   checkoutContainer.appendChild(onlineBtn);
 });
 </script>
+
 
 

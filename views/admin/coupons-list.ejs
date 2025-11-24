@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const action = btn.getAttribute('data-action');
 
       try {
-        // Send toggle request
+        
         const response = await axios.get(`/admin/coupons/toggle/${couponId}?action=${action}`);
         const data = response.data;
 

@@ -148,10 +148,19 @@
 
                                         <!-- Actions -->
                                         <td>
-                                            <a href="/profile/allorder-details/<%= order.orderId %>"
-                                               class="tf-btn btn-fill animate-hover-btn rounded-0 justify-content-center">
-                                                <span>View</span>
-                                            </a>
+                                           
+
+                                            <% if (order.isPaymentPending) { %>
+                                                <button class="tf-btn btn-warning animate-hover-btn rounded-0 justify-content-center complete-payment-btn"style='width: 100px;'
+                                                        data-order-id="<%= order.orderMongoId %>">
+                                                    <span>Complete Payment</span>
+                                                </button>
+                                                <% } else { %>
+                                                     <a href="/profile/allorder-details/<%= order.orderId %>"
+                                                        class="tf-btn btn-fill animate-hover-btn rounded-0 justify-content-center">
+                                                            <span>View</span>
+                                                        </a>
+                                                    <% } %>
                                         </td>
 
                                     </tr>
@@ -233,7 +242,11 @@
         </div>
     </div>
 </section>
-
+<!-- Axios CDN -->
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<!-- Sweet Alert CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <!-- JS: View Mode Redirect -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -246,6 +259,72 @@ document.addEventListener("DOMContentLoaded", function () {
 
     select.addEventListener("change", function () {
         window.location.href = this.value;
+    });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const buttons = document.querySelectorAll(".complete-payment-btn");
+
+    buttons.forEach(btn => {
+        btn.addEventListener("click", async function () {
+
+            const orderId = this.dataset.orderId;
+
+            try {
+                // 1️⃣ Create new Razorpay order for retry
+                const res = await axios.post("/order/retry-payment", { orderId });
+
+                if (!res.data.success) {
+                    Swal.fire("Error", res.data.message, "error");
+                    return;
+                }
+
+                const { razorpayOrderId, amount, currency, orderDbId } = res.data;
+
+                // 2️⃣ Show Razorpay window again
+                const options = {
+                    key: "<%= process.env.RAZORPAY_KEY_ID %>",
+                    amount: amount * 100,
+                    currency: currency,
+                    name: "Mens E-Commerce",
+                    description: "Complete Payment",
+                    order_id: razorpayOrderId,
+
+                    handler: async function (response) {
+                        try {
+                            const verifyRes = await axios.post('/order/verify', {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                orderDbId
+                            });
+
+                            if (verifyRes.data.success) {
+                                Swal.fire("Success", "Payment Completed!", "success");
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                Swal.fire("Error", "Payment verification failed", "error");
+                            }
+
+                        } catch (err) {
+                            Swal.fire("Error", "Payment verification failed", "error");
+                        }
+                    },
+
+                    theme: { color: "#088178" }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (error) {
+                console.error(error);
+                Swal.fire("Error", "Unable to initiate payment", "error");
+            }
+        });
     });
 });
 </script>
