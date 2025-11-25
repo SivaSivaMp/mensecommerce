@@ -104,7 +104,12 @@ const getOrders = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error in getOrders:', error);
-        return next(new AppError('Internal server error', 500));
+        return next(
+            new AppError(
+                'Internal server error',
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            )
+        );
     }
 };
 
@@ -115,7 +120,10 @@ const getOrderDetails = async (req, res, next) => {
 
         if (!userId) {
             return next(
-                new AppError('Please login to view order details', 401)
+                new AppError(
+                    'Please login to view order details',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
             );
         }
 
@@ -133,7 +141,7 @@ const getOrderDetails = async (req, res, next) => {
             });
 
         if (!order) {
-            return next(new AppError('Order not found', 404));
+            return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
         }
 
         const specificItem = order.orderedItems.find(
@@ -141,7 +149,9 @@ const getOrderDetails = async (req, res, next) => {
         );
 
         if (!specificItem) {
-            return next(new AppError('Order item not found', 404));
+            return next(
+                new AppError('Order item not found', HTTP_STATUS.NOT_FOUND)
+            );
         }
 
         const orderItem = {
@@ -257,7 +267,12 @@ const getOrderDetails = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error in getOrderDetails:', error);
-        return next(new AppError('Internal server error', 500));
+        return next(
+            new AppError(
+                'Internal server error',
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            )
+        );
     }
 };
 const renderItemInvoice = async (req, res, next) => {
@@ -342,7 +357,12 @@ const listOrdersOnly = async (req, res, next) => {
     try {
         const userId = getCurrentUserId(req);
         if (!userId) {
-            return next(new AppError('Please login to view your orders', 401));
+            return next(
+                new AppError(
+                    'Please login to view your orders',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
+            );
         }
 
         const page = parseInt(req.query.page) || 1;
@@ -415,7 +435,12 @@ const listOrdersOnly = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error in listOrdersOnly:', error);
-        return next(new AppError('Internal server error', 500));
+        return next(
+            new AppError(
+                'Internal server error',
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            )
+        );
     }
 };
 
@@ -426,7 +451,10 @@ const getOrderDetailsAllItems = async (req, res, next) => {
 
         if (!userId) {
             return next(
-                new AppError('Please login to view order details', 401)
+                new AppError(
+                    'Please login to view order details',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
             );
         }
 
@@ -444,7 +472,7 @@ const getOrderDetailsAllItems = async (req, res, next) => {
             });
 
         if (!order) {
-            return next(new AppError('Order not found', 404));
+            return next(new AppError('Order not found', HTTP_STATUS.NOT_FOUND));
         }
 
         const orderItems = order.orderedItems.map((item) => {
@@ -503,7 +531,12 @@ const getOrderDetailsAllItems = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error in getOrderDetailsAllItems:', error);
-        return next(new AppError('Internal server error', 500));
+        return next(
+            new AppError(
+                'Internal server error',
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            )
+        );
     }
 };
 

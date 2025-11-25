@@ -286,22 +286,38 @@ const editEmail = async (req, res, next) => {
         const { newEmail } = req.body;
         const emailtrim = newEmail.trim();
         if (!emailtrim) {
-            return next(new AppError('please fill the email field', 400));
+            return next(
+                new AppError(
+                    'please fill the email field',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         if (!validator.isEmail(emailtrim)) {
-            return next(new AppError('please fill a valid email', 400));
+            return next(
+                new AppError(
+                    'please fill a valid email',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
         const exisitingUser = await User.findOne({ email: emailtrim });
         if (exisitingUser) {
             return next(
-                new AppError('user with same email-id already present', 400)
+                new AppError(
+                    'user with same email-id already present',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         const otp = generateOtp();
         const emailSent = await sendVerificationEmail(emailtrim, otp);
         if (!emailSent) {
             return next(
-                new AppError('verification email not sent, try again', 400)
+                new AppError(
+                    'verification email not sent, try again',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
         req.session.userOtp = otp;
@@ -335,7 +351,7 @@ const resetEmailOtpVerification = async (req, res, next) => {
             return next(
                 new AppError(
                     'session expired or invalid, please try again',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
@@ -344,7 +360,7 @@ const resetEmailOtpVerification = async (req, res, next) => {
             return next(
                 new AppError(
                     'Invalide otp, please try again with correcct otp',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
@@ -361,14 +377,16 @@ const resetEmailOtpVerification = async (req, res, next) => {
             redirectUrl: '/profile',
         });
     } catch (error) {
-        console.log('error while otp verification', 400);
+        console.log('error while otp verification', HTTP_STATUS.BAD_REQUEST);
         next(error);
     }
 };
 const uploadProfileImage = async (req, res, next) => {
     try {
         if (!req.file) {
-            return next(new AppError('No image file provided.', 400));
+            return next(
+                new AppError('No image file provided.', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
         const uploadResult = await new Promise((resolve, reject) => {

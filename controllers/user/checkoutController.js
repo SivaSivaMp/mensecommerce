@@ -16,7 +16,10 @@ const getCheckout = async (req, res, next) => {
 
         if (!userId) {
             return next(
-                new AppError('Please login to proceed to checkout', 401)
+                new AppError(
+                    'Please login to proceed to checkout',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
             );
         }
 
@@ -105,7 +108,12 @@ const getCheckout = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error in getCheckout:', error);
-        return next(new AppError('Internal server error', 500));
+        return next(
+            new AppError(
+                'Internal server error',
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            )
+        );
     }
 };
 const getCheckoutAddAddress = async (req, res, next) => {
@@ -113,7 +121,12 @@ const getCheckoutAddAddress = async (req, res, next) => {
         const userId = getCurrentUserId(req);
 
         if (!userId) {
-            return next(new AppError('Please login to view cart', 401));
+            return next(
+                new AppError(
+                    'Please login to view cart',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
+            );
         }
         const cart = await Cart.findOne({ userId })
             .populate({
@@ -155,12 +168,19 @@ const getCheckoutEditAddress = async (req, res, next) => {
         const userAddress = await Address.findById(id);
 
         if (!userAddress) {
-            return next(new AppError('address not found', 400));
+            return next(
+                new AppError('address not found', HTTP_STATUS.BAD_REQUEST)
+            );
         }
         const userId = getCurrentUserId(req);
 
         if (!userId) {
-            return next(new AppError('Please login to view cart', 401));
+            return next(
+                new AppError(
+                    'Please login to view cart',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
+            );
         }
         const cart = await Cart.findOne({ userId })
             .populate({
@@ -211,7 +231,7 @@ const applyCoupon = async (req, res, next) => {
         }
         const cart = await Cart.findOne({ userId });
         if (!cart || cart.items.length === 0) {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
                 message: 'Cart is empty',
             });
@@ -357,13 +377,13 @@ const getAvailableCoupons = async (req, res) => {
         const userId = getCurrentUserId(req);
         if (!userId)
             return res
-                .status(401)
+                .status(HTTP_STATUS.UNAUTHORIZED)
                 .json({ success: false, message: 'Please login first' });
 
         const cart = await Cart.findOne({ userId }).populate('items.productId');
         if (!cart || !cart.items.length)
             return res
-                .status(400)
+                .status(HTTP_STATUS.BAD_REQUEST)
                 .json({ success: false, message: 'Your cart is empty' });
 
         const cartTotal = cart.items.reduce(
@@ -398,7 +418,7 @@ const getAvailableCoupons = async (req, res) => {
         });
     } catch (err) {
         console.error('Error in getAvailableCoupons:', err);
-        res.status(500).json({
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
             message: 'Failed to fetch coupons',
         });

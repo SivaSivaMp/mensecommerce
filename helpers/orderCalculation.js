@@ -3,9 +3,9 @@ import ProductVariant from '../models/productVarintSchema.js';
 import Coupon from '../models/couponSchema.js';
 
 /**
- * Validate cart items, check stock, and calculate totals
+ * Calculate totals from cart
  */
-export const validateAndCalculateCart = async (cart) => {
+export const calculateCartTotals = async (cart) => {
     let totalPrice = 0;
     let totalSalePrice = 0;
     let totalDiscount = 0;
@@ -17,26 +17,6 @@ export const validateAndCalculateCart = async (cart) => {
             'isListed categoryName'
         );
         const variant = await ProductVariant.findById(item.variantId);
-
-        if (!product || !variant) {
-            throw new Error(`Product or variant not found`);
-        }
-
-        if (!product.isListed) {
-            throw new Error(
-                `The item ${product.name} is currently unavailable`
-            );
-        }
-
-        if (!product.category?.isListed) {
-            throw new Error(
-                `Category ${product.category.categoryName} is unavailable`
-            );
-        }
-
-        if (variant.quantity < item.quantity) {
-            throw new Error(`Insufficient stock for ${product.name}`);
-        }
 
         const originalPrice = Number(product.originalPrice);
         const salePrice =
@@ -72,9 +52,9 @@ export const validateAndCalculateCart = async (cart) => {
 };
 
 /**
- * Apply coupon (validation + discount calculation)
+ * Apply coupon discount
  */
-export const applyCouponToSubtotal = async (
+export const calculateCouponDiscount = async (
     subtotal,
     appliedCoupon,
     userId
@@ -84,22 +64,7 @@ export const applyCouponToSubtotal = async (
     }
 
     const coupon = await Coupon.findById(appliedCoupon.couponId);
-    if (!coupon || !coupon.isActive) {
-        throw new Error('Invalid or inactive coupon');
-    }
 
-    const now = new Date();
-    if (now > coupon.expiresAt) throw new Error('Coupon expired');
-    if (now < coupon.startsAt) throw new Error('Coupon not started');
-    if (subtotal < coupon.minPurchaseAmount)
-        throw new Error(
-            `Minimum purchase of ₹${coupon.minPurchaseAmount} required`
-        );
-
-    if (coupon.usedUsers.includes(userId))
-        throw new Error('You have already used this coupon');
-
-    // Calculate discount
     let discount = 0;
 
     if (coupon.discountType === 'flat') {
@@ -118,9 +83,6 @@ export const applyCouponToSubtotal = async (
     };
 };
 
-/**
- * Shipping charge logic
- */
 export const calculateShipping = (amountAfterCoupon) => {
     const shippingThreshold = 800;
     return amountAfterCoupon < shippingThreshold ? 50 : 0;

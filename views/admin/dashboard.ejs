@@ -621,10 +621,17 @@ $(document).ready(function () {
   $("#applyFilterChart").click(function () {
     const start = $("#startDateChart").val();
     const end = $("#endDateChart").val();
+    const now = new Date();
      if (!start || !end) {
         showToast("Please select both start and end dates", "warning");
         return;
       }
+       if (start> end) {
+        showToast("start date cannot be future date ", "warning");
+        return;
+      }
+      
+
 
     loadCharts(start, end);
   });
@@ -639,10 +646,5 @@ $(document).ready(function () {
   loadCharts(s, e);
 });
 </script>
-
-
-
 </body>
-
-<!-- Mirrored from pixelwibes.com/template/ebazar/html/dist/index.html by HTTrack Website Copier/3.x [XR&CO'2014], Sun, 03 Aug 2025 13:37:28 GMT -->
 </html> 

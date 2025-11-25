@@ -1,7 +1,7 @@
 import AppError from '../../utils/appError.js';
 import { getCurrentUserId } from '../../helpers/getCurrentUserId.js';
 import Cart from '../../models/cartSchema.js';
-import mongoose from 'mongoose';
+import Product from '../../models/productSchema.js';
 import Address from '../../models/addressSchema.js';
 import ProductVariant from '../../models/productVarintSchema.js';
 import Wallet from '../../models/walletSchema.js';
@@ -11,8 +11,8 @@ import { HTTP_STATUS } from '../../utils/httpStatus.js';
 import razorpay from '../../config/razorpay.js';
 import crypto from 'crypto';
 import {
-    validateAndCalculateCart,
-    applyCouponToSubtotal,
+    calculateCartTotals,
+    calculateCouponDiscount,
     calculateShipping,
 } from '../../helpers/orderCalculation.js';
 /**
@@ -30,44 +30,84 @@ const placeOrder = async (req, res, next) => {
         const { shippingAddressId, paymentMethod } = req.body;
 
         if (!userId)
-            return next(new AppError('Please login to place an order', 401));
+            return next(
+                new AppError(
+                    'Please login to place an order',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
+            );
 
-        if (!shippingAddressId || !paymentMethod) {
+        if (!shippingAddressId || !paymentMethod)
             return next(
                 new AppError(
                     'Shipping address and payment method are required',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
-        }
 
-        if (!['cod', 'online', 'wallet'].includes(paymentMethod)) {
-            return next(new AppError('Invalid payment method', 400));
-        }
+        if (!['cod', 'online', 'wallet'].includes(paymentMethod))
+            return next(
+                new AppError('Invalid payment method', HTTP_STATUS.BAD_REQUEST)
+            );
 
         const cart = await Cart.findOne({ userId })
             .populate({
                 path: 'items.productId',
-                select: 'name originalPrice salesPrice category',
+                select: 'name originalPrice salesPrice category ',
             })
-            .populate({
-                path: 'items.variantId',
-                select: 'quantity size',
-            })
-            .populate({
-                path: 'appliedCoupon.couponId',
-            });
+            .populate({ path: 'items.variantId', select: 'quantity size' })
+            .populate({ path: 'appliedCoupon.couponId' });
 
-        if (!cart || cart.items.length === 0) {
-            return next(new AppError('Cart is empty', 400));
-        }
+        if (!cart || cart.items.length === 0)
+            return next(new AppError('Cart is empty', HTTP_STATUS.BAD_REQUEST));
 
         const shippingAddress = await Address.findById(shippingAddressId);
         if (
             !shippingAddress ||
             shippingAddress.userId.toString() !== userId.toString()
-        ) {
-            return next(new AppError('Invalid shipping address', 404));
+        )
+            return next(
+                new AppError('Invalid shipping address', HTTP_STATUS.NOT_FOUND)
+            );
+
+        for (const item of cart.items) {
+            const product = await Product.findById(item.productId._id).populate(
+                'category',
+                'isListed categoryName'
+            );
+            const variant = await ProductVariant.findById(item.variantId._id);
+
+            if (!product || !variant)
+                return next(
+                    new AppError(
+                        'Product or variant not found',
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
+
+            if (!product.isListed)
+                return next(
+                    new AppError(
+                        `${product.name} is currently unavailable`,
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
+
+            if (!product.category?.isListed)
+                return next(
+                    new AppError(
+                        `Category ${product.category.categoryName} is unavailable`,
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
+
+            if (variant.quantity < item.quantity)
+                return next(
+                    new AppError(
+                        `Insufficient stock for ${product.name}`,
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
         }
 
         const {
@@ -76,14 +116,44 @@ const placeOrder = async (req, res, next) => {
             totalSalePrice,
             totalDiscount,
             subtotal,
-        } = await validateAndCalculateCart(cart);
+        } = await calculateCartTotals(cart);
 
-        let couponDiscount = 0;
-        let couponId = null;
-        let couponCode = null;
+        let couponDiscount = 0,
+            couponId = null,
+            couponCode = null;
 
-        try {
-            const couponData = await applyCouponToSubtotal(
+        if (cart.appliedCoupon?.couponId) {
+            const coupon = await Coupon.findById(cart.appliedCoupon.couponId);
+            if (!coupon || !coupon.isActive)
+                return next(
+                    new AppError(' inactive coupon', HTTP_STATUS.BAD_REQUEST)
+                );
+
+            const now = new Date();
+            if (now > coupon.expiresAt)
+                return next(
+                    new AppError('Coupon expired', HTTP_STATUS.BAD_REQUEST)
+                );
+            if (now < coupon.startsAt)
+                return next(
+                    new AppError('Coupon not started', HTTP_STATUS.BAD_REQUEST)
+                );
+            if (subtotal < coupon.minPurchaseAmount)
+                return next(
+                    new AppError(
+                        `Minimum purchase of ₹${coupon.minPurchaseAmount} required`,
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
+            if (coupon.usedUsers.includes(userId))
+                return next(
+                    new AppError(
+                        'You have already used this coupon',
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
+
+            const couponData = await calculateCouponDiscount(
                 subtotal,
                 cart.appliedCoupon,
                 userId
@@ -91,20 +161,10 @@ const placeOrder = async (req, res, next) => {
             couponDiscount = couponData.couponDiscount;
             couponId = couponData.couponId;
             couponCode = couponData.couponCode;
-        } catch (err) {
-            cart.appliedCoupon = {
-                couponId: null,
-                code: null,
-                discount: 0,
-                appliedAt: null,
-            };
-            await cart.save();
-            return next(new AppError(err.message, 400));
         }
 
         const amountAfterCoupon = subtotal - couponDiscount;
         const shipping = calculateShipping(amountAfterCoupon);
-
         const finalAmount = amountAfterCoupon + shipping;
 
         const orderPayload = {
@@ -136,14 +196,13 @@ const placeOrder = async (req, res, next) => {
         };
 
         if (paymentMethod === 'cod') {
-            if (finalAmount > 1000) {
+            if (finalAmount > 1000)
                 return next(
                     new AppError(
-                        'Your Total exceeds 1000, please try wallet or online payment',
+                        'Total exceeds 1000, please choose online or wallet payment',
                         HTTP_STATUS.BAD_REQUEST
                     )
                 );
-            }
 
             for (const item of orderedItems) {
                 await ProductVariant.updateOne(
@@ -154,12 +213,11 @@ const placeOrder = async (req, res, next) => {
 
             const order = await Order.create(orderPayload);
 
-            if (couponId) {
+            if (couponId)
                 await Coupon.updateOne(
                     { _id: couponId },
                     { $addToSet: { usedUsers: userId } }
                 );
-            }
 
             await Cart.deleteOne({ userId });
 
@@ -172,9 +230,13 @@ const placeOrder = async (req, res, next) => {
 
         if (paymentMethod === 'wallet') {
             const wallet = await Wallet.findOne({ userId });
-
             if (!wallet || wallet.balance < finalAmount)
-                return next(new AppError('Insufficient wallet balance', 400));
+                return next(
+                    new AppError(
+                        'Insufficient wallet balance',
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
 
             for (const item of orderedItems) {
                 await ProductVariant.updateOne(
@@ -197,12 +259,11 @@ const placeOrder = async (req, res, next) => {
                 order.orderId
             );
 
-            if (couponId) {
+            if (couponId)
                 await Coupon.updateOne(
                     { _id: couponId },
                     { $addToSet: { usedUsers: userId } }
                 );
-            }
 
             await Cart.deleteOne({ userId });
 
@@ -237,7 +298,12 @@ const placeOrder = async (req, res, next) => {
         }
     } catch (error) {
         console.error('placeOrder Error:', error);
-        return next(new AppError('Internal Server Error', 500));
+        next(
+            new AppError(
+                'Internal Server Error',
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            )
+        );
     }
 };
 
@@ -252,7 +318,7 @@ const verifyPayment = async (req, res) => {
 
         if (!orderDbId) {
             return res
-                .status(400)
+                .status(HTTP_STATUS.BAD_REQUEST)
                 .json({ success: false, message: 'Missing order reference' });
         }
 
@@ -264,7 +330,7 @@ const verifyPayment = async (req, res) => {
         const generatedSignature = hmac.digest('hex');
 
         if (generatedSignature !== razorpay_signature) {
-            return res.status(400).json({
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
                 success: false,
                 message: 'Payment verification failed',
             });
@@ -273,7 +339,7 @@ const verifyPayment = async (req, res) => {
         const order = await Order.findById(orderDbId);
         if (!order) {
             return res
-                .status(404)
+                .status(HTTP_STATUS.NOT_FOUND)
                 .json({ success: false, message: 'Order not found' });
         }
 
@@ -289,7 +355,7 @@ const verifyPayment = async (req, res) => {
             const variant = await ProductVariant.findById(item.variant);
 
             if (!variant || variant.quantity < item.quantity) {
-                return res.status(400).json({
+                return res.status(HTTP_STATUS.BAD_REQUEST).json({
                     success: false,
                     message: `Insufficient stock for ${item.productName}`,
                 });
@@ -324,7 +390,7 @@ const verifyPayment = async (req, res) => {
         });
     } catch (err) {
         console.error('verifyPayment Error:', err);
-        return res.status(500).json({
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
             message: 'Server error verifying payment',
         });
@@ -337,11 +403,21 @@ const cancelItem = async (req, res, next) => {
         const userId = getCurrentUserId(req);
 
         if (!userId) {
-            return next(new AppError('Please login to cancel items', 401));
+            return next(
+                new AppError(
+                    'Please login to cancel items',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
+            );
         }
 
         if (!itemId || !reason) {
-            return next(new AppError('Item ID and reason are required', 400));
+            return next(
+                new AppError(
+                    'Item ID and reason are required',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         const order = await Order.findOne({
@@ -349,18 +425,21 @@ const cancelItem = async (req, res, next) => {
             'orderedItems._id': itemId,
         }).populate('couponId');
         if (!order) {
-            return next(new AppError('Order item not found', 404));
+            return next(
+                new AppError('Order item not found', HTTP_STATUS.NOT_FOUND)
+            );
         }
 
         const item = order.orderedItems.id(itemId);
-        if (!item) return next(new AppError('Item not found', 404));
+        if (!item)
+            return next(new AppError('Item not found', HTTP_STATUS.NOT_FOUND));
 
         const cancellableStatuses = ['Pending', 'Processing'];
         if (!cancellableStatuses.includes(item.status)) {
             return next(
                 new AppError(
                     `Cannot cancel item with status: ${item.status}`,
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
@@ -441,7 +520,10 @@ const cancelItem = async (req, res, next) => {
         });
     } catch (error) {
         return next(
-            new AppError(`Failed to cancel item: ${error.message}`, 500)
+            new AppError(
+                `Failed to cancel item: ${error.message}`,
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            )
         );
     }
 };
@@ -450,11 +532,21 @@ const returnItem = async (req, res, next) => {
         const { itemId, reason } = req.body;
         const userId = getCurrentUserId(req);
         if (!userId) {
-            return next(new AppError('Please login to return items', 401));
+            return next(
+                new AppError(
+                    'Please login to return items',
+                    HTTP_STATUS.UNAUTHORIZED
+                )
+            );
         }
 
         if (!itemId || !reason) {
-            return next(new AppError('Item ID and reason are required', 400));
+            return next(
+                new AppError(
+                    'Item ID and reason are required',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         const order = await Order.findOne({
@@ -463,18 +555,23 @@ const returnItem = async (req, res, next) => {
         });
 
         if (!order) {
-            return next(new AppError('Order item not found', 404));
+            return next(
+                new AppError('Order item not found', HTTP_STATUS.NOT_FOUND)
+            );
         }
 
         const item = order.orderedItems.id(itemId);
 
         if (!item) {
-            return next(new AppError(' item not found', 404));
+            return next(new AppError(' item not found', HTTP_STATUS.NOT_FOUND));
         }
 
         if (item.status !== 'Delivered') {
             return next(
-                new AppError('Only delivered items can be returned', 400)
+                new AppError(
+                    'Only delivered items can be returned',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
 
@@ -487,12 +584,17 @@ const returnItem = async (req, res, next) => {
             ].includes(item.status)
         ) {
             return next(
-                new AppError('Return request already exists for this item', 400)
+                new AppError(
+                    'Return request already exists for this item',
+                    HTTP_STATUS.BAD_REQUEST
+                )
             );
         }
 
         if (!item.deliveredDate) {
-            return next(new AppError('Delivery date not found', 400));
+            return next(
+                new AppError('Delivery date not found', HTTP_STATUS.BAD_REQUEST)
+            );
         }
 
         const daysSinceDelivery =
@@ -502,7 +604,7 @@ const returnItem = async (req, res, next) => {
             return next(
                 new AppError(
                     'Return window has expired. Returns are only allowed within 7 days of delivery',
-                    400
+                    HTTP_STATUS.BAD_REQUEST
                 )
             );
         }
@@ -536,7 +638,7 @@ const returnItem = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error in returnItem:', error);
-        return res.status(500).json({
+        return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
             message: 'Failed to submit return request',
         });
