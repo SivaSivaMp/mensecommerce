@@ -256,31 +256,84 @@ const addProduct = async (req, res, next) => {
         });
     }
 };
+// const listProduct = async (req, res, next) => {
+//     try {
+//         if (req.session.admin) {
+//             const id = req.query.id;
+//             await Product.updateOne({ _id: id }, { $set: { isListed: true } });
+//             res.redirect('/admin/product');
+//         }
+//     } catch (error) {
+//         console.log('error while listing the category', error);
+//         next(error);
+//     }
+// };
 const listProduct = async (req, res, next) => {
     try {
-        if (req.session.admin) {
-            const id = req.query.id;
-            await Product.updateOne({ _id: id }, { $set: { isListed: true } });
-            res.redirect('/admin/product');
+        const { id } = req.params;
+
+        const updated = await Product.findByIdAndUpdate(
+            id,
+            { isListed: true },
+            { new: true }
+        );
+
+        if (!updated) {
+            return next(
+                new AppError('Product not found', HTTP_STATUS.NOT_FOUND)
+            );
         }
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Product listed successfully',
+        });
     } catch (error) {
-        console.log('error while listing the category', error);
-        next(error);
+        console.error('List product error:', error);
+        return res
+            .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+            .json({ message: 'Server error while listing product' });
     }
 };
+// const unlistProduct = async (req, res, next) => {
+//     try {
+//         if (req.session.admin) {
+//             const id = req.query.id;
+//             await Product.updateOne({ _id: id }, { $set: { isListed: false } });
+//             res.redirect('/admin/product');
+//         }
+//     } catch (error) {
+//         console.log('error while listing the category', error);
+//         next(error);
+//     }
+// };
 
 const unlistProduct = async (req, res, next) => {
     try {
-        if (req.session.admin) {
-            const id = req.query.id;
-            await Product.updateOne({ _id: id }, { $set: { isListed: false } });
-            res.redirect('/admin/product');
+        const { id } = req.params;
+
+        const updated = await Product.findByIdAndUpdate(
+            id,
+            { isListed: false },
+            { new: true }
+        );
+
+        if (!updated) {
+            return next(
+                new AppError('Product not found', HTTP_STATUS.NOT_FOUND)
+            );
         }
+
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Product unlisted successfully',
+        });
     } catch (error) {
-        console.log('error while listing the category', error);
-        next(error);
+        console.error('Unlist Product error:', error);
+        return res
+            .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+            .json({ message: 'Server error while unlisting Product' });
     }
 };
+
 const editProduct = async (req, res, next) => {
     try {
         const productId = req.params.id;

@@ -112,13 +112,13 @@
 
                                                             <td>
                                                                 
-                                                                <% if(category.isListed === true) { %>
-                                                                    <button type="button" class="btn btn-danger btn-sm" style="width: 80px;">
-                                                                        <a href="/admin/category/unlistCategory?id=<%= category._id %>" class="text-white" style="text-decoration: none;">Unlist</a>
+                                                               <% if (category.isListed) { %>
+                                                                    <button class="btn btn-danger btn-sm category-status-btn"data-id="<%= category._id %>"data-action="unlist"style="width: 80px;">
+                                                                        Unlist
                                                                     </button>
                                                                 <% } else { %>
-                                                                    <button type="button" class="btn btn-success btn-sm" style="width: 80px;">
-                                                                        <a href="/admin/category/listCategory?id=<%= category._id %>" class="text-white" style="text-decoration: none;">List</a>
+                                                                    <button class="btn btn-success btn-sm category-status-btn"data-id="<%= category._id %>"data-action="list"style="width: 80px;">
+                                                                        List
                                                                     </button>
                                                                 <% } %>
                                                             </td>
@@ -297,6 +297,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+        });
+    });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".category-status-btn").forEach(btn => {
+        btn.addEventListener("click", async function () {
+
+            const id = this.getAttribute("data-id");
+            const action = this.getAttribute("data-action");
+
+            const confirm = await Swal.fire({
+                title: action === "unlist" ? "Unlist this category?" : "List this category?",
+                text: action === "unlist"
+                    ? "This category will be hidden from users."
+                    : "This category will be visible to users.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes",
+                cancelButtonText: "Cancel"
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            try {
+                const url = `/admin/category/${id}/${action}`;
+
+                await axios.put(url);
+
+                Swal.fire({
+                    icon: "success",
+                    title: action === "unlist" ? "Category Unlisted" : "Category Listed",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => location.reload(), 1200);
+
+            } catch (err) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: err.response?.data?.message || "Operation failed"
+                });
+            }
+
         });
     });
 });

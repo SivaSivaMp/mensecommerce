@@ -193,25 +193,53 @@ const editCategory = async (req, res, next) => {
     }
 };
 // list category
-const listCategory = async (req, res, next) => {
+const listCategory = async (req, res) => {
     try {
-        const id = req.query.id;
-        await Category.updateOne({ _id: id }, { $set: { isListed: true } });
-        res.redirect('/admin/category');
+        const { id } = req.params;
+
+        const updated = await Category.findByIdAndUpdate(
+            id,
+            { isListed: true },
+            { new: true }
+        );
+
+        if (!updated) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+
+        return res.status(200).json({
+            message: 'Category listed successfully',
+        });
     } catch (error) {
-        console.log('error while listing the category', error);
-        next(error);
+        console.error('List category error:', error);
+        return res
+            .status(500)
+            .json({ message: 'Server error while listing category' });
     }
 };
 // unlist category
-const unlistCategory = async (req, res, next) => {
+const unlistCategory = async (req, res) => {
     try {
-        const id = req.query.id;
-        await Category.updateOne({ _id: id }, { $set: { isListed: false } });
-        res.redirect('/admin/category');
+        const { id } = req.params;
+
+        const updated = await Category.findByIdAndUpdate(
+            id,
+            { isListed: false },
+            { new: true }
+        );
+
+        if (!updated) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+
+        return res.status(200).json({
+            message: 'Category unlisted successfully',
+        });
     } catch (error) {
-        console.log('error while unlisting the category', error);
-        next(error);
+        console.error('Unlist category error:', error);
+        return res
+            .status(500)
+            .json({ message: 'Server error while unlisting category' });
     }
 };
 export default {

@@ -51,7 +51,7 @@ const loadHomepage = async (req, res, next) => {
             { $match: { totalQuantity: { $gt: 0 } } },
             { $limit: 12 },
         ]);
-        console.log(productData.discountPercentage);
+
         return res.render('home-men', { data: productData });
     } catch (error) {
         console.log('error loading while home page :', error);

@@ -121,14 +121,14 @@
                                                             </td> 
 
                                                             <td>
-                                                                
-                                                                <% if(product.isListed === true) { %>
-                                                                    <button type="button" class="btn btn-danger btn-sm" style="width: 80px;">
-                                                                        <a href="/admin/product/unlistProduct?id=<%= product._id %>" class="text-white" style="text-decoration: none;">Unlist</a>
+
+                                                                <% if (product.isListed) { %>
+                                                                    <button class="btn btn-danger btn-sm product-status-btn"data-id="<%= product._id %>"data-action="unlist"style="width: 80px;">
+                                                                        Unlist
                                                                     </button>
                                                                 <% } else { %>
-                                                                    <button type="button" class="btn btn-success btn-sm" style="width: 80px;">
-                                                                        <a href="/admin/product/listProduct?id=<%= product._id %>" class="text-white" style="text-decoration: none;">List</a>
+                                                                    <button class="btn btn-success btn-sm product-status-btn"data-id="<%= product._id %>"data-action="list"style="width: 80px;">
+                                                                        List
                                                                     </button>
                                                                 <% } %>
                                                             </td>
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Select all add/remove offer buttons
+  
     document.querySelectorAll('.toggle-btn').forEach(button => {
         button.addEventListener('click', async function() {
             const productId = this.getAttribute('data-id');
@@ -249,13 +249,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             showConfirmButton: false
                         });
 
-                        // change button to remove offer
+                        
                         this.textContent = 'Remove Offer';
                         this.classList.remove('btn-success');
                         this.classList.add('btn-danger');
                         this.setAttribute('data-action', 'remove-offer');
 
-                        // optionally refresh page
                         setTimeout(() => window.location.reload(), 1000);
                     } catch (error) {
                         Swal.fire({
@@ -288,13 +287,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             showConfirmButton: false
                         });
 
-                        // change button to add offer
+                       
                         this.textContent = 'Add Offer';
                         this.classList.remove('btn-danger');
                         this.classList.add('btn-success');
                         this.setAttribute('data-action', 'add-offer');
 
-                        // optionally refresh page
+                       
                         setTimeout(() => window.location.reload(), 1000);
                     } catch (error) {
                         Swal.fire({
@@ -305,6 +304,53 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             }
+        });
+    });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".product-status-btn").forEach(btn => {
+        btn.addEventListener("click", async function () {
+
+            const id = this.getAttribute("data-id");
+            const action = this.getAttribute("data-action");
+
+            const confirm = await Swal.fire({
+                title: action === "unlist" ? "Unlist this product?" : "List this product?",
+                text: action === "unlist"
+                    ? "This product will be hidden from users."
+                    : "This product will be visible to users.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes",
+                cancelButtonText: "Cancel"
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            try {
+                const url = `/admin/product/${id}/${action}`;
+
+                await axios.put(url);
+
+                Swal.fire({
+                    icon: "success",
+                    title: action === "unlist" ? "product Unlisted" : "product Listed",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => location.reload(), 1200);
+
+            } catch (err) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: err.response?.data?.message || "Operation failed"
+                });
+            }
+
         });
     });
 });

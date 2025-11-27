@@ -9,7 +9,7 @@ const userSession = session({
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: process.env.DATABASE_LOCAL,
+        mongoUrl: process.env.DATABASE,
         collectionName: 'sessions',
         ttl: 60 * 60 * 24,
     }),
@@ -25,7 +25,7 @@ const adminSession = session({
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: process.env.DATABASE_LOCAL,
+        mongoUrl: process.env.DATABASE,
         collectionName: 'sessions',
         ttl: 60 * 60 * 24,
     }),

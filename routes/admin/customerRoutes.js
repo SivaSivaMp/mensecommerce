@@ -4,7 +4,7 @@ import { Router } from 'express';
 const router = Router();
 
 router.route('/').get(customerController.customerInfo);
-router.route('/blockCustomer').get(customerController.customerBlocked);
-router.route('/unblockCustomer').get(customerController.customerUnBlocked);
+router.route('/:id/block').put(customerController.customerBlocked);
+router.route('/:id/unblock').put(customerController.customerUnBlocked);
 
 export default router;

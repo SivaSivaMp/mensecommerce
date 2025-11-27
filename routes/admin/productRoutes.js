@@ -11,8 +11,8 @@ router
     .get(productController.getAddProduct)
     .post(upload.any(), productController.addProduct);
 
-router.route('/unlistProduct').get(productController.unlistProduct);
-router.route('/listProduct').get(productController.listProduct);
+router.route('/:id/unlist').put(productController.unlistProduct);
+router.route('/:id/list').put(productController.listProduct);
 
 router
     .route('/edit-product/:id')

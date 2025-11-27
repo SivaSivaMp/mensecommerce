@@ -1,4 +1,6 @@
 import User from '../../models/userSchema.js';
+import AppError from '../../utils/appError.js';
+import { HTTP_STATUS } from '../../utils/httpStatus.js';
 // ccustomer list
 const customerInfo = async (req, res, next) => {
     try {
@@ -36,27 +38,49 @@ const customerInfo = async (req, res, next) => {
     }
 };
 // block customer
+
 const customerBlocked = async (req, res, next) => {
     try {
-        const id = req.query.id;
-
-        await User.updateOne({ _id: id }, { $set: { isBlocked: true } });
-
-        res.redirect('/admin/users');
+        const { id } = req.params;
+        const updated = await User.findByIdAndUpdate(
+            id,
+            { isBlocked: true },
+            { new: true }
+        );
+        if (!updated) {
+            return next(
+                new AppError('Customer not found', HTTP_STATUS.NOT_FOUND)
+            );
+        }
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Customer blocked successfully',
+        });
     } catch (error) {
-        console.log('error while blocking the user', error);
+        console.error('Block Customer error:', error);
         next(error);
     }
 };
+
 // unblock customer
+
 const customerUnBlocked = async (req, res, next) => {
     try {
-        const id = req.query.id;
-
-        await User.updateOne({ _id: id }, { $set: { isBlocked: false } });
-        res.redirect('/admin/users');
+        const { id } = req.params;
+        const updated = await User.findByIdAndUpdate(
+            id,
+            { isBlocked: false },
+            { new: true }
+        );
+        if (!updated) {
+            return next(
+                new AppError('Customer not found', HTTP_STATUS.NOT_FOUND)
+            );
+        }
+        return res.status(HTTP_STATUS.OK).json({
+            message: 'Customer Unblocked successfully',
+        });
     } catch (error) {
-        console.log('error while blocking the user', error);
+        console.error('UnBlock Customer error:', error);
         next(error);
     }
 };

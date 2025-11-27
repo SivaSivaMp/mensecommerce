@@ -4,13 +4,17 @@ dotenv.config();
 
 const connectB = async () => {
     try {
-        await mongoose.connect(process.env.DATABASE_LOCAL);
-        if (!process.env.DATABASE_LOCAL) {
-            throw new Error('MONGODB URI notdefined in the env');
+        if (!process.env.DATABASE) {
+            throw new Error('MONGODB URI is not defined in the env');
         }
-        console.log('Database connected succesfully');
+
+        await mongoose.connect(process.env.DATABASE, {
+            serverSelectionTimeoutMS: 5000,
+        });
+
+        console.log('Connected to MongoDB Atlas');
     } catch (error) {
-        console.log('Error while connecting to database :', error);
+        console.error('DB connection error:', error);
         process.exit(1);
     }
 };

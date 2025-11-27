@@ -13,8 +13,8 @@ router
     .route('/category-edit')
     .get(categoryController.getEditCategory)
     .patch(categoryController.editCategory);
-router.route('/listCategory').get(categoryController.listCategory);
-router.route('/unlistCategory').get(categoryController.unlistCategory);
+router.route('/:id/list').put(categoryController.listCategory);
+router.route('/:id/unlist').put(categoryController.unlistCategory);
 router.route('/add-offer/:id').post(offerController.addCategoryOffer);
 router.route('/remove-offer/:id').post(offerController.removeCategoryOffer);
 export default router;
