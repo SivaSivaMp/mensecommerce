@@ -48,7 +48,7 @@ const loadHomepage = async (req, res, next) => {
                     },
                 },
             },
-            { $match: { totalQuantity: { $gt: 0 } } },
+            // { $match: { totalQuantity: { $gt: 0 } } },
             { $limit: 12 },
         ]);
 
@@ -165,7 +165,7 @@ const loadShoppingPage = async (req, res) => {
                 },
             },
 
-            { $match: { totalQuantity: { $gt: 0 } } },
+            // { $match: { totalQuantity: { $gt: 0 } } },
 
             {
                 $facet: {
@@ -349,7 +349,7 @@ const getProductDetails = async (req, res, next) => {
                     },
                 },
             },
-            { $match: { totalQuantity: { $gt: 0 } } },
+            // { $match: { totalQuantity: { $gt: 0 } } },
         ]);
         const reviews = await Review.find({ productId })
             .populate('userId', 'name')

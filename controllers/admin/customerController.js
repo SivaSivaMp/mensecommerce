@@ -6,7 +6,7 @@ const customerInfo = async (req, res, next) => {
     try {
         let search = req.query.search || '';
         let page = parseInt(req.query.page) || 1;
-        const limit = 5;
+        const limit = 10;
         const skip = (page - 1) * limit;
         const filter = {
             isAdmin: false,

@@ -19,6 +19,7 @@
    
 </head>
 <body>
+
     <div id="ebazar-layout" class="theme-blue">
 
         <!-- sidebar -->
@@ -99,6 +100,7 @@
                                     <div class="image-count-info mt-2">
                                         <span id="imageCount">0</span> images uploaded
                                     </div>
+                                    <div class="required-images mt-2"></div>
                                 </div>
                             </div>
                         </div>
@@ -245,24 +247,37 @@
     }
 
     // Save cropped image
-    document.getElementById('saveCrop').addEventListener('click', function() {
-        if (!cropper) return;
-        
-        cropper.getCroppedCanvas({
-            width: 400,
-            height: 400,
-            imageSmoothingEnabled: true,
-            imageSmoothingQuality: 'high'
-        }).toBlob(function(blob) {
-            const croppedFile = new File([blob], currentFile.name, {
-                type: currentFile.type,
-                lastModified: Date.now()
-            });
-            
-            addImageToDisplay(croppedFile);
-            hideCropModal();
-        }, currentFile.type, 0.9);
+document.getElementById('saveCrop').addEventListener('click', function () {
+    if (!cropper) return;
+
+    const canvas = cropper.getCroppedCanvas({
+        width: 400,
+        height: 400,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
     });
+
+    if (!canvas) {
+        console.error("Cropper not ready yet");
+        return;
+    }
+
+    canvas.toBlob((blob) => {
+        if (!blob) {
+            console.error("Failed generating blob");
+            return;
+        }
+
+        const croppedFile = new File([blob], currentFile.name, {
+            type: currentFile.type,
+            lastModified: Date.now(),
+        });
+
+        addImageToDisplay(croppedFile);
+        hideCropModal(); // <-- will now always run
+    }, currentFile.type, 0.9);
+});
+
 
     // Cancel crop
     document.getElementById('cancelCrop').addEventListener('click', hideCropModal);
@@ -356,6 +371,10 @@
         
         if (uploadedImages.length < 3) {
             showErrorToast("Please upload at least 3 images.");
+            return;
+        }
+        if (uploadedImages.length > 5) {
+            showErrorToast("Maximum 5 images are allowed for an image.");
             return;
         }
 

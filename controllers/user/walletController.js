@@ -17,7 +17,7 @@ const getWalletTransactions = async (req, res, next) => {
         const typeFilter = req.query.type || '';
 
         const page = parseInt(req.query.page) || 1;
-        const limit = 8;
+        const limit = 10;
         const skip = (page - 1) * limit;
 
         const wallet = await Wallet.findOne({ userId });

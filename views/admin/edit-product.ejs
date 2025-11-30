@@ -348,18 +348,18 @@
     }
 
     // Calculate total stock
-    function calculateTotalStock() {
-        const sizeInputs = document.querySelectorAll('.size-input');
-        let total = 0;
-        sizeInputs.forEach(input => {
-            const value = parseInt(input.value) || 0;
-            total += value;
-        });
-        document.getElementById('totalStock').textContent = total;
-    }
-    document.querySelectorAll('.size-input').forEach(input => {
-        input.addEventListener('input', calculateTotalStock);
-    });
+    // function calculateTotalStock() {
+    //     const sizeInputs = document.querySelectorAll('.size-input');
+    //     let total = 0;
+    //     sizeInputs.forEach(input => {
+    //         const value = parseInt(input.value) || 0;
+    //         total += value;
+    //     });
+    //     document.getElementById('totalStock').textContent = total;
+    // }
+    // document.querySelectorAll('.size-input').forEach(input => {
+    //     input.addEventListener('input', calculateTotalStock);
+    // });
 
     // Form submission
     const form = document.getElementById('productForm');

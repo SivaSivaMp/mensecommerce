@@ -9,7 +9,7 @@ const getProductInfo = async (req, res, next) => {
     try {
         let search = req.query.search || '';
         let page = parseInt(req.query.page) || 1;
-        const limit = 8;
+        const limit = 10;
         const skip = (page - 1) * limit;
         const productData = await Product.aggregate([
             {
@@ -183,6 +183,22 @@ const addProduct = async (req, res, next) => {
                     .end(file.buffer);
             });
             imageUrls.push(url);
+        }
+        if (imageUrls.length < 3) {
+            return next(
+                new AppError(
+                    'Product must have at 3 images',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
+        }
+        if (imageUrls.length > 5) {
+            return next(
+                new AppError(
+                    'Product should only maximum 5 images',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
         }
 
         let totalStock = 0;

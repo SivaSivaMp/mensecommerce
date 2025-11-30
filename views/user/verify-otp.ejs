@@ -106,14 +106,7 @@
         }, 1000);
     }
 
-    function resendOTP() {
-        clearInterval(timerInterval);
-        startTimer();
-
-        console.log('OTP Resent!');
-        return false;
-    }
-
+    
     window.onload = startTimer;
 </script>
 <script>
@@ -159,7 +152,7 @@
             if (res.data.success) {
                 successBox.textContent = 'OTP Resent Successfully';
                 successBox.classList.remove('d-none');
-                startTimer();
+                
             } else {
                 errorBox.textContent =
                     res.data.message ||

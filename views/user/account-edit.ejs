@@ -225,7 +225,7 @@
                 setTimeout(() => {
                     successBox.classList.add("d-none");
                     errorBox.classList.add("d-none");
-                }, 1500);
+                }, 4000);
                 const formData={
                     newName:document.getElementById('full-name').value,
                     newPhone:document.getElementById('phone').value,
@@ -266,7 +266,7 @@
                 setTimeout(() => {
                     successBox1.classList.add("d-none");
                     errorBox1.classList.add("d-none");
-                }, 1500);
+                }, 4000);
                 const formData={
                     newEmail:document.getElementById('email').value
                 }
@@ -303,8 +303,11 @@ if (imageForm) {
     e.preventDefault();
     const imageSuccess = document.getElementById("image-success");
     const imageError = document.getElementById("image-error");
-    imageSuccess.classList.add("d-none");
-    imageError.classList.add("d-none");
+    setTimeout(() => {
+        imageSuccess.classList.add("d-none");
+        imageError.classList.add("d-none");
+                }, 4000);
+   
 
     const fileInput = document.getElementById("profileImage");
     if (!fileInput.files.length) {

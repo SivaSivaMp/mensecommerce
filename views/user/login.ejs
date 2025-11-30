@@ -71,8 +71,11 @@
             const successBox = document.getElementById("success-message");           
             form.addEventListener("submit", async (e) => {
                 e.preventDefault();
-                errorBox.classList.add("d-none");
+                setTimeout(()=>{
+                    errorBox.classList.add("d-none");
                 successBox.classList.add("d-none");
+                },5000)
+                
                 const formData = {
                 email: document.getElementById("property3").value,
                 password: document.getElementById("property4").value

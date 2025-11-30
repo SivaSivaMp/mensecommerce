@@ -6,7 +6,7 @@ const getCouponList = async (req, res, next) => {
     try {
         const search = req.query.search?.trim() || '';
         const page = parseInt(req.query.page) || 1;
-        const limit = 8;
+        const limit = 10;
         const skip = (page - 1) * limit;
 
         const query = {};
@@ -131,11 +131,20 @@ const addCoupon = async (req, res, next) => {
         }
         const startDate = startsAt ? new Date(startsAt) : new Date();
         const endDate = new Date(expiresAt);
+        const now = new Date();
 
         if (endDate <= startDate) {
             return next(
                 new AppError(
                     'Expiry date must be after start date.',
+                    HTTP_STATUS.BAD_REQUEST
+                )
+            );
+        }
+        if (endDate < now) {
+            return next(
+                new AppError(
+                    'Expiry date cannot be a past date.',
                     HTTP_STATUS.BAD_REQUEST
                 )
             );

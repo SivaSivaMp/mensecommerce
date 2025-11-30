@@ -1,5 +1,14 @@
 <%-include("../partials/user/header")%>
-       
+  <style>
+    .grid-layout .no-products {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 0;
+    text-align: center;
+}
+  </style>     
         <!-- Section Product -->
         <section class="flat-spacing-2">
             <div class="container">
@@ -9,7 +18,7 @@
                             <% products.forEach(function(product,i) { %>
                             <div class="card-product" data-productId="<%= product._id %>">
                                 <div class="card-product-wrapper" data-productId="<%= product._id %>">
-                                <a href="#" class="product-img">
+                                <a href="/product-details?id=<%=product._id%>" class="product-img">
                                     <img class="lazyload img-product"
                                         src="<%= product.images && product.images[0] ? product.images[0] : '/images/placeholder.jpg' %>"
                                         alt="<%= product.name %>">
@@ -87,7 +96,7 @@
                             </div>
                             <% }) %>
                         <% } else { %>
-                            <div class="col-12 text-center">
+                            <div class="no-products">
                             <h4>No products found In your wishlist</h4>
                            
                             </div>

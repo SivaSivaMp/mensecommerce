@@ -89,6 +89,23 @@
   margin-bottom: 10px;
   width: 100%;
 }
+.cart-empty-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px; /* You can increase if needed */
+    width: 150%;
+}
+
+.cart-empty-content {
+    text-align: center;
+}
+
+.cart-empty-content p {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 20px;
+}
 
 /* FREE delivery text */
 .delivery-info small {
@@ -111,6 +128,7 @@
   font-weight: 600;
   color: #2ca02c;
 }
+
 </style>
         <!-- page-title -->
         <div class="tf-page-title style-2">
@@ -213,12 +231,14 @@
             </table>
           </form>
         <% } else { %>
-          <div style="text-align: center; padding: 40px;">
-            <p style="font-size: 18px; color: #666;">Your cart is empty</p>
-            <a href="/shop" class="tf-btn btn-fill animate-hover-btn radius-3" style="display: inline-block; margin-top: 20px;">
-              <span>Continue Shopping</span>
-            </a>
-          </div>
+          <div class="cart-empty-wrapper">
+            <div class="cart-empty-content">
+                <p>Your cart is empty</p>
+                <a href="/shop" class="tf-btn btn-fill animate-hover-btn radius-3">
+                    <span>Continue Shopping</span>
+                </a>
+            </div>
+        </div>
         <% } %>
       </div>
 

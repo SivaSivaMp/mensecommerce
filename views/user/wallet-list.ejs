@@ -1,4 +1,53 @@
 <%- include("../partials/user/header") %>
+<style>
+  .swal2-wallet-popup {
+  max-width: 720px !important; /* match width option, override defaults */
+  padding: 28px 30px !important;
+  border-radius: 8px !important;
+}
+
+/* Make the input full width, taller and visually consistent */
+.swal2-wallet-popup .swal2-input {
+  width: 100% !important;
+  box-sizing: border-box;
+  height: 48px !important;
+  padding: 10px 14px !important;
+  font-size: 16px !important;
+  border-radius: 6px !important;
+  border: 1px solid #dfe3e8 !important;
+  background: #fff !important;
+  color: #222 !important;
+  margin: 8px 0 12px !important;
+}
+
+/* Remove browser number spinner if any (defensive) */
+.swal2-wallet-popup .swal2-input[type=number]::-webkit-outer-spin-button,
+.swal2-wallet-popup .swal2-input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.swal2-wallet-popup .swal2-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Adjust button area spacing if needed */
+.swal2-wallet-popup .swal2-actions {
+  margin-top: 12px !important;
+}
+
+/* Optional: keep mobile responsive */
+@media (max-width: 640px) {
+  .swal2-wallet-popup {
+    width: calc(100% - 40px) !important;
+    max-width: none !important;
+    padding: 20px !important;
+  }
+  .swal2-wallet-popup .swal2-input {
+    height: 44px !important;
+    font-size: 15px !important;
+  }
+}
+</style>
 
 <div class="tf-breadcrumb">
   <div class="container">
@@ -138,15 +187,31 @@
     e.preventDefault();
 
     const { value: amount } = await Swal.fire({
-      title: 'Add Money ',
-      input: 'number',
-      inputLabel: 'Enter amount (in ₹)',
-      inputPlaceholder: 'e.g. 500',
-      showCancelButton: true,
-      confirmButtonText: 'Add Money',
-    });
+        title: 'Add Money',
+        input: 'text', // keep text for consistent styling
+        inputLabel: 'Enter amount (in ₹)',
+        inputPlaceholder: 'e.g. 500',
+        inputAttributes: {
+          inputmode: 'numeric',
+          pattern: '[0-9]*',
+          maxlength: 8
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Add Money',
+        width: 720, // <-- increase modal width (px) to fit your layout
+        customClass: {
+          popup: 'swal2-wallet-popup' // custom class for additional CSS hooks
+        },
+        preConfirm: (value) => {
+          if (!value || isNaN(value) || Number(value) <= 0) {
+            Swal.showValidationMessage("Please enter a valid positive amount");
+            return false;
+          }
+          return Number(value);
+        }
+      });
 
-    if (!amount || amount <= 0) return;
+   
 
     try {
       // 1️⃣ Create Razorpay order

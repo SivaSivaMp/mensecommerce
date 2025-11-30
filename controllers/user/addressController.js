@@ -19,7 +19,7 @@ const getAddressInfo = async (req, res, next) => {
         const userId = getCurrentUserId(req);
 
         const page = parseInt(req.query.page, 10) || 1;
-        const limit = 2;
+        const limit = 5;
         const skip = (page - 1) * limit;
 
         const userAddressCount = await Address.countDocuments({ userId });

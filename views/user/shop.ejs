@@ -1,5 +1,14 @@
 <%-include("../partials/user/header")%>
-
+<style>
+    .grid-layout .no-products {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 0;
+    text-align: center;
+}
+</style>
 
         <!-- /page-title -->
         
@@ -153,9 +162,8 @@
                             </div>
                             <% }) %>
                         <% } else { %>
-                            <div class="col-12 text-center">
-                            <h4>No products found In your wishlist</h4>
-                           
+                            <div class="no-products">  
+                                <h4>No products found in your Shop page</h4>
                             </div>
                         <% } %>
                     </div>

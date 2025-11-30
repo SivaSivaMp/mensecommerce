@@ -111,8 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
             e.style.display = "none";
             e.textContent = "";
         });
-        errorBox.classList.add("d-none");
-        successBox.classList.add("d-none");
+       
     }
 
     function validate() {
@@ -169,7 +168,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
-
+        setTimeout(()=>{
+             errorBox.classList.add("d-none");
+        successBox.classList.add("d-none");
+        },5000)
         if (!validate()) return;
 
         setLoading(true);
