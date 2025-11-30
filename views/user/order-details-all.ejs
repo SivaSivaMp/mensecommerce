@@ -237,7 +237,7 @@
             </p>
         </div>
 
-        <a href="/profile/orders-summary" class="tf-btn btn-outline animate-hover-btn radius-3">
+        <a href="/profile/orders-summary" class="tf-btn btn-outline animate-hover-btn radius-3" style=" height: 50px;">
             ← Back to Orders
         </a>
     </div>
@@ -272,6 +272,7 @@
 
                     <p class="product-price">₹<%= item.totalPrice.toLocaleString('en-IN') %></p>
                 </div>
+                
             </div>
 
             <!-- STATUS TIMELINE -->
@@ -282,7 +283,7 @@
                 <% timeline.forEach(stage => { %>
                     <div class="timeline-item">
                         <div class="timeline-dot 
-                            <%= ['Processing','Shipped','Out for Delivery','Delivered'].includes(item.status) || stage==='Pending' ? 'completed':'' %>
+                            <%= ['Processing','Shipped','Out for Delivery','Delivered','Return Rejected'].includes(item.status) || stage==='Pending' ? 'completed':'' %>
                             <%= item.status === stage ? 'current':'' %>
                         ">
                             ✓
@@ -303,6 +304,23 @@
                     <button class="btn-return" onclick="returnItem('<%= item._id %>')">Return</button>
                 <% } %>
             </div>
+             <% if (item.status === 'Delivered' && item.deliveredDate) { %>
+                            <p class="return-window">
+                                <span>ℹ️</span> Return window closes on <%= new Date(new Date(item.deliveredDate).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+                            </p>
+                        <% } %>
+
+                        <% if (item.cancellationReason) { %>
+                            <p style="color: #dc3545; font-size: 13px; margin-top: 10px;">
+                                <strong>Cancellation Reason:</strong> <%= item.cancellationReason %>
+                            </p>
+                        <% } %>
+
+                        <% if (item.returnReason) { %>
+                            <p style="color: #ffc107; font-size: 13px; margin-top: 10px;">
+                                <strong>Return Reason:</strong> <%= item.returnReason %>
+                            </p>
+                        <% } %>
 
         </div>
         <% }) %>

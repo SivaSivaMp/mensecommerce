@@ -147,11 +147,11 @@
                     
                     <!-- Product Column -->
                     <td class="tf-cart-item_product">
-                      <a href="/product-detail/<%= item.productId %>" class="img-box">
+                      <a href="/product-details?id=<%= item.productId %>" class="img-box">
                         <img src="<%= item.productImage %>" alt="<%= item.productName %>">
                       </a>
                       <div class="cart-info">
-                        <a href="/product-detail/<%= item.productId %>" class="cart-title link"><%= item.productName %></a>
+                        <a href="/product-details?id=<%= item.productId %>" class="cart-title link"><%= item.productName %></a>
                         <div class="cart-meta-variant">
                           <%= item.size %>
                           <strike>
