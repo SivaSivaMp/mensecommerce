@@ -79,46 +79,131 @@
                 </div>
             </div>
         </section>
-        <script src="/others/formvalidation.js"></script>
+        
         <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>   
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("register-form");
-  const errorBox = document.getElementById("error-message");
-  const successBox = document.getElementById("success-message");
+document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("register-form");
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
+    const nameEl = document.getElementById("property1");
+    const emailEl = document.getElementById("property3");
+    const passEl = document.getElementById("property4");
+    const cpassEl = document.getElementById("property5");
+    const referralEl = document.getElementById("property6");
 
-    errorBox.classList.add("d-none");
-    successBox.classList.add("d-none");
+    const err1 = document.getElementById("error-1");
+    const err2 = document.getElementById("error-2");
+    const err3 = document.getElementById("error-3");
+    const err4 = document.getElementById("error-4");
 
-    const formData = {
-      name: document.getElementById("property1").value,
-      email: document.getElementById("property3").value,
-      password: document.getElementById("property4").value,
-      cpassword: document.getElementById("property5").value,
-      referralCode:document.getElementById('property6').value
-    };
+    const errorBox = document.getElementById("error-message");
+    const successBox = document.getElementById("success-message");
 
-    try {
-      const res = await axios.post("/signup", formData);
-      if (res.data.status === "success") {
-        successBox.textContent = res.data.message;
-        successBox.classList.remove("d-none");
-        setTimeout(() => {
-          window.location.href = res.data.redirectUrl;
-        }, 1500);
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || "Something went wrong";
-      errorBox.textContent = msg;
-      errorBox.classList.remove("d-none");
+    const submitBtn = form.querySelector("button[type='submit']");
+
+    function showError(el, msg) {
+        el.style.display = "block";
+        el.textContent = msg;
     }
-  });
-});
 
+    function clearErrors() {
+        [err1, err2, err3, err4].forEach(e => {
+            e.style.display = "none";
+            e.textContent = "";
+        });
+        errorBox.classList.add("d-none");
+        successBox.classList.add("d-none");
+    }
+
+    function validate() {
+        clearErrors();
+        let valid = true;
+
+        // Name
+        if (!nameEl.value.trim()) {
+            showError(err1, "Full name is required");
+            valid = false;
+        }
+
+        // Email
+        const email = emailEl.value.trim();
+        const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!email) {
+            showError(err2, "Email is required");
+            valid = false;
+        } else if (!emailReg.test(email)) {
+            showError(err2, "Enter a valid email");
+            valid = false;
+        }
+
+        // Password
+        const pass = passEl.value;
+        if (pass.length < 8) {
+            showError(err3, "Password must be at least 8 characters");
+            valid = false;
+        }
+
+        // Confirm Pass
+        if (cpassEl.value !== passEl.value) {
+            showError(err4, "Passwords do not match");
+            valid = false;
+        }
+
+        return valid;
+    }
+
+    // LOADING UI
+    function setLoading(state) {
+        if (state) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Registering...
+            `;
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Register";
+        }
+    }
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (!validate()) return;
+
+        setLoading(true);
+
+        const payload = {
+            name: nameEl.value.trim(),
+            email: emailEl.value.trim(),
+            password: passEl.value,
+            cpassword: cpassEl.value,
+            referralCode: referralEl.value.trim(),
+        };
+
+        try {
+            const res = await axios.post("/signup", payload);
+
+            if (res.data.status === "success") {
+                successBox.textContent = res.data.message;
+                successBox.classList.remove("d-none");
+
+                setTimeout(() => {
+                    window.location.href = res.data.redirectUrl;
+                }, 1500);
+            }
+        } catch (err) {
+            const msg = err.response?.data?.message || "Something went wrong";
+            errorBox.textContent = msg;
+            errorBox.classList.remove("d-none");
+        }
+
+        setLoading(false);
+    });
+});
 </script>
+
 <script>
 
     const passInput = document.getElementById("property4");

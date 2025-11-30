@@ -122,6 +122,17 @@ const signup = async (req, res, next) => {
                 new AppError('password do not match', HTTP_STATUS.BAD_REQUEST)
             );
         }
+        if (referralCode) {
+            const referrer = await User.findOne({ referralCode: referralCode });
+            if (!referrer) {
+                return next(
+                    new AppError(
+                        'Invalid referral code',
+                        HTTP_STATUS.BAD_REQUEST
+                    )
+                );
+            }
+        }
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return next(
@@ -131,6 +142,7 @@ const signup = async (req, res, next) => {
                 )
             );
         }
+
         const otp = generateOtp();
         const emailSent = await sendVerificationEmail(email, otp);
         console.log('otp is :', otp);
